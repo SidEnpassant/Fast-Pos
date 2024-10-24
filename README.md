@@ -24,18 +24,25 @@ Fast POS is a streamlined point-of-sale (POS) application designed specifically 
   - Edit business details, including name, address, and bill rules as needed.
   - Signature updates and more.
 
-## Installation
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/fast-pos.git
-
-2. get dependencies: flutter pub get
-3: flutter run
-
 
 Technologies Used:
 Flutter for app development
 Firebase for backend and real-time data management
 Graphing libraries for monthly analytics
 Third-party plugins for UI enhancements
+
+
+
+## Installation
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/fast-pos.git
+
+2. get dependencies:
+    ```bash
+    flutter pub get
+
+3:
+  ```bash
+  flutter run
