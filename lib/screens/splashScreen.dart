@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:inventopos/bottom%20navigation%20bar/bottomNavbar.dart';
+import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
+import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
-import 'package:inventopos/screens/DashboardScreen.dart';
+import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
 import 'package:inventopos/screens/Authentication/loginScreen.dart';
 import 'package:inventopos/screens/Authentication/signUpScreen.dart';
 

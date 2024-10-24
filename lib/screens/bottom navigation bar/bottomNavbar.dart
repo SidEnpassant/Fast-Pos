@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:bottom_navy_bar/bottom_navy_bar.dart';
-import 'package:inventopos/Account/myAccount.dart';
-import 'package:inventopos/Notification/notificationsScreen.dart';
+import 'package:inventopos/screens/Account/myAccount.dart';
+import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
+import 'package:inventopos/screens/Notification/notificationsScreen.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
-import 'package:inventopos/screens/DashboardScreen.dart';
+import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
 
 class NavBarScreen extends StatefulWidget {
   const NavBarScreen({super.key});
@@ -18,6 +19,7 @@ class _NavBarScreenState extends State<NavBarScreen> {
   // List of widgets representing each tab
   final List<Widget> _pages = [
     DashboardScreen(), // Your dashboard screen
+    MonthlyRevenueAnalysis(), //Analysis Screen
     BillGenerationScreen(), // Your bill generation screen
     NotificationsScreen(), // Your notification screen
     MyAccountPage(), // Your profile screen
@@ -51,7 +53,6 @@ class _NavBarScreenState extends State<NavBarScreen> {
           borderRadius: BorderRadius.circular(
               30), // Make sure corners are rounded for the BottomNavyBar
           child: BottomNavyBar(
-            // borderRadius: BorderRadius.all(Radius.circular(20)),
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             selectedIndex: _currentIndex,
             onItemSelected: (index) {
@@ -63,6 +64,12 @@ class _NavBarScreenState extends State<NavBarScreen> {
               BottomNavyBarItem(
                 icon: Icon(Icons.dashboard_customize_outlined),
                 title: Text('Dashboard'),
+                activeColor: Colors.blueAccent,
+                inactiveColor: Colors.grey,
+              ),
+              BottomNavyBarItem(
+                icon: Icon(Icons.analytics_outlined),
+                title: Text('Analysis'),
                 activeColor: Colors.blueAccent,
                 inactiveColor: Colors.grey,
               ),

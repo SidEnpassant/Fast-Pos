@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -20,6 +21,7 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
+import 'package:speech_to_text/speech_to_text.dart';
 
 class BillGenerationScreen extends StatefulWidget {
   const BillGenerationScreen({Key? key}) : super(key: key);
@@ -500,92 +502,152 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     final nameController = TextEditingController(text: initialProductName);
     final priceController = TextEditingController();
     final quantityController = TextEditingController(text: '1');
+    final commentController = TextEditingController();
+    final stt = SpeechToText();
+    bool isListening = false;
 
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Product'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nameController,
-              decoration: InputDecoration(
-                labelText: 'Product Name',
-                border: const OutlineInputBorder(),
-                suffixIcon: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: const Icon(Icons.qr_code_scanner),
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        final scannedName = await _showBarcodeScanner();
-                        if (scannedName != null) {
-                          _showAddProductDialog(scannedName);
-                        }
-                      },
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Add Product'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                TextField(
+                  controller: nameController,
+                  decoration: InputDecoration(
+                    labelText: 'Product Name*',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.qr_code_scanner),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            final scannedName = await _showBarcodeScanner();
+                            if (scannedName != null) {
+                              _showAddProductDialog(scannedName);
+                            }
+                          },
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.camera_alt),
+                          onPressed: () async {
+                            Navigator.pop(context);
+                            final recognizedText = await _showTextRecognition();
+                            if (recognizedText != null) {
+                              _showAddProductDialog(recognizedText);
+                            }
+                          },
+                        ),
+                      ],
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.camera_alt),
-                      onPressed: () async {
-                        Navigator.pop(context);
-                        final recognizedText = await _showTextRecognition();
-                        if (recognizedText != null) {
-                          _showAddProductDialog(recognizedText);
-                        }
-                      },
-                    ),
-                  ],
+                  ),
                 ),
-              ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: priceController,
+                  decoration: const InputDecoration(
+                    labelText: 'Price*',
+                    border: OutlineInputBorder(),
+                    prefixText: '₹',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: quantityController,
+                  decoration: const InputDecoration(
+                    labelText: 'Quantity*',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 16),
+                TextField(
+                  controller: commentController,
+                  maxLines: 3,
+                  decoration: InputDecoration(
+                    labelText: 'Comments (Optional)',
+                    border: const OutlineInputBorder(),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        isListening ? Icons.mic : Icons.mic_none,
+                        color: isListening ? Colors.red : null,
+                      ),
+                      onPressed: () async {
+                        if (!isListening) {
+                          bool available = await stt.initialize();
+                          if (available) {
+                            setDialogState(() => isListening = true);
+                            stt.listen(
+                              onResult: (result) {
+                                setDialogState(() {
+                                  commentController.text =
+                                      result.recognizedWords;
+                                });
+                              },
+                              listenFor: const Duration(seconds: 30),
+                              pauseFor: const Duration(seconds: 5),
+                              partialResults: true,
+                              cancelOnError: true,
+                              listenMode: ListenMode.confirmation,
+                            );
+                          }
+                        } else {
+                          setDialogState(() => isListening = false);
+                          stt.stop();
+                        }
+                      },
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: priceController,
-              decoration: const InputDecoration(
-                labelText: 'Price',
-                border: OutlineInputBorder(),
-                prefixText: '₹',
-              ),
-              keyboardType: TextInputType.number,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
             ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: quantityController,
-              decoration: const InputDecoration(
-                labelText: 'Quantity',
-                border: OutlineInputBorder(),
-              ),
-              keyboardType: TextInputType.number,
+            ElevatedButton(
+              onPressed: () {
+                final name = nameController.text.trim();
+                final price = double.tryParse(priceController.text) ?? 0;
+                final quantity = int.tryParse(quantityController.text) ?? 0;
+                final comment = commentController.text.trim();
+
+                if (name.isNotEmpty && price > 0 && quantity > 0) {
+                  // Use the parent's setState to update the list
+                  Navigator.pop(context);
+                  setState(() {
+                    _products.add(ProductItem(
+                      name: name,
+                      price: price,
+                      quantity: quantity,
+                      comment: comment.isNotEmpty
+                          ? comment
+                          : null, // Make comment optional
+                    ));
+                  });
+                } else {
+                  // Show error message for required fields
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content:
+                          Text('Please fill in all required fields correctly'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+              child: const Text('Add'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final name = nameController.text;
-              final price = double.tryParse(priceController.text) ?? 0;
-              final quantity = int.tryParse(quantityController.text) ?? 0;
-
-              if (name.isNotEmpty && price > 0 && quantity > 0) {
-                setState(() {
-                  _products.add(ProductItem(
-                    name: name,
-                    price: price,
-                    quantity: quantity,
-                  ));
-                });
-                Navigator.pop(context);
-              }
-            },
-            child: const Text('Add'),
-          ),
-        ],
       ),
     );
   }
@@ -981,6 +1043,8 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
         ''; // Fetch Business Address
     final businessPhone = userDoc.data()?['phoneNumber'] as String? ?? '';
     final signatureUrl = userDoc.data()?['signatureUrl'] as String? ?? '';
+    final billRules =
+        userDoc.data()?['billRules'] as String? ?? ''; // Added billRules
 
     // Load signature image before creating the page
     Uint8List? signatureImage;
@@ -1074,6 +1138,7 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
               pw.SizedBox(height: 20),
 
               // Products Table
+
               pw.Table(
                 border: pw.TableBorder.all(),
                 columnWidths: {
@@ -1115,31 +1180,54 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
                       ),
                     ],
                   ),
-                  // Product Rows
-                  ..._products.map(
-                    (product) => pw.TableRow(
-                      children: [
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(product.name),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(
-                              'Rs. ${product.price.toStringAsFixed(2)}'),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text('${product.quantity}'),
-                        ),
-                        pw.Padding(
-                          padding: const pw.EdgeInsets.all(8),
-                          child: pw.Text(
-                              'Rs. ${(product.price * product.quantity).toStringAsFixed(2)}'),
-                        ),
-                      ],
-                    ),
-                  ),
+                  // Product Rows with Comments
+                  ..._products
+                      .expand((product) => [
+                            // Product details row
+                            pw.TableRow(
+                              children: [
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(product.name),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(
+                                      'Rs. ${product.price.toStringAsFixed(2)}'),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text('${product.quantity}'),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(
+                                      'Rs. ${(product.price * product.quantity).toStringAsFixed(2)}'),
+                                ),
+                              ],
+                            ),
+                            // Comment row (only if comment exists)
+                            if (product.comment != null &&
+                                product.comment!
+                                    .isNotEmpty) // Check if comment exists and is not empty
+                              pw.TableRow(
+                                children: [
+                                  pw.Padding(
+                                    padding: const pw.EdgeInsets.all(8),
+                                    child:
+                                        pw.Text('Comment: ${product.comment}',
+                                            style: pw.TextStyle(
+                                              fontSize: 10,
+                                              fontStyle: pw.FontStyle.italic,
+                                            )),
+                                  ),
+                                  pw.SizedBox(), // Empty cell for price
+                                  pw.SizedBox(), // Empty cell for quantity
+                                  pw.SizedBox(), // Empty cell for total
+                                ],
+                              ),
+                          ])
+                      .toList(),
                 ],
               ),
               pw.SizedBox(height: 16),
@@ -1200,6 +1288,14 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
                       pw.SizedBox(height: 4),
                       pw.Text('Phone: $businessPhone',
                           style: const pw.TextStyle(fontSize: 10)),
+                      if (billRules.isNotEmpty) ...[
+                        pw.SizedBox(height: 4),
+                        pw.Text('Terms & Conditions:',
+                            style: pw.TextStyle(
+                                fontSize: 10, fontWeight: pw.FontWeight.bold)),
+                        pw.Text(billRules,
+                            style: const pw.TextStyle(fontSize: 8)),
+                      ],
                     ],
                   ),
                   if (signatureImage != null)
@@ -1257,14 +1353,32 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
           title: const Text('Bill Generated Successfully'),
           content: const Text('What would you like to do with the PDF?'),
           actions: <Widget>[
-            TextButton(
-              onPressed: () {
-                // Implement download functionality
-                _downloadPDF(pdfPath);
-                Navigator.of(context).pop();
+            // Example of how to call it in your code
+            ElevatedButton(
+              onPressed: () async {
+                String? filePath = await _downloadPDF('your-pdf-url-here');
+                if (filePath != null) {
+                  // Show success message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('PDF downloaded successfully')),
+                  );
+                } else {
+                  // Show error message
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Failed to download PDF')),
+                  );
+                }
               },
-              child: const Text('Download PDF'),
+              child: Text('Download PDF'),
             ),
+            // TextButton(
+            //   onPressed: () {
+            //     // Implement download functionality
+            //     _downloadPDF(pdfPath);
+            //     Navigator.of(context).pop();
+            //   },
+            //   child: const Text('Download PDF'),
+            // ),
             TextButton(
               onPressed: () {
                 // Implement view functionality
@@ -1287,22 +1401,155 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     );
   }
 
-  Future<void> _downloadPDF(String pdfPath) async {
-    // In a Flutter mobile app, saving files is generally done in the app's local directory.
-    // If you want to download a file, you'll typically save it to the device's storage.
+  static Future<String?> _downloadPDF(String pdfUrl) async {
     try {
-      // Get the directory to save the PDF
-      final directory = await getApplicationDocumentsDirectory();
-      final localPath = '${directory.path}/downloaded_bill.pdf';
+      print('Starting PDF download from: $pdfUrl'); // Debug log
 
-      // Copy the PDF file to the local path
-      final file = File(pdfPath);
-      await file.copy(localPath);
+      // Request storage permission on Android
+      if (Platform.isAndroid) {
+        print('Requesting Android storage permission...');
+        var status = await Permission.storage.request();
+        if (!status.isGranted) {
+          print('Storage permission denied');
+          throw Exception('Storage permission denied');
+        }
+        print('Storage permission granted');
+      }
 
-      // Show a success message
-      print('PDF downloaded successfully to $localPath');
-    } catch (e) {
+      // Get storage directory
+      Directory? directory;
+      if (Platform.isAndroid) {
+        var androidInfo = await DeviceInfoPlugin().androidInfo;
+        if (androidInfo.version.sdkInt >= 30) {
+          directory = await getExternalStorageDirectory();
+        } else {
+          directory = Directory('/storage/emulated/0/Download');
+        }
+
+        // Null check and directory existence check
+        if (directory != null && !(await directory.exists())) {
+          print(
+              'Downloads directory not accessible, falling back to app storage');
+          directory = await getExternalStorageDirectory();
+        }
+      } else if (Platform.isIOS) {
+        directory = await getApplicationDocumentsDirectory();
+      }
+
+      // Ensure directory is not null
+      if (directory == null) {
+        print('Failed to get storage directory');
+        throw Exception('Could not access storage directory');
+      }
+
+      // Ensure the directory exists
+      if (!directory.existsSync()) {
+        directory.createSync(recursive: true);
+      }
+
+      print('Using directory: ${directory.path}');
+
+      // Create filename with timestamp
+      String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      String filename = 'invoice_$timestamp.pdf';
+      String saveFilePath = '${directory.path}/$filename';
+
+      print('Will save file to: $saveFilePath');
+
+      // Download PDF
+      print('Starting HTTP request...');
+      final response = await http.get(Uri.parse(pdfUrl)).timeout(
+        Duration(minutes: 2), // 2 minutes timeout
+        onTimeout: () {
+          print('Download timeout');
+          throw Exception('Download timeout');
+        },
+      );
+
+      print('HTTP Response status code: ${response.statusCode}');
+      print('Response content length: ${response.contentLength}');
+
+      if (response.statusCode == 200) {
+        // Verify we received PDF data
+        if (response.headers['content-type']?.contains('application/pdf') ==
+                true ||
+            response.bodyBytes.length > 0) {
+          // Create and write to file
+          File file = File(saveFilePath);
+          await file.writeAsBytes(response.bodyBytes);
+
+          // Verify file was created
+          if (await file.exists()) {
+            print('File successfully saved to: $saveFilePath');
+            return saveFilePath;
+          } else {
+            print('File was not created');
+            throw Exception('File was not created');
+          }
+        } else {
+          print('Invalid PDF data received');
+          throw Exception('Invalid PDF data received');
+        }
+      } else {
+        print('HTTP request failed with status: ${response.statusCode}');
+        throw Exception('Failed to download PDF: ${response.statusCode}');
+      }
+    } catch (e, stackTrace) {
       print('Error downloading PDF: $e');
+      print('Stack trace: $stackTrace');
+      return null;
+    }
+  }
+
+  static Future<bool> verifyFileExists(String filePath) async {
+    return await File(filePath).exists();
+  }
+
+// Example usage:
+  void downloadInvoice(BuildContext context) async {
+    try {
+      // Show loading indicator
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Center(
+            child: CircularProgressIndicator(),
+          );
+        },
+      );
+
+      String? filePath = await _downloadPDF(
+          'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
+
+      // Hide loading indicator
+      Navigator.pop(context);
+
+      if (filePath != null && await verifyFileExists(filePath)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('PDF downloaded successfully to: $filePath'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to download PDF. Please check the logs.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Hide loading indicator if still showing
+      Navigator.pop(context);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -1339,11 +1586,13 @@ class ProductItem {
   final String name;
   final double price;
   final int quantity;
+  final String? comment;
 
   ProductItem({
     required this.name,
     required this.price,
     required this.quantity,
+    this.comment,
   });
 
   Map<String, dynamic> toMap() {
@@ -1351,6 +1600,7 @@ class ProductItem {
       'name': name,
       'price': price,
       'quantity': quantity,
+      if (comment != null) 'comment': comment,
     };
   }
 }

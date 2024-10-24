@@ -2,10 +2,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/Account/myAccount.dart';
-import 'package:inventopos/bottom%20navigation%20bar/bottomNavbar.dart';
-import 'package:inventopos/Notification/notificationsScreen.dart';
+import 'package:inventopos/screens/Account/myAccount.dart';
+import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
+import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
+import 'package:inventopos/screens/Notification/notificationsScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -44,12 +46,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Dashboard',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        Text(
+                          'Dashboard',
+                          style: GoogleFonts.poppins(
+                            textStyle: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 25,
+                              fontStyle:
+                                  FontStyle.normal, // or FontStyle.normal
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          width: 70,
+                        ),
+                        // TextButton(
+                        //     child: Text(
+                        //       'Revenue Analysis',
+                        //       style: GoogleFonts.poppins(
+                        //         textStyle: const TextStyle(
+                        //           fontWeight: FontWeight.bold,
+                        //           fontSize: 14,
+                        //           fontStyle:
+                        //               FontStyle.normal, // or FontStyle.normal
+                        //         ),
+                        //       ),
+                        //     ),
+                        //     onPressed: () {
+                        //       Navigator.push(
+                        //         context,
+                        //         MaterialPageRoute(
+                        //             builder: (context) =>
+                        //                 const MonthlyRevenueAnalysis()),
+                        //       );
+                        //     }),
+                      ],
                     ),
                     const SizedBox(height: 20),
                     _buildStatisticsCards(),
@@ -109,16 +142,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   children: [
                     Text(
                       data?['businessName'] ?? 'Your Business',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
+                      style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 20,
+                          fontStyle: FontStyle.normal, // or FontStyle.normal
+                        ),
                       ),
                     ),
                     Text(
                       DateFormat('EEEE, d MMMM').format(DateTime.now()),
-                      style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: 12,
+                      style: GoogleFonts.poppins(
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          fontStyle: FontStyle.normal, // or FontStyle.normal
+                        ),
                       ),
                     ),
                   ],
@@ -255,11 +294,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Quick Actions',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
+          style: GoogleFonts.poppins(
+            textStyle: const TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 16,
+              fontStyle: FontStyle.normal, // or FontStyle.normal
+            ),
           ),
         ),
         const SizedBox(height: 16),
@@ -338,17 +380,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
+            Text(
               'Recent Bills',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
+              style: GoogleFonts.poppins(
+                textStyle: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                  fontStyle: FontStyle.normal, // or FontStyle.normal
+                ),
               ),
             ),
-            TextButton(
-              onPressed: () {},
-              child: const Text('See All'),
-            ),
+            // TextButton(
+            //   onPressed: () {},
+            //   child: const Text('See All'),
+            // ),
           ],
         ),
         StreamBuilder<QuerySnapshot>(

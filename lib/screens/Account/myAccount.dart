@@ -411,6 +411,8 @@ class _MyAccountPageState extends State<MyAccountPage>
                             'Business Address', 'businessAddress'),
                         SizedBox(height: 15),
                         _buildEditableField('GST Number', 'gstNumber'),
+                        SizedBox(height: 15),
+                        _buildEditableField('Bill Rules', 'billRules'),
                       ],
                     ),
                   ),

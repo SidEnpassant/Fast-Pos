@@ -131,7 +131,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                'We\'ve sent a verification code to',
+                'We\'ve sent a verification email to',
                 style: TextStyle(
                   fontSize: 16,
                   color: Colors.grey[600],
@@ -147,23 +147,23 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 ),
               ),
               const SizedBox(height: 32),
-              Pinput(
-                length: 6,
-                controller: otpController,
-                defaultPinTheme: defaultPinTheme,
-                focusedPinTheme: defaultPinTheme.copyDecorationWith(
-                  border: Border.all(color: Theme.of(context).primaryColor),
-                ),
-                submittedPinTheme: defaultPinTheme.copyDecorationWith(
-                  border: Border.all(color: Colors.green),
-                ),
-                showCursor: true,
-                onCompleted: (pin) => _verifyOTP(pin),
-              ),
+              // Pinput(
+              //   length: 6,
+              //   controller: otpController,
+              //   defaultPinTheme: defaultPinTheme,
+              //   focusedPinTheme: defaultPinTheme.copyDecorationWith(
+              //     border: Border.all(color: Theme.of(context).primaryColor),
+              //   ),
+              //   submittedPinTheme: defaultPinTheme.copyDecorationWith(
+              //     border: Border.all(color: Colors.green),
+              //   ),
+              //   showCursor: true,
+              //   onCompleted: (pin) => _verifyOTP(pin),
+              // ),
               const SizedBox(height: 32),
               if (!canResendEmail) ...[
                 Text(
-                  'Resend code in ${remainingTime}s',
+                  'Resend email in ${remainingTime}s',
                   style: TextStyle(color: Colors.grey[600]),
                 ),
               ],
@@ -206,15 +206,16 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
   }
 
   Future<void> _verifyOTP(String otp) async {
-    if (otp.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a valid 6-digit code'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
+    // if (otp.length != 6) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     const SnackBar(
+    //       content: Text(
+    //           'Please verify you email through the link attached in email'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    //   return;
+    // }
 
     setState(() {
       isLoading = true;
