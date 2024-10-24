@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class CompleteTransactionsScreen extends StatefulWidget {
@@ -42,7 +43,12 @@ class _CompleteTransactionsScreenState
                   });
                 },
               )
-            : const Text('Completed Transactions'),
+            : Text(
+                'Completed Transactions',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
         actions: [
           IconButton(
             icon: Icon(isSearching ? Icons.close : Icons.search),
@@ -201,7 +207,9 @@ class _CompleteTransactionsScreenState
                             ),
                             ...transactions.map((doc) {
                               final data = doc.data() as Map<String, dynamic>;
-                              return _buildTransactionCard(context, data);
+                              final docId = doc.id; // Get the document ID
+                              return _buildTransactionCard(
+                                  context, data, docId);
                             }).toList(),
                           ],
                         );
@@ -243,7 +251,7 @@ class _CompleteTransactionsScreenState
   }
 
   Widget _buildTransactionCard(
-      BuildContext context, Map<String, dynamic> data) {
+      BuildContext context, Map<String, dynamic> data, String docId) {
     final totalAmount = (data['totalAmount'] as num).toDouble();
     final customerName = data['customerName'] as String;
     final customerPhone = data['customerPhone'] as String;
@@ -276,6 +284,12 @@ class _CompleteTransactionsScreenState
             ),
           ],
         ),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red),
+          onPressed: () async {
+            await _deleteTransaction(docId);
+          },
+        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -296,7 +310,7 @@ class _CompleteTransactionsScreenState
                         children: [
                           Expanded(
                             child: Text(
-                              '${item['name']} x ${item['quantity']}',
+                              '${item['productName']} x ${item['quantity']}', // Changed to use 'productName' field
                               style: const TextStyle(fontSize: 14),
                             ),
                           ),
@@ -327,5 +341,122 @@ class _CompleteTransactionsScreenState
         ],
       ),
     );
+  }
+
+  // Widget _buildTransactionCard(
+  //     BuildContext context, Map<String, dynamic> data, String docId) {
+  //   final totalAmount = (data['totalAmount'] as num).toDouble();
+  //   final customerName = data['customerName'] as String;
+  //   final customerPhone = data['customerPhone'] as String;
+  //   final paymentMethod = data['paymentMethod'] as String? ?? 'Cash';
+  //   final items = List<Map<String, dynamic>>.from(data['items'] ?? []);
+
+  //   return Card(
+  //     margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+  //     elevation: 2,
+  //     child: ExpansionTile(
+  //       title: Text(
+  //         customerName,
+  //         style: const TextStyle(
+  //           fontWeight: FontWeight.bold,
+  //           fontSize: 16,
+  //         ),
+  //       ),
+  //       subtitle: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           const SizedBox(height: 4),
+  //           Text(customerPhone),
+  //           const SizedBox(height: 4),
+  //           Text(
+  //             'Amount: ₹${totalAmount.toStringAsFixed(2)}',
+  //             style: const TextStyle(
+  //               color: Colors.green,
+  //               fontWeight: FontWeight.w500,
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //       trailing: IconButton(
+  //         icon: const Icon(Icons.delete, color: Colors.red),
+  //         onPressed: () async {
+  //           await _deleteTransaction(docId);
+  //         },
+  //       ),
+  //       children: [
+  //         Padding(
+  //           padding: const EdgeInsets.all(16.0),
+  //           child: Column(
+  //             crossAxisAlignment: CrossAxisAlignment.start,
+  //             children: [
+  //               Text('Payment Method: $paymentMethod',
+  //                   style: const TextStyle(fontSize: 16)),
+  //               const SizedBox(height: 16),
+  //               const Text('Items:',
+  //                   style:
+  //                       TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+  //               const SizedBox(height: 8),
+  //               ...items.map((item) => Padding(
+  //                     padding: const EdgeInsets.only(bottom: 8.0),
+  //                     child: Row(
+  //                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                       children: [
+  //                         Expanded(
+  //                           child: Text(
+  //                             '${item['name']} x ${item['quantity']}',
+  //                             style: const TextStyle(fontSize: 14),
+  //                           ),
+  //                         ),
+  //                         Text(
+  //                           '₹${(item['totalPrice'] as num).toStringAsFixed(2)}',
+  //                           style: const TextStyle(fontSize: 14),
+  //                         ),
+  //                       ],
+  //                     ),
+  //                   )),
+  //               const Divider(),
+  //               Row(
+  //                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  //                 children: [
+  //                   const Text('Total Amount:',
+  //                       style: TextStyle(
+  //                           fontSize: 16, fontWeight: FontWeight.bold)),
+  //                   Text(
+  //                     '₹${totalAmount.toStringAsFixed(2)}',
+  //                     style: const TextStyle(
+  //                         fontSize: 16, fontWeight: FontWeight.bold),
+  //                   ),
+  //                 ],
+  //               ),
+  //             ],
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+
+// Add this method to handle the deletion
+  Future<void> _deleteTransaction(String docId) async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      try {
+        // Delete the document from Firestore
+        await FirebaseFirestore.instance
+            .collection('bills')
+            .doc(docId)
+            .delete();
+        // Show a success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Transaction deleted successfully')),
+        );
+      } catch (e) {
+        // Show an error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error deleting transaction: $e')),
+        );
+      }
+    }
   }
 }

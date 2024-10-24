@@ -4,7 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/Account/myAccount.dart';
-import 'package:inventopos/notificationsScreen.dart';
+import 'package:inventopos/bottom%20navigation%20bar/bottomNavbar.dart';
+import 'package:inventopos/Notification/notificationsScreen.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -63,12 +64,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ],
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Navigator.pushNamed(context, '/create-bill'),
-        label: const Text('New Bill'),
-        icon: const Icon(Icons.add),
-        backgroundColor: Colors.white,
-      ),
+      // floatingActionButton: FloatingActionButton.extended(
+      //   onPressed: () => Navigator.pushNamed(context, '/create-bill'),
+      //   label: const Text('New Bill'),
+      //   icon: const Icon(Icons.add),
+      //   backgroundColor: Colors.white,
+      // ),
     );
   }
 
@@ -127,15 +128,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(width: 12),
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => NotificationsScreen()),
-              );
-            },
-          ),
-          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
               await FirebaseAuth.instance.signOut();
@@ -146,38 +138,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             },
             tooltip: 'Logout',
-          ),
-          IconButton(
-            icon: const Icon(Icons.account_circle),
-            onPressed: () {
-              // Handle account actions here
-              showModalBottomSheet(
-                context: context,
-                builder: (context) {
-                  return ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      ListTile(
-                        leading: const Icon(Icons.person),
-                        title: const Text('Profile'),
-                        onTap: () {
-                          Navigator.pushNamed(
-                              context, '/profile'); // Adjust route
-                        },
-                      ),
-                      ListTile(
-                        leading: const Icon(Icons.close),
-                        title: const Text('Close'),
-                        onTap: () {
-                          Navigator.pop(context);
-                        },
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-            tooltip: 'Account',
           ),
         ],
       ),

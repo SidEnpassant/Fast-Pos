@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:inventopos/bottom%20navigation%20bar/bottomNavbar.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
 import 'package:inventopos/screens/DashboardScreen.dart';
 import 'package:inventopos/screens/Authentication/loginScreen.dart';
@@ -19,7 +20,7 @@ class SplashScreen extends StatelessWidget {
               return const CircularProgressIndicator();
             } else if (snapshot.hasData) {
               // User is signed in, navigate to home screen
-              return DashboardScreen();
+              return NavBarScreen();
             } else {
               // User is not signed in, navigate to login screen
               return LoginScreen();

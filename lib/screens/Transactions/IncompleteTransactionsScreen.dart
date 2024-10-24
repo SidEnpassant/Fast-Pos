@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 class IncompleteTransactionsScreen extends StatefulWidget {
@@ -28,8 +29,14 @@ class _IncompleteTransactionsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title:
-            isSearching ? _buildSearchField() : const Text('Pending Payments'),
+        title: isSearching
+            ? _buildSearchField()
+            : Text(
+                'Pending Transactions',
+                style: GoogleFonts.poppins(
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
         actions: [
           IconButton(
             icon: Icon(isSearching ? Icons.close : Icons.search),
@@ -210,7 +217,7 @@ class _IncompleteTransactionsScreenState
 // Check for overdue transactions and create notifications
   void _checkForOverdueTransactions(String userId) async {
     final now = DateTime.now();
-    final tenDaysAgo = now.subtract(Duration(minutes: 1));
+    final tenDaysAgo = now.subtract(Duration(days: 5));
 
     final snapshot = await FirebaseFirestore.instance
         .collection('bills')

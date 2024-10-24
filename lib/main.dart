@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:inventopos/Account/myAccount.dart';
+import 'package:inventopos/bottom%20navigation%20bar/bottomNavbar.dart';
 import 'package:inventopos/firebase_options.dart';
-import 'package:inventopos/notificationsScreen.dart';
+import 'package:inventopos/Notification/notificationsScreen.dart';
 import 'package:inventopos/screens/Authentication/loginScreen.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
 import 'package:inventopos/screens/Transactions/CompleteTransactionsScreen.dart';
@@ -28,7 +29,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'InventoPos',
+      title: 'Fast Pos',
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
@@ -40,7 +41,7 @@ class MyApp extends StatelessWidget {
             ),
         '/login': (context) => LoginScreen(),
         '/signup': (context) => RegisterScreen(),
-        '/home': (context) => DashboardScreen(),
+        '/home': (context) => NavBarScreen(),
         '/forgot-password': (context) => ForgotPassword(),
         '/create-bill': (context) => BillGenerationScreen(),
         '/complete-transactions': (context) => CompleteTransactionsScreen(),
