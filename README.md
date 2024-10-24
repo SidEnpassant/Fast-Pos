@@ -37,7 +37,7 @@ Third-party plugins for UI enhancements
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/fast-pos.git
+   git clone https://github.com/CoderSid007/Fast-Pos.git
 
 2. get dependencies:
     ```bash
