@@ -1,7 +1,11 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class CompleteTransactionsScreen extends StatefulWidget {
@@ -225,6 +229,152 @@ class _CompleteTransactionsScreenState
     );
   }
 
+  Future<void> _updateSignedBill(String billId) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+
+    if (image != null) {
+      try {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+
+        // Delete previous signed bill if exists
+        final previousBillRef = await FirebaseFirestore.instance
+            .collection('bills')
+            .doc(billId)
+            .get();
+
+        if (previousBillRef.data()?['signedBillUrl'] != null) {
+          await FirebaseStorage.instance
+              .refFromURL(previousBillRef.data()!['signedBillUrl'])
+              .delete();
+        }
+
+        // Upload new image
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('signed_bills')
+            .child('$billId.jpg');
+
+        await storageRef.putFile(File(image.path));
+        final downloadUrl = await storageRef.getDownloadURL();
+
+        // Update Firestore
+        await FirebaseFirestore.instance
+            .collection('bills')
+            .doc(billId)
+            .update({
+          'signedBillUrl': downloadUrl,
+          'lastSignedBillUpdate': FieldValue.serverTimestamp(),
+        });
+
+        Navigator.pop(context); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed bill updated successfully')),
+        );
+      } catch (e) {
+        Navigator.pop(context); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating signed bill: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showSignedBill(String? billUrl) async {
+    if (billUrl == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No signed bill available')),
+      );
+      return;
+    }
+
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.fullscreen),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                backgroundColor: Colors.black,
+                                iconTheme:
+                                    const IconThemeData(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.black,
+                              body: Center(
+                                child: Image.network(
+                                  billUrl,
+                                  fit: BoxFit.contain,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Text('Error loading image',
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: Image.network(
+                    billUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Text('Error loading image'),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _showDateRangePicker() async {
     final DateTime? pickedStartDate = await showDatePicker(
       context: context,
@@ -257,6 +407,7 @@ class _CompleteTransactionsScreenState
     final customerPhone = data['customerPhone'] as String;
     final paymentMethod = data['paymentMethod'] as String? ?? 'Cash';
     final items = List<Map<String, dynamic>>.from(data['items'] ?? []);
+    final signedBillUrl = data['signedBillUrl'] as String?;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -284,12 +435,6 @@ class _CompleteTransactionsScreenState
             ),
           ],
         ),
-        trailing: IconButton(
-          icon: const Icon(Icons.delete, color: Colors.red),
-          onPressed: () async {
-            await _deleteTransaction(docId);
-          },
-        ),
         children: [
           Padding(
             padding: const EdgeInsets.all(16.0),
@@ -310,7 +455,7 @@ class _CompleteTransactionsScreenState
                         children: [
                           Expanded(
                             child: Text(
-                              '${item['productName']} x ${item['quantity']}', // Changed to use 'productName' field
+                              '${item['productName']} x ${item['quantity']}',
                               style: const TextStyle(fontSize: 14),
                             ),
                           ),
@@ -335,6 +480,36 @@ class _CompleteTransactionsScreenState
                     ),
                   ],
                 ),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.upload_file),
+                      label: const Text('Update again'),
+                      onPressed: () => _updateSignedBill(docId),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    ElevatedButton.icon(
+                      icon: const Icon(Icons.receipt_long),
+                      label: const Text('Show Bill'),
+                      onPressed: signedBillUrl != null
+                          ? () => _showSignedBill(signedBillUrl)
+                          : null,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => _deleteTransaction(docId),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
@@ -349,19 +524,63 @@ class _CompleteTransactionsScreenState
 
     if (userId != null) {
       try {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+
+        // First, get the document to check if it has a signed bill
+        final docSnapshot = await FirebaseFirestore.instance
+            .collection('bills')
+            .doc(docId)
+            .get();
+
+        // If there's a signed bill URL, delete it from Storage
+        if (docSnapshot.data()?['signedBillUrl'] != null) {
+          final signedBillUrl = docSnapshot.data()!['signedBillUrl'] as String;
+          try {
+            await FirebaseStorage.instance.refFromURL(signedBillUrl).delete();
+          } catch (storageError) {
+            print('Error deleting signed bill: $storageError');
+            // Continue with document deletion even if storage deletion fails
+          }
+        }
+
         // Delete the document from Firestore
         await FirebaseFirestore.instance
             .collection('bills')
             .doc(docId)
             .delete();
+
+        // Dismiss loading dialog
+        Navigator.pop(context);
+
         // Show a success message
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Transaction deleted successfully')),
+          const SnackBar(
+            content:
+                Text('Transaction and associated bill deleted successfully'),
+            backgroundColor: Colors.green,
+          ),
         );
       } catch (e) {
+        // Dismiss loading dialog if still showing
+        if (context.mounted) {
+          Navigator.pop(context);
+        }
+
         // Show an error message
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error deleting transaction: $e')),
+          SnackBar(
+            content: Text('Error deleting transaction: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }

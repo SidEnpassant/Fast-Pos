@@ -657,7 +657,6 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     if (status.isDenied) {
       return null;
     }
-
     String? productName;
 
     await showModalBottomSheet(

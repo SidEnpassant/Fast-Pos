@@ -1,7 +1,11 @@
+import 'dart:io';
+
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 
 class IncompleteTransactionsScreen extends StatefulWidget {
@@ -214,6 +218,145 @@ class _IncompleteTransactionsScreenState
     );
   }
 
+  Future<void> _updateSignedBill(String billId) async {
+    final ImagePicker picker = ImagePicker();
+    final XFile? image = await picker.pickImage(source: ImageSource.camera);
+
+    if (image != null) {
+      try {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          },
+        );
+
+        // Delete previous signed bill if exists
+        final previousBillRef = await FirebaseFirestore.instance
+            .collection('bills')
+            .doc(billId)
+            .get();
+
+        if (previousBillRef.data()?['signedBillUrl'] != null) {
+          await FirebaseStorage.instance
+              .refFromURL(previousBillRef.data()!['signedBillUrl'])
+              .delete();
+        }
+
+        // Upload new image
+        final storageRef = FirebaseStorage.instance
+            .ref()
+            .child('signed_bills')
+            .child('$billId.jpg');
+
+        await storageRef.putFile(File(image.path));
+        final downloadUrl = await storageRef.getDownloadURL();
+
+        // Update Firestore
+        await FirebaseFirestore.instance
+            .collection('bills')
+            .doc(billId)
+            .update({
+          'signedBillUrl': downloadUrl,
+          'lastSignedBillUpdate': FieldValue.serverTimestamp(),
+        });
+
+        Navigator.pop(context); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Signed bill updated successfully')),
+        );
+      } catch (e) {
+        Navigator.pop(context); // Dismiss loading dialog
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error updating signed bill: $e')),
+        );
+      }
+    }
+  }
+
+  Future<void> _showSignedBill(String billUrl) async {
+    await showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return Dialog(
+          child: Container(
+            width: MediaQuery.of(context).size.width * 0.9,
+            height: MediaQuery.of(context).size.height * 0.7,
+            padding: const EdgeInsets.all(8.0),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.fullscreen),
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => Scaffold(
+                              appBar: AppBar(
+                                backgroundColor: Colors.black,
+                                iconTheme:
+                                    const IconThemeData(color: Colors.white),
+                              ),
+                              backgroundColor: Colors.black,
+                              body: Center(
+                                child: Image.network(
+                                  billUrl,
+                                  fit: BoxFit.contain,
+                                  loadingBuilder:
+                                      (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return const Center(
+                                        child: CircularProgressIndicator());
+                                  },
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return const Center(
+                                      child: Text('Error loading image',
+                                          style:
+                                              TextStyle(color: Colors.white)),
+                                    );
+                                  },
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ],
+                ),
+                Expanded(
+                  child: Image.network(
+                    billUrl,
+                    fit: BoxFit.contain,
+                    loadingBuilder: (context, child, loadingProgress) {
+                      if (loadingProgress == null) return child;
+                      return const Center(child: CircularProgressIndicator());
+                    },
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Center(
+                        child: Text('Error loading image'),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
 // Check for overdue transactions and create notifications
   void _checkForOverdueTransactions(String userId) async {
     final now = DateTime.now();
@@ -293,50 +436,69 @@ class _IncompleteTransactionsScreenState
     Map<String, dynamic> billData,
   ) async {
     final TextEditingController amountController = TextEditingController();
+    bool updateSignedBill = false;
 
     return showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Update Payment'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text('Remaining Amount: ₹${remainingAmount.toStringAsFixed(2)}'),
-            const SizedBox(height: 16),
-            TextField(
-              controller: amountController,
-              keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount Paid',
-                border: OutlineInputBorder(),
-                prefixText: '₹',
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Text(
+              remainingAmount <= 0 ? 'Update Final Payment' : 'Update Payment'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Remaining Amount: ₹${remainingAmount.toStringAsFixed(2)}'),
+              const SizedBox(height: 16),
+              TextField(
+                controller: amountController,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Amount Paid',
+                  border: OutlineInputBorder(),
+                  prefixText: '₹',
+                ),
               ),
+              if (double.tryParse(amountController.text) == remainingAmount)
+                CheckboxListTile(
+                  title: const Text('Update signed bill'),
+                  value: updateSignedBill,
+                  onChanged: (bool? value) {
+                    setState(() {
+                      updateSignedBill = value ?? false;
+                    });
+                  },
+                ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                final amount = double.tryParse(amountController.text);
+                if (amount == null || amount <= 0 || amount > remainingAmount) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Please enter a valid amount'),
+                    ),
+                  );
+                  return;
+                }
+
+                await _updatePayment(billId, amount, billData);
+
+                if (amount == remainingAmount && updateSignedBill) {
+                  await _updateSignedBill(billId);
+                }
+
+                Navigator.pop(context);
+              },
+              child: const Text('Update'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () async {
-              final amount = double.tryParse(amountController.text);
-              if (amount == null || amount <= 0 || amount > remainingAmount) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('Please enter a valid amount'),
-                  ),
-                );
-                return;
-              }
-
-              await _updatePayment(billId, amount, billData);
-              Navigator.pop(context);
-            },
-            child: const Text('Update'),
-          ),
-        ],
       ),
     );
   }
@@ -365,30 +527,381 @@ class _IncompleteTransactionsScreenState
     final totalAmount = (billData['totalAmount'] as num).toDouble();
     final paidAmount = (billData['paidAmount'] as num).toDouble();
     final remainingAmount = totalAmount - paidAmount;
+    final signedBillUrl = billData['signedBillUrl'] as String?;
 
     return Card(
       margin: const EdgeInsets.all(8.0),
-      child: ListTile(
-        title: Text(billData['customerName']),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Display the customer's phone number
-            Text(
-                'Phone: ${billData['customerPhone'] ?? 'N/A'}'), // Added this line
-            _buildAmountRow('Total Amount:', totalAmount),
-            _buildAmountRow('Amount Paid:', paidAmount),
-            _buildAmountRow('Remaining Amount:', remainingAmount),
-          ],
-        ),
-        trailing: IconButton(
-          icon: const Icon(Icons.edit),
-          onPressed: remainingAmount > 0
-              ? () => _showUpdatePaymentDialog(
-                  context, billId, remainingAmount, billData)
-              : null,
-        ),
+      child: Column(
+        children: [
+          ListTile(
+            title: Text(billData['customerName']),
+            subtitle: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Phone: ${billData['customerPhone'] ?? 'N/A'}'),
+                _buildAmountRow('Total Amount:', totalAmount),
+                _buildAmountRow('Amount Paid:', paidAmount),
+                _buildAmountRow('Remaining Amount:', remainingAmount),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.upload_file),
+                  label: const Text('Update Signed Bill'),
+                  onPressed: () => _updateSignedBill(billId),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                ElevatedButton.icon(
+                  icon: const Icon(Icons.receipt_long),
+                  label: const Text('Show Bill'),
+                  onPressed: signedBillUrl != null
+                      ? () => _showSignedBill(signedBillUrl)
+                      : null,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.edit),
+                  onPressed: remainingAmount > 0
+                      ? () => _showUpdatePaymentDialog(
+                          context, billId, remainingAmount, billData)
+                      : null,
+                ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// import 'package:flutter/material.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
+// import 'package:google_fonts/google_fonts.dart';
+// import 'package:intl/intl.dart';
+// import 'package:image_picker/image_picker.dart';
+// import 'package:firebase_storage/firebase_storage.dart';
+// import 'dart:io';
+
+// class IncompleteTransactionsScreen extends StatefulWidget {
+//   const IncompleteTransactionsScreen({Key? key}) : super(key: key);
+
+//   @override
+//   _IncompleteTransactionsScreenState createState() =>
+//       _IncompleteTransactionsScreenState();
+// }
+
+// class _IncompleteTransactionsScreenState extends State<IncompleteTransactionsScreen> {
+//   // ... (keep existing variables) ...
+
+//   Future<void> _updateSignedBill(String billId) async {
+//     final ImagePicker picker = ImagePicker();
+//     final XFile? image = await picker.pickImage(source: ImageSource.camera);
+
+//     if (image != null) {
+//       try {
+//         // Show loading dialog
+//         showDialog(
+//           context: context,
+//           barrierDismissible: false,
+//           builder: (BuildContext context) {
+//             return const Center(
+//               child: CircularProgressIndicator(),
+//             );
+//           },
+//         );
+
+//         // Delete previous signed bill if exists
+//         final previousBillRef = await FirebaseFirestore.instance
+//             .collection('bills')
+//             .doc(billId)
+//             .get();
+        
+//         if (previousBillRef.data()?['signedBillUrl'] != null) {
+//           await FirebaseStorage.instance
+//               .refFromURL(previousBillRef.data()!['signedBillUrl'])
+//               .delete();
+//         }
+
+//         // Upload new image
+//         final storageRef = FirebaseStorage.instance
+//             .ref()
+//             .child('signed_bills')
+//             .child('$billId.jpg');
+        
+//         await storageRef.putFile(File(image.path));
+//         final downloadUrl = await storageRef.getDownloadURL();
+
+//         // Update Firestore
+//         await FirebaseFirestore.instance
+//             .collection('bills')
+//             .doc(billId)
+//             .update({
+//           'signedBillUrl': downloadUrl,
+//           'lastSignedBillUpdate': FieldValue.serverTimestamp(),
+//         });
+
+//         Navigator.pop(context); // Dismiss loading dialog
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           const SnackBar(content: Text('Signed bill updated successfully')),
+//         );
+//       } catch (e) {
+//         Navigator.pop(context); // Dismiss loading dialog
+//         ScaffoldMessenger.of(context).showSnackBar(
+//           SnackBar(content: Text('Error updating signed bill: $e')),
+//         );
+//       }
+//     }
+//   }
+
+//   Future<void> _showSignedBill(String billUrl) async {
+//     await showDialog(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return Dialog(
+//           child: Container(
+//             width: MediaQuery.of(context).size.width * 0.9,
+//             height: MediaQuery.of(context).size.height * 0.7,
+//             padding: const EdgeInsets.all(8.0),
+//             child: Column(
+//               children: [
+//                 Row(
+//                   mainAxisAlignment: MainAxisAlignment.end,
+//                   children: [
+//                     IconButton(
+//                       icon: const Icon(Icons.close),
+//                       onPressed: () => Navigator.pop(context),
+//                     ),
+//                   ],
+//                 ),
+//                 Expanded(
+//                   child: Image.network(
+//                     billUrl,
+//                     fit: BoxFit.contain,
+//                     loadingBuilder: (context, child, loadingProgress) {
+//                       if (loadingProgress == null) return child;
+//                       return const Center(child: CircularProgressIndicator());
+//                     },
+//                     errorBuilder: (context, error, stackTrace) {
+//                       return const Center(
+//                         child: Text('Error loading image'),
+//                       );
+//                     },
+//                   ),
+//                 ),
+//               ],
+//             ),
+//           ),
+//         );
+//       },
+//     );
+//   }
+
+//   Future<void> _showUpdatePaymentDialog(
+//     BuildContext context,
+//     String billId,
+//     double remainingAmount,
+//     Map<String, dynamic> billData,
+//   ) async {
+//     final TextEditingController amountController = TextEditingController();
+//     bool updateSignedBill = false;
+
+//     return showDialog(
+//       context: context,
+//       builder: (context) => StatefulBuilder(
+//         builder: (context, setState) => AlertDialog(
+//           title: Text(remainingAmount <= 0 ? 'Update Final Payment' : 'Update Payment'),
+//           content: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             children: [
+//               Text('Remaining Amount: ₹${remainingAmount.toStringAsFixed(2)}'),
+//               const SizedBox(height: 16),
+//               TextField(
+//                 controller: amountController,
+//                 keyboardType: TextInputType.number,
+//                 decoration: const InputDecoration(
+//                   labelText: 'Amount Paid',
+//                   border: OutlineInputBorder(),
+//                   prefixText: '₹',
+//                 ),
+//               ),
+//               if (double.tryParse(amountController.text) == remainingAmount)
+//                 CheckboxListTile(
+//                   title: const Text('Update signed bill'),
+//                   value: updateSignedBill,
+//                   onChanged: (bool? value) {
+//                     setState(() {
+//                       updateSignedBill = value ?? false;
+//                     });
+//                   },
+//                 ),
+//             ],
+//           ),
+//           actions: [
+//             TextButton(
+//               onPressed: () => Navigator.pop(context),
+//               child: const Text('Cancel'),
+//             ),
+//             ElevatedButton(
+//               onPressed: () async {
+//                 final amount = double.tryParse(amountController.text);
+//                 if (amount == null || amount <= 0 || amount > remainingAmount) {
+//                   ScaffoldMessenger.of(context).showSnackBar(
+//                     const SnackBar(
+//                       content: Text('Please enter a valid amount'),
+//                     ),
+//                   );
+//                   return;
+//                 }
+
+//                 await _updatePayment(billId, amount, billData);
+                
+//                 if (amount == remainingAmount && updateSignedBill) {
+//                   await _updateSignedBill(billId);
+//                 }
+                
+//                 Navigator.pop(context);
+//               },
+//               child: const Text('Update'),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Widget _buildBillCard(
+//       BuildContext context, String billId, Map<String, dynamic> billData) {
+//     final totalAmount = (billData['totalAmount'] as num).toDouble();
+//     final paidAmount = (billData['paidAmount'] as num).toDouble();
+//     final remainingAmount = totalAmount - paidAmount;
+//     final signedBillUrl = billData['signedBillUrl'] as String?;
+
+//     return Card(
+//       margin: const EdgeInsets.all(8.0),
+//       child: Column(
+//         children: [
+//           ListTile(
+//             title: Text(billData['customerName']),
+//             subtitle: Column(
+//               crossAxisAlignment: CrossAxisAlignment.start,
+//               children: [
+//                 Text('Phone: ${billData['customerPhone'] ?? 'N/A'}'),
+//                 _buildAmountRow('Total Amount:', totalAmount),
+//                 _buildAmountRow('Amount Paid:', paidAmount),
+//                 _buildAmountRow('Remaining Amount:', remainingAmount),
+//               ],
+//             ),
+//           ),
+//           Padding(
+//             padding: const EdgeInsets.all(8.0),
+//             child: Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//               children: [
+//                 ElevatedButton.icon(
+//                   icon: const Icon(Icons.upload_file),
+//                   label: const Text('Update Signed Bill'),
+//                   onPressed: () => _updateSignedBill(billId),
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.blue,
+//                     foregroundColor: Colors.white,
+//                   ),
+//                 ),
+//                 ElevatedButton.icon(
+//                   icon: const Icon(Icons.receipt_long),
+//                   label: const Text('Show Bill'),
+//                   onPressed: signedBillUrl != null
+//                       ? () => _showSignedBill(signedBillUrl)
+//                       : null,
+//                   style: ElevatedButton.styleFrom(
+//                     backgroundColor: Colors.green,
+//                     foregroundColor: Colors.white,
+//                   ),
+//                 ),
+//                 IconButton(
+//                   icon: const Icon(Icons.edit),
+//                   onPressed: remainingAmount > 0
+//                       ? () => _showUpdatePaymentDialog(
+//                           context, billId, remainingAmount, billData)
+//                       : null,
+//                 ),
+//               ],
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+// }
