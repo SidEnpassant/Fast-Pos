@@ -713,7 +713,7 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
                           final url =
                               'https://api.barcodelookup.com/v3/products';
                           final apiKey =
-                              'ao4ts806g5qm9gp0w80825kpadku3j'; // Replace with your Barcode Lookup API key
+                              'YOUR_API_KEY'; // Replace with your Barcode Lookup API key
                           final queryParameters = {
                             'barcode':
                                 barcode, // Sending the barcode value to lookup
