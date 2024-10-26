@@ -1025,7 +1025,34 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     }
   }
 
+  Future<String> _getNextBillNumber() async {
+    final user = FirebaseAuth.instance.currentUser;
+    final userRef =
+        FirebaseFirestore.instance.collection('users').doc(user!.uid);
+
+    // Run this in a transaction to ensure atomic updates
+    return FirebaseFirestore.instance
+        .runTransaction<String>((transaction) async {
+      // Get the current document
+      final userDoc = await transaction.get(userRef);
+
+      // Get the current bill number, default to 0 if it doesn't exist
+      final currentBillNumber = userDoc.data()?['lastBillNumber'] as int? ?? 0;
+
+      // Increment the bill number
+      final nextBillNumber = currentBillNumber + 1;
+
+      // Update the document with the new bill number
+      transaction.update(userRef, {'lastBillNumber': nextBillNumber});
+
+      // Return the new bill number as a string
+      return nextBillNumber.toString();
+    });
+  }
+
   Future<String> _generateAndSharePDF(String billId) async {
+    // Get the next sequential bill number
+    final sequentialBillNumber = await _getNextBillNumber();
     // Create a PDF document
     final pdf = pw.Document();
 
@@ -1114,7 +1141,7 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
                   pw.Column(
                     crossAxisAlignment: pw.CrossAxisAlignment.start,
                     children: [
-                      pw.Text('Bill No: $billId',
+                      pw.Text('Bill No: $sequentialBillNumber \n$billId',
                           style: const pw.TextStyle(fontSize: 12)),
                       pw.Text(
                           'Date: ${DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now())}',
@@ -1603,3 +1630,38 @@ class ProductItem {
     };
   }
 }
+
+// Future<String> _generateAndSharePDF(String billId) async {
+//   // Get the next sequential bill number
+//   final sequentialBillNumber = await _getNextBillNumber();
+
+//   // Create a PDF document
+//   final pdf = pw.Document();
+
+//   // Fetch additional business details from Firestore
+//   final user = FirebaseAuth.instance.currentUser;
+//   final userDoc =
+//       await FirebaseFirestore.instance.collection('users').doc(user!.uid).get();
+
+//   // ... [rest of your existing code remains the same until the Bill Details section]
+
+//   // Update the Bill Details section to use the sequential number
+//   pw.Row(
+//     mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
+//     children: [
+//       pw.Column(
+//         crossAxisAlignment: pw.CrossAxisAlignment.start,
+//         children: [
+//           pw.Text('Bill No: $sequentialBillNumber',
+//               style: const pw.TextStyle(fontSize: 12)),
+//           pw.Text(
+//               'Date: ${DateFormat('dd/MM/yyyy hh:mm a').format(DateTime.now())}',
+//               style: const pw.TextStyle(fontSize: 12)),
+//         ],
+//       ),
+//       // ... [rest of your existing code remains the same]
+//     ],
+//   );
+
+//   // ... [rest of your existing code remains the same]
+// }

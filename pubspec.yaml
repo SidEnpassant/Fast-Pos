@@ -73,7 +73,7 @@ dependencies:
   glassmorphism: ^3.0.0
   loading_animation_widget: ^1.2.0
   mobile_scanner: ^3.5.5
-  google_mlkit_text_recognition: ^0.8.0
+  google_mlkit_text_recognition: ^0.6.0
   permission_handler: ^10.0.0
   speech_to_text: ^7.0.0
   flutter_neumorphic: ^3.2.0
