@@ -50,21 +50,22 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    appId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    messagingSenderId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    projectId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    databaseURL: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    storageBucket: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
+    apiKey: 'AIzaSyCOiFBnJlJB2NE-vxEMjeY4ay7sjKyJlhc',
+    appId: '1:740291614563:android:3945615e92c344d593e556',
+    messagingSenderId: '740291614563',
+    projectId: 'inventopos',
+    databaseURL: 'https://inventopos-default-rtdb.firebaseio.com',
+    storageBucket: 'inventopos.appspot.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    appId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    messagingSenderId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    projectId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    databaseURL: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    storageBucket: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
-    iosBundleId: 'YOUR_DETAILS_FROM_YOUR_ACCOUNT',
+    apiKey: 'AIzaSyA2Q8C-k8cjNuTVu8OPXJxF4_HEmlYAspU',
+    appId: '1:740291614563:ios:203ca63b3d2c580e93e556',
+    messagingSenderId: '740291614563',
+    projectId: 'inventopos',
+    databaseURL: 'https://inventopos-default-rtdb.firebaseio.com',
+    storageBucket: 'inventopos.appspot.com',
+    iosBundleId: 'com.example.inventopos',
   );
+
 }

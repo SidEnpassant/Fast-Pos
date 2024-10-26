@@ -1357,7 +1357,7 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     return pdfPath;
   }
 
-// Helper function to get signature image from URL
+// Helper function to get signature image from URL and get it
   Future<Uint8List> _getSignatureImage(String signatureUrl) async {
     try {
       final response = await http.get(Uri.parse(signatureUrl));
