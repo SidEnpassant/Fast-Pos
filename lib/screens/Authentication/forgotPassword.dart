@@ -1,4 +1,4 @@
-import 'package:inventopos/screens/Authentication/signUpScreen.dart';
+import 'package:inventopos/screens/register/signUpScreen.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 

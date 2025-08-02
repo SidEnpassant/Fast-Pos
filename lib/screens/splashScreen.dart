@@ -4,8 +4,8 @@ import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
 import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
 import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
-import 'package:inventopos/screens/Authentication/loginScreen.dart';
-import 'package:inventopos/screens/Authentication/signUpScreen.dart';
+import 'package:inventopos/screens/login/loginScreen.dart';
+import 'package:inventopos/screens/register/signUpScreen.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});

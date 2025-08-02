@@ -1014,7 +1014,7 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
       'businessId': userId, // Using userId as businessId
       'amount': amount, // Add totalAmount or paidAmount based on paymentStatus
       'isComplete': isComplete, // True if payment is complete, false otherwise
-      'date': FieldValue.serverTimestamp(), // Add current timestamp as date
+      'date': FieldValue.serverTimestamp(),
     };
 
     try {
@@ -1380,23 +1380,23 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
           content: const Text('What would you like to do with the PDF?'),
           actions: <Widget>[
             // Example of how to call it in your code
-            ElevatedButton(
-              onPressed: () async {
-                String? filePath = await _downloadPDF('your-pdf-url-here');
-                if (filePath != null) {
-                  // Show success message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('PDF downloaded successfully')),
-                  );
-                } else {
-                  // Show error message
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Failed to download PDF')),
-                  );
-                }
-              },
-              child: Text('Download PDF'),
-            ),
+            // ElevatedButton(
+            //   onPressed: () async {
+            //     String? filePath = await _downloadPDF('your-pdf-url-here');
+            //     if (filePath != null) {
+            //       // Show success message
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         SnackBar(content: Text('PDF downloaded successfully')),
+            //       );
+            //     } else {
+            //       // Show error message
+            //       ScaffoldMessenger.of(context).showSnackBar(
+            //         SnackBar(content: Text('Failed to download PDF')),
+            //       );
+            //     }
+            //   },
+            //   child: Text('Download PDF'),
+            // ),
             // TextButton(
             //   onPressed: () {
             //     // Implement download functionality

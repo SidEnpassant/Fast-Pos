@@ -83,15 +83,24 @@ class _MyAccountPageState extends State<MyAccountPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text(message),
+            Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.check, color: Colors.white, size: 16),
+            ),
+            SizedBox(width: 12),
+            Text(message, style: TextStyle(fontWeight: FontWeight.w500)),
           ],
         ),
-        backgroundColor: Colors.green,
+        backgroundColor: Color(0xFF00C896),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: EdgeInsets.all(10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: EdgeInsets.all(16),
+        elevation: 8,
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -101,15 +110,24 @@ class _MyAccountPageState extends State<MyAccountPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(Icons.error_outline, color: Colors.white),
-            SizedBox(width: 8),
-            Text(message),
+            Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.close, color: Colors.white, size: 16),
+            ),
+            SizedBox(width: 12),
+            Text(message, style: TextStyle(fontWeight: FontWeight.w500)),
           ],
         ),
-        backgroundColor: Colors.red,
+        backgroundColor: Color(0xFFFF5252),
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: EdgeInsets.all(10),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        margin: EdgeInsets.all(16),
+        elevation: 8,
+        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -154,114 +172,198 @@ class _MyAccountPageState extends State<MyAccountPage>
         TextEditingController(text: _userData[field]);
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        backgroundColor: Colors.white.withOpacity(0.95),
-        title: Text(
-          'Edit $label',
-          style: TextStyle(
-            color: Colors.black,
-            fontWeight: FontWeight.bold,
+      barrierColor: Colors.black54,
+      builder: (context) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(24),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.1),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
+            ],
+          ),
+          padding: EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Edit $label',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF1A1D29),
+                ),
+              ),
+              SizedBox(height: 20),
+              Container(
+                decoration: BoxDecoration(
+                  color: Color(0xFFF8F9FB),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: Color(0xFFE5E7EB)),
+                ),
+                child: TextField(
+                  controller: _controller,
+                  decoration: InputDecoration(
+                    hintText: 'Enter $label',
+                    hintStyle: TextStyle(color: Color(0xFF9CA3AF)),
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.all(16),
+                  ),
+                  style: TextStyle(color: Color(0xFF1A1D29), fontSize: 16),
+                ),
+              ),
+              SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      child: TextButton(
+                        child: Text(
+                          'Cancel',
+                          style: TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Container(
+                      height: 48,
+                      child: ElevatedButton(
+                        child: Text(
+                          'Save',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        onPressed: () {
+                          _updateUserData(field, _controller.text);
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xFF3B82F6),
+                          foregroundColor: Colors.white,
+                          elevation: 0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
           ),
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: _controller,
-              decoration: InputDecoration(
-                hintText: 'Enter $label',
-                hintStyle: TextStyle(color: Colors.grey),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(color: Colors.teal),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(15),
-                  borderSide: BorderSide(color: Colors.teal, width: 2),
-                ),
-                filled: true,
-                fillColor: Colors.grey[50],
-              ),
-              style: TextStyle(color: Colors.black),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            child: Text('Cancel',
-                style: TextStyle(color: Colors.grey, fontSize: 16)),
-            onPressed: () => Navigator.pop(context),
-          ),
-          ElevatedButton(
-            child: Text('Save', style: TextStyle(fontSize: 16)),
-            onPressed: () {
-              _updateUserData(field, _controller.text);
-              Navigator.pop(context);
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color.fromARGB(255, 255, 255, 255),
-              padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(15),
-              ),
-            ),
-          ),
-        ],
       ),
     );
   }
 
-  Widget _buildEditableField(String label, String field) {
+  Widget _buildEditableField(String label, String field, IconData icon) {
     return AnimationConfiguration.synchronized(
       duration: Duration(milliseconds: 500),
       child: SlideAnimation(
-        verticalOffset: 50.0,
+        verticalOffset: 30.0,
         child: FadeInAnimation(
-          child: GlassmorphicContainer(
-            width: double.infinity,
-            height: 80,
-            borderRadius: 20,
-            blur: 20,
-            alignment: Alignment.center,
-            border: 2,
-            linearGradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.1),
-                Colors.white.withOpacity(0.05),
+          child: Container(
+            margin: EdgeInsets.only(bottom: 16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.04),
+                  blurRadius: 10,
+                  offset: Offset(0, 2),
+                ),
               ],
             ),
-            borderGradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Colors.white.withOpacity(0.5),
-                Colors.white.withOpacity(0.5),
-              ],
-            ),
-            child: ListTile(
-              contentPadding: EdgeInsets.symmetric(horizontal: 20),
-              title: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.black87,
-                  fontWeight: FontWeight.w500,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                onTap: () => _showEditDialog(label, field),
+                borderRadius: BorderRadius.circular(16),
+                child: Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Color(0xFF3B82F6).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Icon(
+                          icon,
+                          color: Color(0xFF3B82F6),
+                          size: 20,
+                        ),
+                      ),
+                      SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              label,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Color(0xFF6B7280),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            SizedBox(height: 4),
+                            Text(
+                              _userData[field]?.isNotEmpty == true
+                                  ? _userData[field]
+                                  : 'Not set',
+                              style: TextStyle(
+                                fontSize: 16,
+                                color: _userData[field]?.isNotEmpty == true
+                                    ? Color(0xFF1A1D29)
+                                    : Color(0xFF9CA3AF),
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Container(
+                        width: 32,
+                        height: 32,
+                        decoration: BoxDecoration(
+                          color: Color(0xFFF3F4F6),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Icon(
+                          Icons.chevron_right,
+                          color: Color(0xFF9CA3AF),
+                          size: 16,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              subtitle: Text(
-                _userData[field] ?? 'Not set',
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              trailing: IconButton(
-                icon: Icon(Icons.edit, color: Colors.teal),
-                onPressed: () => _showEditDialog(label, field),
               ),
             ),
           ),
@@ -274,25 +376,28 @@ class _MyAccountPageState extends State<MyAccountPage>
     return Stack(
       children: [
         Container(
-          width: 130,
-          height: 130,
+          width: 120,
+          height: 120,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.teal, Colors.blue],
+              colors: [
+                Color(0xFF3B82F6),
+                Color(0xFF1D4ED8),
+              ],
             ),
             boxShadow: [
               BoxShadow(
-                blurRadius: 15,
-                color: Colors.black.withOpacity(0.2),
-                offset: Offset(0, 5),
-              )
+                color: Color(0xFF3B82F6).withOpacity(0.3),
+                blurRadius: 20,
+                offset: Offset(0, 8),
+              ),
             ],
           ),
           child: Padding(
-            padding: EdgeInsets.all(3),
+            padding: EdgeInsets.all(4),
             child: Container(
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
@@ -304,14 +409,23 @@ class _MyAccountPageState extends State<MyAccountPage>
                       'https://via.placeholder.com/150',
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Shimmer.fromColors(
-                    baseColor: Colors.grey[300]!,
-                    highlightColor: Colors.grey[100]!,
+                    baseColor: Color(0xFFF3F4F6),
+                    highlightColor: Color(0xFFE5E7EB),
                     child: Container(
                       color: Colors.white,
                     ),
                   ),
-                  errorWidget: (context, url, error) =>
-                      Icon(Icons.person, size: 50, color: Colors.grey),
+                  errorWidget: (context, url, error) => Container(
+                    decoration: BoxDecoration(
+                      color: Color(0xFFF3F4F6),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.person,
+                      size: 40,
+                      color: Color(0xFF9CA3AF),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -323,21 +437,21 @@ class _MyAccountPageState extends State<MyAccountPage>
           child: GestureDetector(
             onTap: _updateSignature,
             child: Container(
-              width: 40,
-              height: 40,
+              width: 36,
+              height: 36,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.teal,
-                border: Border.all(color: Colors.white, width: 2),
+                color: Color(0xFF10B981),
+                border: Border.all(color: Colors.white, width: 3),
                 boxShadow: [
                   BoxShadow(
-                    blurRadius: 5,
-                    color: Colors.black.withOpacity(0.2),
+                    color: Color(0xFF10B981).withOpacity(0.3),
+                    blurRadius: 8,
                     offset: Offset(0, 2),
-                  )
+                  ),
                 ],
               ),
-              child: Icon(Icons.camera_alt, color: Colors.white, size: 20),
+              child: Icon(Icons.camera_alt, color: Colors.white, size: 16),
             ),
           ),
         ),
@@ -345,28 +459,85 @@ class _MyAccountPageState extends State<MyAccountPage>
     );
   }
 
+  Widget _buildProfileHeader() {
+    return Container(
+      padding: EdgeInsets.all(24),
+      margin: EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _buildProfileImage(),
+          SizedBox(height: 20),
+          Text(
+            _userData['name'] ?? 'Your Name',
+            style: TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.w700,
+              color: Color(0xFF1A1D29),
+            ),
+          ),
+          SizedBox(height: 8),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            decoration: BoxDecoration(
+              color: Color(0xFF3B82F6).withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              _userData['email'] ?? 'your.email@example.com',
+              style: TextStyle(
+                fontSize: 14,
+                color: Color(0xFF3B82F6),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.grey[100],
+      backgroundColor: Color(0xFFF8F9FB),
       appBar: AppBar(
-        title: Text('My Account',
-            style: TextStyle(
-                color: Colors.black,
-                fontWeight: FontWeight.bold,
-                fontSize: 24)),
+        title: Text(
+          'My Account',
+          style: TextStyle(
+            color: Color(0xFF1A1D29),
+            fontWeight: FontWeight.w700,
+            fontSize: 20,
+          ),
+        ),
         backgroundColor: Colors.white,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        actions: [
-          // IconButton(
-          //   icon: Icon(Icons.settings,
-          //       color: const Color.fromARGB(255, 255, 255, 255)),
-          //   onPressed: () {
-          //     // Add settings functionality
-          //   },
-          // ),
-        ],
+        leading: IconButton(
+          icon: Container(
+            padding: EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: Color(0xFFF3F4F6),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(
+              Icons.arrow_back_ios_new,
+              color: Color(0xFF1A1D29),
+              size: 16,
+            ),
+          ),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
       ),
       body: Stack(
         children: [
@@ -375,46 +546,54 @@ class _MyAccountPageState extends State<MyAccountPage>
               opacity: _animation,
               child: RefreshIndicator(
                 onRefresh: () async => _loadUserData(),
+                color: Color(0xFF3B82F6),
+                backgroundColor: Colors.white,
                 child: SingleChildScrollView(
                   physics: BouncingScrollPhysics(),
-                  child: Padding(
-                    padding: const EdgeInsets.all(20.0),
-                    child: Column(
-                      children: [
-                        _buildProfileImage(),
-                        SizedBox(height: 20),
-                        Text(
-                          _userData['name'] ?? 'Your Name',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
+                  child: Column(
+                    children: [
+                      _buildProfileHeader(),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Personal Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A1D29),
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            _buildEditableField(
+                                'Name', 'name', Icons.person_outline),
+                            _buildEditableField('Phone Number', 'phoneNumber',
+                                Icons.phone_outlined),
+                            SizedBox(height: 24),
+                            Text(
+                              'Business Information',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF1A1D29),
+                              ),
+                            ),
+                            SizedBox(height: 16),
+                            _buildEditableField('Business Name', 'businessName',
+                                Icons.business_outlined),
+                            _buildEditableField('Business Address',
+                                'businessAddress', Icons.location_on_outlined),
+                            _buildEditableField('GST Number', 'gstNumber',
+                                Icons.receipt_long_outlined),
+                            _buildEditableField(
+                                'Bill Rules', 'billRules', Icons.rule_outlined),
+                            SizedBox(height: 40),
+                          ],
                         ),
-                        SizedBox(height: 10),
-                        Text(
-                          _userData['email'] ?? 'your.email@example.com',
-                          style: TextStyle(
-                            fontSize: 16,
-                            color: Colors.black54,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        SizedBox(height: 30),
-                        _buildEditableField('Name', 'name'),
-                        SizedBox(height: 15),
-                        _buildEditableField('Phone Number', 'phoneNumber'),
-                        SizedBox(height: 15),
-                        _buildEditableField('Business Name', 'businessName'),
-                        SizedBox(height: 15),
-                        _buildEditableField(
-                            'Business Address', 'businessAddress'),
-                        SizedBox(height: 15),
-                        _buildEditableField('GST Number', 'gstNumber'),
-                        SizedBox(height: 15),
-                        _buildEditableField('Bill Rules', 'billRules'),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -424,9 +603,16 @@ class _MyAccountPageState extends State<MyAccountPage>
             Container(
               color: Colors.black.withOpacity(0.3),
               child: Center(
-                child: LoadingAnimationWidget.staggeredDotsWave(
-                  color: Colors.white,
-                  size: 50,
+                child: Container(
+                  padding: EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: LoadingAnimationWidget.staggeredDotsWave(
+                    color: Color(0xFF3B82F6),
+                    size: 40,
+                  ),
                 ),
               ),
             ),

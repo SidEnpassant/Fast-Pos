@@ -5,14 +5,14 @@ import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
 import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
 import 'package:inventopos/firebase_options.dart';
 import 'package:inventopos/screens/Notification/notificationsScreen.dart';
-import 'package:inventopos/screens/Authentication/loginScreen.dart';
+import 'package:inventopos/screens/login/loginScreen.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
 import 'package:inventopos/screens/Transactions/CompleteTransactionsScreen.dart';
 // import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
 import 'package:inventopos/screens/Authentication/EmailVerificationScreen.dart';
 import 'package:inventopos/screens/Transactions/IncompleteTransactionsScreen.dart';
 import 'package:inventopos/screens/Authentication/forgotPassword.dart';
-import 'package:inventopos/screens/Authentication/signUpScreen.dart';
+import 'package:inventopos/screens/register/signUpScreen.dart';
 import 'package:inventopos/screens/splashScreen.dart';
 
 void main() async {
