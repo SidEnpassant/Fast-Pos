@@ -81,6 +81,7 @@ dependencies:
   path: ^1.8.0
   device_info_plus: ^9.0.2
   animate_do: ^3.1.2
+  firebase_app_check: ^0.3.2+10
   
 
 dev_dependencies:
