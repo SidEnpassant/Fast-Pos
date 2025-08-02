@@ -5,7 +5,7 @@ buildscript {
         mavenCentral()
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:8.0.0'  // Ensure Gradle version is compatible
+        classpath 'com.android.tools.build:gradle:8.3.0'  // Ensure Gradle version is compatible
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
@@ -30,6 +30,14 @@ subprojects {
 }
 subprojects {
     project.evaluationDependsOn(":app")
+}
+subprojects {
+    if (project.name == 'firebase_ml_model_downloader' && project.hasProperty('android')) {
+        project.android.buildFeatures.buildConfig = true
+    }
+    if (project.name == 'google_mlkit_commons' && project.hasProperty("android")) {
+        project.android.namespace = "com.google.mlkit.common"
+    }
 }
 
 tasks.register("clean", Delete) {
