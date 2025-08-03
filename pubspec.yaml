@@ -82,6 +82,7 @@ dependencies:
   device_info_plus: ^9.0.2
   animate_do: ^3.1.2
   firebase_app_check: 0.4.0
+  flutter_launcher_icons: ^0.14.4
   
 
 dev_dependencies:
@@ -94,11 +95,12 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^4.0.0
-  flutter_launcher_icons: ^0.14.1
 
-flutter_icons:
+flutter_launcher_icons:
   android: true
-  image_path: "assets/icon/app_icon.png"  # Path to your icon image
+  ios: true
+  image_path: "assets/icon/applogomain.png"  # Path to your icon image
+  min_sdk_android: 21
   # optionally, as transparency is not allowed on app store
   # remove_alpha_ios: true
 
@@ -118,6 +120,7 @@ flutter:
     - assets/images/
     - assets/fonts/
     - assets/icon/app_icon.png
+    - assets/icon/
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

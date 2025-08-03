@@ -46,7 +46,7 @@ class LoginController {
         Navigator.pushReplacementNamed(context, '/home');
       }
     } on FirebaseAuthException catch (e) {
-      String errorMessage = 'An error occurred';
+      String errorMessage = 'Wrong email or password';
       if (e.code == 'user-not-found') {
         errorMessage = 'No user found for that email.';
       } else if (e.code == 'wrong-password') {

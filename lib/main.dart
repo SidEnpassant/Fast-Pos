@@ -21,8 +21,6 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-  // final token = await FirebaseAppCheck.instance.getToken();
-  // print("DEBUG APP CHECK TOKEN: $token");
 
   await FirebaseAppCheck.instance.activate(
     androidProvider: AndroidProvider.debug,
@@ -45,7 +43,7 @@ class MyApp extends StatelessWidget {
       home: SplashScreen(),
       // Define routes here
       routes: {
-        '/verify-email': (context) => EmailVerificationScreen(
+        '/verify-email': (context) => RegistrationSuccessScreen(
               email: ModalRoute.of(context)?.settings.arguments as String,
             ),
         '/login': (context) => LoginScreen(),

@@ -329,12 +329,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
           await credential.user!.sendEmailVerification();
 
           // Show success message and navigate to verification screen
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content:
-                  Text('Verification email sent. Please check your inbox.'),
-            ),
-          );
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content:
+          //         Text('Verification email sent. Please check your inbox.'),
+          //   ),
+          // );
 
           Navigator.pushReplacementNamed(
             context,
