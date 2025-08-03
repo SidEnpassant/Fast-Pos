@@ -523,21 +523,6 @@ class _MyAccountPageState extends State<MyAccountPage>
         backgroundColor: Colors.white,
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
-        leading: IconButton(
-          icon: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Color(0xFFF3F4F6),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.arrow_back_ios_new,
-              color: Color(0xFF1A1D29),
-              size: 16,
-            ),
-          ),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
       ),
       body: Stack(
         children: [

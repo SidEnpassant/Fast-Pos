@@ -90,15 +90,38 @@ class _LoginScreenState extends State<LoginScreen> {
                     },
                   ),
                   const SizedBox(height: 8),
+                  // Align(
+                  //   alignment: Alignment.centerRight,
+                  //   child: TextButton(
+                  //     onPressed: () {
+                  //       Navigator.pushNamed(context, '/forgot-password');
+                  //     },
+                  //     child: const Text('Forgot Password?'),
+                  //   ),
+                  // ),
+
                   Align(
                     alignment: Alignment.centerRight,
                     child: TextButton(
                       onPressed: () {
-                        Navigator.pushNamed(context, '/forgot-password');
+                        // Show "Coming soon" message
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Coming soon'),
+                            duration: Duration(seconds: 2),
+                          ),
+                        );
                       },
-                      child: const Text('Forgot Password?'),
+                      child: const Text(
+                        'Forgot Password?',
+                        style: TextStyle(
+                          color: Colors.grey, // visually make it look disabled
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
                     ),
                   ),
+
                   const SizedBox(height: 24),
                   ValueListenableBuilder<bool>(
                     valueListenable: controller.isLoadingNotifier,

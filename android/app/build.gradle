@@ -10,7 +10,7 @@ plugins {
 
 android {
     namespace = "com.example.inventopos"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -48,6 +48,12 @@ android {
 }
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
+    // Firebase SDK for App Check (Debug Provider)
+    implementation 'com.google.firebase:firebase-appcheck-debug:17.1.1'
+    // Also make sure you have core
+    implementation 'com.google.firebase:firebase-common:20.4.1'
+    implementation 'com.google.firebase:firebase-appcheck:17.1.1'
+
 }
 
 
