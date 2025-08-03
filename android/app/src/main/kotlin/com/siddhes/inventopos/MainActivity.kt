@@ -1,4 +1,4 @@
-package com.example.inventopos
+package com.siddhes.inventopos
 
 import android.os.Bundle
 import io.flutter.embedding.android.FlutterActivity

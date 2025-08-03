@@ -47,4 +47,4 @@ android/app/google-services.json
 firebase.json
 pubspec.lock
 android/app/release-key.keystore
-key.properties
+android/key.properties
