@@ -1,12 +1,11 @@
 import 'dart:io';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:inventopos/supabase_mappers.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class IncompleteTransactionsScreen extends StatefulWidget {
   const IncompleteTransactionsScreen({Key? key}) : super(key: key);
@@ -73,14 +72,10 @@ class _IncompleteTransactionsScreenState
           ),
         ],
       ),
-      body: StreamBuilder<User?>(
-        stream: FirebaseAuth.instance.authStateChanges(),
-        builder: (context, authSnapshot) {
-          if (authSnapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          }
-
-          if (!authSnapshot.hasData) {
+      body: Builder(
+        builder: (context) {
+          final user = Supabase.instance.client.auth.currentUser;
+          if (user == null) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -98,8 +93,7 @@ class _IncompleteTransactionsScreenState
             );
           }
 
-          final userId = authSnapshot.data!.uid;
-          return _buildBody(userId);
+          return _buildBody(user.id);
         },
       ),
     );
@@ -109,15 +103,13 @@ class _IncompleteTransactionsScreenState
     // Check for overdue transactions and create notifications
     _checkForOverdueTransactions(userId);
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('bills')
-          .where('userId', isEqualTo: userId)
-          .where('paymentStatus', isEqualTo: 'partial')
-          .orderBy('createdAt', descending: true)
-          .snapshots(),
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: Supabase.instance.client
+          .from('bills')
+          .stream(primaryKey: ['id']).eq('user_id', userId),
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
 
@@ -141,7 +133,11 @@ class _IncompleteTransactionsScreenState
           );
         }
 
-        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+        final partialRows = (snapshot.data ?? [])
+            .where((r) => r['payment_status'] == 'partial')
+            .toList();
+
+        if (partialRows.isEmpty) {
           return Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -160,31 +156,28 @@ class _IncompleteTransactionsScreenState
           );
         }
 
-        // Filter bills based on search query
-        final filteredBills = snapshot.data!.docs.where((doc) {
-          final data = doc.data() as Map<String, dynamic>;
+        final filteredBills = partialRows.where((row) {
+          final data = SupabaseMappers.billFromRow(row);
           final customerName = data['customerName'] as String;
           return customerName.toLowerCase().contains(searchQuery);
         }).toList();
 
-        // Further filter bills by selected date
         final dateFilteredBills = selectedDate != null
-            ? filteredBills.where((doc) {
-                final data = doc.data() as Map<String, dynamic>;
-                final createdAt = (data['createdAt'] as Timestamp).toDate();
+            ? filteredBills.where((row) {
+                final data = SupabaseMappers.billFromRow(row);
+                final createdAt = data['createdAt'] as DateTime;
                 return DateFormat('yyyy-MM-dd').format(createdAt) ==
                     DateFormat('yyyy-MM-dd').format(selectedDate!);
               }).toList()
             : filteredBills;
 
-        // Group bills by date
-        Map<String, List<DocumentSnapshot>> groupedBills = {};
-        for (var doc in dateFilteredBills) {
-          final data = doc.data() as Map<String, dynamic>;
+        final Map<String, List<Map<String, dynamic>>> groupedBills = {};
+        for (final row in dateFilteredBills) {
+          final data = SupabaseMappers.billFromRow(row);
           final date = DateFormat('yyyy-MM-dd')
-              .format((data['createdAt'] as Timestamp).toDate());
+              .format(data['createdAt'] as DateTime);
           groupedBills.putIfAbsent(date, () => []);
-          groupedBills[date]!.add(doc);
+          groupedBills[date]!.add(row);
         }
 
         return ListView.builder(
@@ -206,9 +199,10 @@ class _IncompleteTransactionsScreenState
                     ),
                   ),
                 ),
-                ...bills.map((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  return _buildBillCard(context, doc.id, data);
+                ...bills.map((row) {
+                  final data = SupabaseMappers.billFromRow(row);
+                  final id = row['id'] as String;
+                  return _buildBillCard(context, id, data);
                 }).toList(),
               ],
             );
@@ -235,35 +229,23 @@ class _IncompleteTransactionsScreenState
           },
         );
 
-        // Delete previous signed bill if exists
-        final previousBillRef = await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(billId)
-            .get();
+        final supabase = Supabase.instance.client;
+        try {
+          await supabase.storage.from('signed_bills').remove(['$billId.jpg']);
+        } catch (_) {}
 
-        if (previousBillRef.data()?['signedBillUrl'] != null) {
-          await FirebaseStorage.instance
-              .refFromURL(previousBillRef.data()!['signedBillUrl'])
-              .delete();
-        }
+        await supabase.storage.from('signed_bills').upload(
+              '$billId.jpg',
+              File(image.path),
+              fileOptions: const FileOptions(upsert: true),
+            );
+        final downloadUrl =
+            supabase.storage.from('signed_bills').getPublicUrl('$billId.jpg');
 
-        // Upload new image
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('signed_bills')
-            .child('$billId.jpg');
-
-        await storageRef.putFile(File(image.path));
-        final downloadUrl = await storageRef.getDownloadURL();
-
-        // Update Firestore
-        await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(billId)
-            .update({
-          'signedBillUrl': downloadUrl,
-          'lastSignedBillUpdate': FieldValue.serverTimestamp(),
-        });
+        await supabase.from('bills').update({
+          'signed_bill_url': downloadUrl,
+          'last_signed_bill_update': DateTime.now().toUtc().toIso8601String(),
+        }).eq('id', billId);
 
         Navigator.pop(context); // Dismiss loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
@@ -362,23 +344,24 @@ class _IncompleteTransactionsScreenState
     final now = DateTime.now();
     final tenDaysAgo = now.subtract(Duration(days: 5));
 
-    final snapshot = await FirebaseFirestore.instance
-        .collection('bills')
-        .where('userId', isEqualTo: userId)
-        .where('paymentStatus', isEqualTo: 'partial')
-        .get();
+    final supabase = Supabase.instance.client;
+    final rows = await supabase
+        .from('bills')
+        .select()
+        .eq('user_id', userId)
+        .eq('payment_status', 'partial');
 
-    for (var doc in snapshot.docs) {
-      final data = doc.data() as Map<String, dynamic>;
-      final createdAt = (data['createdAt'] as Timestamp).toDate();
+    for (final raw in rows) {
+      final row = Map<String, dynamic>.from(raw as Map);
+      final data = SupabaseMappers.billFromRow(row);
+      final createdAt = data['createdAt'] as DateTime;
 
       if (createdAt.isBefore(tenDaysAgo)) {
-        // Create a notification
-        await FirebaseFirestore.instance.collection('notifications').add({
-          'userId': userId,
-          'message': 'You have a payment due for ${data['customerName']}.',
-          'timestamp': FieldValue.serverTimestamp(),
-          'isRead': false,
+        await supabase.from('notifications').insert({
+          'user_id': userId,
+          'message':
+              'You have a payment due for ${data['customerName']}.',
+          'is_read': false,
         });
       }
     }
@@ -408,11 +391,11 @@ class _IncompleteTransactionsScreenState
     final totalAmount = (billData['totalAmount'] as num).toDouble();
     final newPaidAmount = currentPaidAmount + additionalAmount;
 
-    await FirebaseFirestore.instance.collection('bills').doc(billId).update({
-      'paidAmount': newPaidAmount,
-      'paymentStatus': newPaidAmount >= totalAmount ? 'complete' : 'partial',
-      'lastUpdated': FieldValue.serverTimestamp(),
-    });
+    await Supabase.instance.client.from('bills').update({
+      'paid_amount': newPaidAmount,
+      'payment_status': newPaidAmount >= totalAmount ? 'complete' : 'partial',
+      'last_updated': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', billId);
   }
 
   Future<void> _markAsFullyPaid(
@@ -422,11 +405,11 @@ class _IncompleteTransactionsScreenState
   ) async {
     final totalAmount = (billData['totalAmount'] as num).toDouble();
 
-    await FirebaseFirestore.instance.collection('bills').doc(billId).update({
-      'paidAmount': totalAmount,
-      'paymentStatus': 'complete',
-      'lastUpdated': FieldValue.serverTimestamp(),
-    });
+    await Supabase.instance.client.from('bills').update({
+      'paid_amount': totalAmount,
+      'payment_status': 'complete',
+      'last_updated': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', billId);
   }
 
   Future<void> _showUpdatePaymentDialog(

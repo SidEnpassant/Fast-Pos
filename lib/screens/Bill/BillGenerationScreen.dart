@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
 import 'package:image_picker/image_picker.dart';
@@ -18,8 +16,8 @@ import 'package:http/http.dart' as http;
 import 'dart:typed_data';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
-import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:speech_to_text/speech_to_text.dart';
 
@@ -948,15 +946,16 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final user = FirebaseAuth.instance.currentUser;
+      final supabase = Supabase.instance.client;
+      final user = supabase.auth.currentUser;
       if (user == null) throw Exception('User not authenticated');
 
-      // Get business name from user profile
-      final userDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .get();
-      final businessName = userDoc.data()?['businessName'] as String?;
+      final userRow = await supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
+      final businessName = userRow?['business_name'] as String?;
       if (businessName == null) throw Exception('Business name not found');
 
       final totalAmount = _products.fold<double>(
@@ -964,31 +963,34 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
         (sum, item) => sum + (item.price * item.quantity),
       );
 
-      // Create bill document
-      final billRef = await FirebaseFirestore.instance.collection('bills').add({
-        'userId': user.uid,
-        'businessName': businessName,
-        'customerName': _customerNameController.text,
-        'customerPhone': _customerPhoneController.text,
-        'products': _products.map((p) => p.toMap()).toList(),
-        'totalAmount': totalAmount,
-        'paidAmount': _paymentStatus == 'complete' ? totalAmount : _paidAmount,
-        'paymentMethod': _paymentMethod,
-        'paymentStatus': _paymentStatus,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
+      final inserted = await supabase
+          .from('bills')
+          .insert({
+            'user_id': user.id,
+            'business_name': businessName,
+            'customer_name': _customerNameController.text.trim(),
+            'customer_phone': _customerPhoneController.text.trim(),
+            'products': _products.map((p) => p.toMap()).toList(),
+            'total_amount': totalAmount,
+            'paid_amount':
+                _paymentStatus == 'complete' ? totalAmount : _paidAmount,
+            'payment_method': _paymentMethod,
+            'payment_status': _paymentStatus,
+          })
+          .select('id')
+          .single();
 
-      // Add transaction to the transactions collection
+      final billId = inserted['id'] as String;
+
       await _addTransaction(
-          user.uid,
-          totalAmount,
-          _paymentStatus == 'complete' ? totalAmount : _paidAmount,
-          _paymentStatus);
+        user.id,
+        totalAmount,
+        _paymentStatus == 'complete' ? totalAmount : _paidAmount,
+        _paymentStatus,
+      );
 
-      // Generate PDF and share
-      final pdfPath = await _generateAndSharePDF(billRef.id);
+      final pdfPath = await _generateAndSharePDF(billId);
 
-      // Show success dialog with options
       _showPDFOptionsDialog(pdfPath);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1003,51 +1005,28 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
 
   Future<void> _addTransaction(String userId, double totalAmount,
       double paidAmount, String paymentStatus) async {
-    CollectionReference transactions =
-        FirebaseFirestore.instance.collection('transactions');
-
-    // Determine the amount and isComplete status
-    double amount = paymentStatus == 'complete' ? totalAmount : paidAmount;
-    bool isComplete = paymentStatus == 'complete';
-
-    Map<String, dynamic> transactionData = {
-      'businessId': userId, // Using userId as businessId
-      'amount': amount, // Add totalAmount or paidAmount based on paymentStatus
-      'isComplete': isComplete, // True if payment is complete, false otherwise
-      'date': FieldValue.serverTimestamp(),
-    };
+    final supabase = Supabase.instance.client;
+    final amount = paymentStatus == 'complete' ? totalAmount : paidAmount;
+    final isComplete = paymentStatus == 'complete';
 
     try {
-      await transactions.add(transactionData);
-      print('Transaction added successfully');
+      await supabase.from('transactions').insert({
+        'business_id': userId,
+        'amount': amount,
+        'is_complete': isComplete,
+        'customer_name': _customerNameController.text.trim(),
+      });
     } catch (e) {
       print('Failed to add transaction: $e');
     }
   }
 
   Future<String> _getNextBillNumber() async {
-    final user = FirebaseAuth.instance.currentUser;
-    final userRef =
-        FirebaseFirestore.instance.collection('users').doc(user!.uid);
-
-    // Run this in a transaction to ensure atomic updates
-    return FirebaseFirestore.instance
-        .runTransaction<String>((transaction) async {
-      // Get the current document
-      final userDoc = await transaction.get(userRef);
-
-      // Get the current bill number, default to 0 if it doesn't exist
-      final currentBillNumber = userDoc.data()?['lastBillNumber'] as int? ?? 0;
-
-      // Increment the bill number
-      final nextBillNumber = currentBillNumber + 1;
-
-      // Update the document with the new bill number
-      transaction.update(userRef, {'lastBillNumber': nextBillNumber});
-
-      // Return the new bill number as a string
-      return nextBillNumber.toString();
-    });
+    final user = Supabase.instance.client.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+    final n = await Supabase.instance.client
+        .rpc('increment_bill_number', params: {'p_user_id': user.id});
+    return n.toString();
   }
 
   Future<String> _generateAndSharePDF(String billId) async {
@@ -1056,21 +1035,19 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
     // Create a PDF document
     final pdf = pw.Document();
 
-    // Fetch additional business details from Firestore
-    final user = FirebaseAuth.instance.currentUser;
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user!.uid)
-        .get();
+    final user = Supabase.instance.client.auth.currentUser;
+    final userDoc = await Supabase.instance.client
+        .from('profiles')
+        .select()
+        .eq('id', user!.id)
+        .maybeSingle();
 
-    final businessName = userDoc.data()?['businessName'] as String? ?? '';
-    final gstNumber = userDoc.data()?['gstNumber'] as String? ?? '';
-    final businessAddress = userDoc.data()?['businessAddress'] as String? ??
-        ''; // Fetch Business Address
-    final businessPhone = userDoc.data()?['phoneNumber'] as String? ?? '';
-    final signatureUrl = userDoc.data()?['signatureUrl'] as String? ?? '';
-    final billRules =
-        userDoc.data()?['billRules'] as String? ?? ''; // Added billRules
+    final businessName = userDoc?['business_name'] as String? ?? '';
+    final gstNumber = userDoc?['gst_number'] as String? ?? '';
+    final businessAddress = userDoc?['business_address'] as String? ?? '';
+    final businessPhone = userDoc?['phone_number'] as String? ?? '';
+    final signatureUrl = userDoc?['signature_url'] as String? ?? '';
+    final billRules = userDoc?['bill_rules'] as String? ?? '';
 
     // Load signature image before creating the page
     Uint8List? signatureImage;

@@ -1,11 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
 import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
-import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
-import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
 import 'package:inventopos/screens/login/loginScreen.dart';
-import 'package:inventopos/screens/register/signUpScreen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -14,18 +10,19 @@ class SplashScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Center(
-        child: StreamBuilder<User?>(
-          stream: FirebaseAuth.instance.authStateChanges(),
+        child: StreamBuilder<AuthState>(
+          stream: Supabase.instance.client.auth.onAuthStateChange,
           builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                Supabase.instance.client.auth.currentSession == null) {
               return const CircularProgressIndicator();
-            } else if (snapshot.hasData) {
-              // User is signed in, navigate to home screen
-              return NavBarScreen();
-            } else {
-              // User is not signed in, navigate to login screen
-              return LoginScreen();
             }
+            final session = snapshot.data?.session ??
+                Supabase.instance.client.auth.currentSession;
+            if (session != null) {
+              return NavBarScreen();
+            }
+            return LoginScreen();
           },
         ),
       ),

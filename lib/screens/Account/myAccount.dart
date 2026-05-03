@@ -1,9 +1,8 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+import 'package:inventopos/supabase_mappers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -20,8 +19,7 @@ class MyAccountPage extends StatefulWidget {
 
 class _MyAccountPageState extends State<MyAccountPage>
     with SingleTickerProviderStateMixin {
-  final _auth = FirebaseAuth.instance;
-  final _firestore = FirebaseFirestore.instance;
+  final _supabase = Supabase.instance.client;
   bool _isLoading = true;
 
   Map<String, dynamic> _userData = {};
@@ -47,12 +45,16 @@ class _MyAccountPageState extends State<MyAccountPage>
   }
 
   void _loadUserData() async {
-    User? user = _auth.currentUser;
+    final user = _supabase.auth.currentUser;
     if (user != null) {
-      DocumentSnapshot userData =
-          await _firestore.collection('users').doc(user.uid).get();
+      final row = await _supabase
+          .from('profiles')
+          .select()
+          .eq('id', user.id)
+          .maybeSingle();
       setState(() {
-        _userData = userData.data() as Map<String, dynamic>? ?? {};
+        _userData =
+            row != null ? SupabaseMappers.profileFromRow(row) : <String, dynamic>{};
         _isLoading = false;
       });
     }
@@ -61,12 +63,10 @@ class _MyAccountPageState extends State<MyAccountPage>
   Future<void> _updateUserData(String field, String value) async {
     setState(() => _isLoading = true);
     try {
-      User? user = _auth.currentUser;
-      if (user != null) {
-        await _firestore
-            .collection('users')
-            .doc(user.uid)
-            .update({field: value});
+      final user = _supabase.auth.currentUser;
+      final column = SupabaseMappers.profileColumnForField(field);
+      if (user != null && column != null) {
+        await _supabase.from('profiles').update({column: value}).eq('id', user.id);
         setState(() {
           _userData[field] = value;
         });
@@ -144,17 +144,21 @@ class _MyAccountPageState extends State<MyAccountPage>
 
       if (image != null) {
         setState(() => _isLoading = true);
-        User? user = _auth.currentUser;
+        final user = _supabase.auth.currentUser;
         if (user != null) {
-          final ref = FirebaseStorage.instance.ref().child(
-              'signatures/${user.uid}_${DateTime.now().millisecondsSinceEpoch}.jpg');
-          await ref.putFile(File(image.path));
-          String downloadURL = await ref.getDownloadURL();
+          final path =
+              '${user.id}/signature_${DateTime.now().millisecondsSinceEpoch}.jpg';
+          await _supabase.storage.from('signatures').upload(
+                path,
+                File(image.path),
+                fileOptions: const FileOptions(upsert: true),
+              );
+          final downloadURL =
+              _supabase.storage.from('signatures').getPublicUrl(path);
 
-          await _firestore
-              .collection('users')
-              .doc(user.uid)
-              .update({'signatureUrl': downloadURL});
+          await _supabase
+              .from('profiles')
+              .update({'signature_url': downloadURL}).eq('id', user.id);
           setState(() {
             _userData['signatureUrl'] = downloadURL;
           });

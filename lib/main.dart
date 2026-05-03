@@ -1,31 +1,34 @@
-import 'package:firebase_app_check/firebase_app_check.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:inventopos/screens/Account/myAccount.dart';
 import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
 import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
-import 'package:inventopos/firebase_options.dart';
+import 'package:inventopos/supabase_config.dart';
 import 'package:inventopos/screens/Notification/notificationsScreen.dart';
 import 'package:inventopos/screens/login/loginScreen.dart';
 import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
 import 'package:inventopos/screens/Transactions/CompleteTransactionsScreen.dart';
-// import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
 import 'package:inventopos/screens/Authentication/EmailVerificationScreen.dart';
 import 'package:inventopos/screens/Transactions/IncompleteTransactionsScreen.dart';
 import 'package:inventopos/screens/Authentication/forgotPassword.dart';
 import 'package:inventopos/screens/register/signUpScreen.dart';
 import 'package:inventopos/screens/splashScreen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
+  await Supabase.initialize(
+    url: SupabaseConfig.url,
+    anonKey: SupabaseConfig.anonKey,
   );
-
-  await FirebaseAppCheck.instance.activate(
-    androidProvider: AndroidProvider.debug,
-    appleProvider: AppleProvider.debug,
-  );
+  if (kDebugMode &&
+      !SupabaseConfig.anonKey.startsWith('eyJ') &&
+      SupabaseConfig.anonKey != 'YOUR_ANON_JWT_MUST_START_WITH_eyJ') {
+    debugPrint(
+      'Supabase: anon key should be the JWT from Dashboard → Settings → API '
+      '(starts with eyJ). sb_publishable_ and similar values are not valid.',
+    );
+  }
   runApp(const MyApp());
 }
 
@@ -41,7 +44,6 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: SplashScreen(),
-      // Define routes here
       routes: {
         '/verify-email': (context) => RegistrationSuccessScreen(
               email: ModalRoute.of(context)?.settings.arguments as String,

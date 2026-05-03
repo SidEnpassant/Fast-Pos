@@ -1,10 +1,8 @@
 import 'dart:io';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart'; // Import for Firebase Storage
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -277,11 +275,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
   }
 
   Future<void> _handleRegister() async {
-    Future<void> saveBusinessName(String businessName) async {
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('businessName', businessName);
-    }
-
     if (_formKey.currentState!.validate()) {
       if (_signatureImage == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -297,59 +290,99 @@ class _RegisterScreenState extends State<RegisterScreen> {
       });
 
       try {
-        // First, create the user account
-        final credential =
-            await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        final supabase = Supabase.instance.client;
+        final authRes = await supabase.auth.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
         );
+        final user = authRes.user;
+        if (user == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Sign up was rejected. Check the email format, password strength, '
+                  'and that your Supabase anon key is the JWT from Project Settings → API (starts with eyJ).',
+                ),
+                duration: Duration(seconds: 8),
+              ),
+            );
+          }
+          return;
+        }
 
-        // Upload the signature image to Firebase Storage
-        String signatureUrl = await _uploadSignatureImage();
+        // Storage + RLS profile write need an authenticated session (JWT).
+        if (authRes.session == null) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text(
+                  'Account created but there is no session yet. In Supabase: '
+                  'Authentication → Providers → Email → disable "Confirm email" '
+                  'so signup can upload your signature and save your profile in one step. '
+                  'Then try again (or use a new email if this one is already registered).',
+                ),
+                duration: Duration(seconds: 12),
+              ),
+            );
+          }
+          return;
+        }
 
-        // Then, store additional user information in Firestore
-        if (credential.user != null) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(credential.user!.uid)
-              .set({
-            'name': _nameController.text,
-            'businessName': _businessNameController.text,
-            'businessAddress':
-                _businessAddressController.text, // Save business address
-            'phoneNumber': _phoneController.text,
-            'email': _emailController.text.trim(),
-            'gstNumber': _gstNumberController.text.trim(),
-            'billRules': _billRulesController.text.trim(),
-            'signatureUrl': signatureUrl,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+        final signatureUrl = await _uploadSignatureImage(user.id);
 
-          // Send email verification
-          await credential.user!.sendEmailVerification();
+        await supabase.from('profiles').upsert({
+          'id': user.id,
+          'email': _emailController.text.trim(),
+          'name': _nameController.text,
+          'business_name': _businessNameController.text,
+          'business_address': _businessAddressController.text,
+          'phone_number': _phoneController.text,
+          'gst_number': _gstNumberController.text.trim(),
+          'bill_rules': _billRulesController.text.trim(),
+          'signature_url': signatureUrl,
+        }, onConflict: 'id');
 
-          // Show success message and navigate to verification screen
-          // ScaffoldMessenger.of(context).showSnackBar(
-          //   const SnackBar(
-          //     content:
-          //         Text('Verification email sent. Please check your inbox.'),
-          //   ),
-          // );
-
+        if (mounted) {
           Navigator.pushReplacementNamed(
             context,
             '/verify-email',
             arguments: _emailController.text,
           );
         }
-      } on FirebaseAuthException catch (e) {
-        String errorMessage = 'An error occurred';
-        if (e.code == 'email-already-in-use') {
+      } on AuthException catch (e, st) {
+        debugPrint('Register AuthException: ${e.message}\n$st');
+        var errorMessage = e.message.trim();
+        if (errorMessage.isEmpty) {
+          errorMessage = 'Sign up failed (auth). Check API keys and network.';
+        }
+        final lower = errorMessage.toLowerCase();
+        if (lower.contains('already registered') ||
+            lower.contains('user already') ||
+            lower.contains('already been registered')) {
           errorMessage = 'This email is already registered';
         }
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(errorMessage),
+              duration: const Duration(seconds: 8),
+            ),
+          );
+        }
+      } catch (e, st) {
+        debugPrint('Register error: $e\n$st');
+        final msg = e.toString();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                msg.length > 300 ? '${msg.substring(0, 300)}…' : msg,
+              ),
+              duration: const Duration(seconds: 10),
+            ),
+          );
+        }
       } finally {
         setState(() {
           _isLoading = false;
@@ -358,13 +391,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  Future<String> _uploadSignatureImage() async {
-    final storageRef = FirebaseStorage.instance
-        .ref()
-        .child('signatures/${_nameController.text}_signature.jpg');
-    final uploadTask = storageRef.putFile(_signatureImage!);
-    final snapshot = await uploadTask.whenComplete(() => null);
-    return await snapshot.ref.getDownloadURL();
+  Future<String> _uploadSignatureImage(String userId) async {
+    final supabase = Supabase.instance.client;
+    final path = '$userId/signature.jpg';
+    await supabase.storage.from('signatures').upload(
+          path,
+          _signatureImage!,
+          fileOptions: const FileOptions(upsert: true),
+        );
+    return supabase.storage.from('signatures').getPublicUrl(path);
   }
 
   @override

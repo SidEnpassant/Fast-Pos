@@ -1,12 +1,11 @@
 import 'dart:io';
 
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:inventopos/supabase_mappers.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class CompleteTransactionsScreen extends StatefulWidget {
   const CompleteTransactionsScreen({Key? key}) : super(key: key);
@@ -76,14 +75,10 @@ class _CompleteTransactionsScreenState
       body: Column(
         children: [
           Expanded(
-            child: StreamBuilder<User?>(
-              stream: FirebaseAuth.instance.authStateChanges(),
-              builder: (context, authSnapshot) {
-                if (authSnapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-
-                if (!authSnapshot.hasData) {
+            child: Builder(
+              builder: (context) {
+                final user = Supabase.instance.client.auth.currentUser;
+                if (user == null) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -102,17 +97,15 @@ class _CompleteTransactionsScreenState
                   );
                 }
 
-                final userId = authSnapshot.data!.uid;
+                final userId = user.id;
 
-                return StreamBuilder<QuerySnapshot>(
-                  stream: FirebaseFirestore.instance
-                      .collection('bills')
-                      .where('userId', isEqualTo: userId)
-                      .where('paymentStatus', isEqualTo: 'complete')
-                      .orderBy('createdAt', descending: true)
-                      .snapshots(),
+                return StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: Supabase.instance.client
+                      .from('bills')
+                      .stream(primaryKey: ['id']).eq('user_id', userId),
                   builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                    if (snapshot.connectionState == ConnectionState.waiting &&
+                        !snapshot.hasData) {
                       return const Center(child: CircularProgressIndicator());
                     }
 
@@ -136,7 +129,11 @@ class _CompleteTransactionsScreenState
                       );
                     }
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    final completeRows = (snapshot.data ?? [])
+                        .where((r) => r['payment_status'] == 'complete')
+                        .toList();
+
+                    if (completeRows.isEmpty) {
                       return Center(
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
@@ -156,19 +153,15 @@ class _CompleteTransactionsScreenState
                       );
                     }
 
-                    // Filter documents based on search query and date range
-                    final filteredDocs = snapshot.data!.docs.where((doc) {
-                      final data = doc.data() as Map<String, dynamic>;
+                    final filteredRows = completeRows.where((row) {
+                      final data = SupabaseMappers.billFromRow(row);
                       final customerName = data['customerName'] as String;
-                      final createdAt =
-                          (data['createdAt'] as Timestamp).toDate();
+                      final createdAt = data['createdAt'] as DateTime;
 
-                      // Check if the customer name matches the search query
                       final matchesSearchQuery = customerName
                           .toLowerCase()
                           .contains(searchQuery.toLowerCase());
 
-                      // Check if the createdAt date is within the selected date range
                       final isWithinDateRange = (startDate == null ||
                               createdAt.isAfter(startDate!)) &&
                           (endDate == null ||
@@ -178,15 +171,14 @@ class _CompleteTransactionsScreenState
                       return matchesSearchQuery && isWithinDateRange;
                     }).toList();
 
-                    // Group transactions by date
-                    Map<String, List<DocumentSnapshot>> groupedTransactions =
-                        {};
-                    for (var doc in filteredDocs) {
-                      final data = doc.data() as Map<String, dynamic>;
+                    final Map<String, List<Map<String, dynamic>>>
+                        groupedTransactions = {};
+                    for (final row in filteredRows) {
+                      final data = SupabaseMappers.billFromRow(row);
                       final date = DateFormat('yyyy-MM-dd')
-                          .format((data['createdAt'] as Timestamp).toDate());
+                          .format(data['createdAt'] as DateTime);
                       groupedTransactions.putIfAbsent(date, () => []);
-                      groupedTransactions[date]!.add(doc);
+                      groupedTransactions[date]!.add(row);
                     }
 
                     return ListView.builder(
@@ -209,9 +201,9 @@ class _CompleteTransactionsScreenState
                                 ),
                               ),
                             ),
-                            ...transactions.map((doc) {
-                              final data = doc.data() as Map<String, dynamic>;
-                              final docId = doc.id; // Get the document ID
+                            ...transactions.map((row) {
+                              final data = SupabaseMappers.billFromRow(row);
+                              final docId = row['id'] as String;
                               return _buildTransactionCard(
                                   context, data, docId);
                             }).toList(),
@@ -246,35 +238,23 @@ class _CompleteTransactionsScreenState
           },
         );
 
-        // Delete previous signed bill if exists
-        final previousBillRef = await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(billId)
-            .get();
+        final supabase = Supabase.instance.client;
+        try {
+          await supabase.storage.from('signed_bills').remove(['$billId.jpg']);
+        } catch (_) {}
 
-        if (previousBillRef.data()?['signedBillUrl'] != null) {
-          await FirebaseStorage.instance
-              .refFromURL(previousBillRef.data()!['signedBillUrl'])
-              .delete();
-        }
+        await supabase.storage.from('signed_bills').upload(
+              '$billId.jpg',
+              File(image.path),
+              fileOptions: const FileOptions(upsert: true),
+            );
+        final downloadUrl =
+            supabase.storage.from('signed_bills').getPublicUrl('$billId.jpg');
 
-        // Upload new image
-        final storageRef = FirebaseStorage.instance
-            .ref()
-            .child('signed_bills')
-            .child('$billId.jpg');
-
-        await storageRef.putFile(File(image.path));
-        final downloadUrl = await storageRef.getDownloadURL();
-
-        // Update Firestore
-        await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(billId)
-            .update({
-          'signedBillUrl': downloadUrl,
-          'lastSignedBillUpdate': FieldValue.serverTimestamp(),
-        });
+        await supabase.from('bills').update({
+          'signed_bill_url': downloadUrl,
+          'last_signed_bill_update': DateTime.now().toUtc().toIso8601String(),
+        }).eq('id', billId);
 
         Navigator.pop(context); // Dismiss loading dialog
         ScaffoldMessenger.of(context).showSnackBar(
@@ -404,9 +384,9 @@ class _CompleteTransactionsScreenState
       BuildContext context, Map<String, dynamic> data, String docId) {
     final totalAmount = (data['totalAmount'] as num).toDouble();
     final customerName = data['customerName'] as String;
-    final customerPhone = data['customerPhone'] as String;
+    final customerPhone = data['customerPhone'] as String? ?? '';
     final paymentMethod = data['paymentMethod'] as String? ?? 'Cash';
-    final items = List<Map<String, dynamic>>.from(data['items'] ?? []);
+    final items = SupabaseMappers.billProductsAsLineItems(data);
     final signedBillUrl = data['signedBillUrl'] as String?;
 
     return Card(
@@ -520,11 +500,10 @@ class _CompleteTransactionsScreenState
 
 // Add this method to handle the deletion
   Future<void> _deleteTransaction(String docId) async {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
 
     if (userId != null) {
       try {
-        // Show loading dialog
         showDialog(
           context: context,
           barrierDismissible: false,
@@ -535,53 +514,39 @@ class _CompleteTransactionsScreenState
           },
         );
 
-        // First, get the document to check if it has a signed bill
-        final docSnapshot = await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(docId)
-            .get();
-
-        // If there's a signed bill URL, delete it from Storage
-        if (docSnapshot.data()?['signedBillUrl'] != null) {
-          final signedBillUrl = docSnapshot.data()!['signedBillUrl'] as String;
-          try {
-            await FirebaseStorage.instance.refFromURL(signedBillUrl).delete();
-          } catch (storageError) {
-            print('Error deleting signed bill: $storageError');
-            // Continue with document deletion even if storage deletion fails
-          }
+        final supabase = Supabase.instance.client;
+        try {
+          await supabase.storage.from('signed_bills').remove(['$docId.jpg']);
+        } catch (storageError) {
+          print('Error deleting signed bill: $storageError');
         }
 
-        // Delete the document from Firestore
-        await FirebaseFirestore.instance
-            .collection('bills')
-            .doc(docId)
-            .delete();
+        await supabase.from('bills').delete().eq('id', docId);
 
-        // Dismiss loading dialog
-        Navigator.pop(context);
+        if (context.mounted) Navigator.pop(context);
 
-        // Show a success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content:
-                Text('Transaction and associated bill deleted successfully'),
-            backgroundColor: Colors.green,
-          ),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content:
+                  Text('Transaction and associated bill deleted successfully'),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
       } catch (e) {
-        // Dismiss loading dialog if still showing
         if (context.mounted) {
           Navigator.pop(context);
         }
 
-        // Show an error message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error deleting transaction: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error deleting transaction: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
       }
     }
   }

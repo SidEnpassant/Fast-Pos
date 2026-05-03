@@ -1,6 +1,6 @@
 import 'package:inventopos/screens/register/signUpScreen.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ForgotPassword extends StatefulWidget {
   const ForgotPassword({super.key});
@@ -17,19 +17,24 @@ class _ForgotPasswordState extends State<ForgotPassword> {
 
   resetPassword() async {
     try {
-      await FirebaseAuth.instance.sendPasswordResetEmail(email: email);
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-          content: Text(
-        "Password Reset Email has been sent !",
-        style: TextStyle(fontSize: 20.0),
-      )));
-    } on FirebaseAuthException catch (e) {
-      if (e.code == "user-not-found") {
+      await Supabase.instance.client.auth.resetPasswordForEmail(email);
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
             content: Text(
-          "No user found for that email.",
+          "Password Reset Email has been sent !",
           style: TextStyle(fontSize: 20.0),
         )));
+      }
+    } on AuthException catch (e) {
+      if (e.message.contains('User not found') ||
+          e.message.toLowerCase().contains('not found')) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+              content: Text(
+            "No user found for that email.",
+            style: TextStyle(fontSize: 20.0),
+          )));
+        }
       }
     }
   }

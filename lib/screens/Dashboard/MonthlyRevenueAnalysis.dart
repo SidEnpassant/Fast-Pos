@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:inventopos/supabase_mappers.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:shimmer/shimmer.dart';
 import 'package:animate_do/animate_do.dart';
@@ -105,19 +105,17 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
   }
 
   Widget _buildMonthlyRevenueSection() {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) {
       return _buildErrorWidget('User not authenticated');
     }
 
     return Scaffold(
       appBar: _buildAppBar(),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('bills')
-            .where('userId', isEqualTo: userId)
-            .orderBy('createdAt', descending: true)
-            .snapshots(),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: Supabase.instance.client
+            .from('bills')
+            .stream(primaryKey: ['id']).eq('user_id', userId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return _buildErrorWidget('Error loading data: ${snapshot.error}');
@@ -131,16 +129,11 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
           Map<String, double> monthlyRevenues = {};
           Map<String, int> monthlyTransactions = {};
 
-          for (var doc in snapshot.data!.docs) {
+          for (final row in snapshot.data!) {
             try {
-              final data = doc.data() as Map<String, dynamic>;
+              final data = SupabaseMappers.billFromRow(row);
 
-              DateTime timestamp;
-              if (data['createdAt'] is Timestamp) {
-                timestamp = (data['createdAt'] as Timestamp).toDate();
-              } else {
-                continue;
-              }
+              final timestamp = data['createdAt'] as DateTime;
 
               final monthYear = DateFormat('MMM yyyy').format(timestamp);
 

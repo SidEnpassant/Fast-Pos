@@ -1,21 +1,21 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/supabase_mappers.dart';
 import 'package:intl/intl.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class NotificationsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
+    final user = Supabase.instance.client.auth.currentUser;
     if (user == null) {
       return Center(
         child: const Text('Please log in to view notifications.'),
       );
     }
 
-    final userId = user.uid;
+    final userId = user.id;
 
     return Scaffold(
       appBar: AppBar(
@@ -29,22 +29,21 @@ class NotificationsScreen extends StatelessWidget {
         backgroundColor: Colors.white,
         centerTitle: true,
       ),
-      body: StreamBuilder<QuerySnapshot>(
-        stream: FirebaseFirestore.instance
-            .collection('notifications')
-            .where('userId', isEqualTo: userId)
-            .orderBy('timestamp', descending: true)
-            .snapshots(),
+      body: StreamBuilder<List<Map<String, dynamic>>>(
+        stream: Supabase.instance.client
+            .from('notifications')
+            .stream(primaryKey: ['id']).eq('user_id', userId),
         builder: (context, snapshot) {
           if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           }
 
-          if (snapshot.connectionState == ConnectionState.waiting) {
+          if (snapshot.connectionState == ConnectionState.waiting &&
+              !snapshot.hasData) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
             return Center(
               child: const Text(
                 'No notifications',
@@ -53,26 +52,25 @@ class NotificationsScreen extends StatelessWidget {
             );
           }
 
-          return ListView.builder(
-            itemCount: snapshot.data!.docs.length,
-            itemBuilder: (context, index) {
-              final doc = snapshot.data!.docs[index];
-              final data = doc.data() as Map<String, dynamic>?;
+          final rows = List<Map<String, dynamic>>.from(snapshot.data!);
+          rows.sort((a, b) => SupabaseMappers.parseDate(b['timestamp'])
+              .compareTo(SupabaseMappers.parseDate(a['timestamp'])));
 
-              if (data == null) {
-                return const ListTile(
-                  title: Text('Error loading notification.'),
-                );
-              }
+          return ListView.builder(
+            itemCount: rows.length,
+            itemBuilder: (context, index) {
+              final row = rows[index];
+              final data = SupabaseMappers.notificationFromRow(row);
+              final id = row['id'] as String;
 
               final message = data['message'] as String?;
-              final timestamp = data['timestamp'] as Timestamp?;
+              final timestamp = data['timestamp'] as DateTime?;
 
               return Padding(
                 padding:
                     const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                 child: Dismissible(
-                  key: Key(doc.id),
+                  key: Key(id),
                   direction: DismissDirection.endToStart,
                   background: Container(
                     color: Colors.red,
@@ -82,10 +80,10 @@ class NotificationsScreen extends StatelessWidget {
                   ),
                   onDismissed: (direction) async {
                     try {
-                      await FirebaseFirestore.instance
-                          .collection('notifications')
-                          .doc(doc.id)
-                          .delete();
+                      await Supabase.instance.client
+                          .from('notifications')
+                          .delete()
+                          .eq('id', id);
                       await _showToast('Notification deleted');
                     } catch (e) {
                       await _showToast('Failed to delete notification: $e');
@@ -125,7 +123,7 @@ class NotificationsScreen extends StatelessWidget {
                       subtitle: Text(
                         timestamp != null
                             ? DateFormat('yyyy-MM-dd – kk:mm')
-                                .format(timestamp.toDate())
+                                .format(timestamp)
                             : 'Unknown time',
                         style: const TextStyle(
                             color: Color.fromARGB(255, 0, 0, 0)),
@@ -156,7 +154,7 @@ class NotificationsScreen extends StatelessWidget {
         fontSize: 16.0,
       );
     } catch (e) {
-      print('Toast error: $e'); // Log any errors with the toast
+      print('Toast error: $e');
     }
   }
 }

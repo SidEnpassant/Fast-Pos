@@ -1,15 +1,9 @@
 // home_dashboard_screen.dart
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/screens/Account/myAccount.dart';
-import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
-import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
-import 'package:inventopos/screens/Notification/notificationsScreen.dart';
-import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:inventopos/supabase_mappers.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -19,20 +13,6 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  String businessName = 'Your Business';
-  @override
-  void initState() {
-    super.initState();
-    _loadBusinessName();
-  }
-
-  Future<void> _loadBusinessName() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    setState(() {
-      businessName = prefs.getString('businessName') ?? 'Your Business';
-    });
-  }
-
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
@@ -127,21 +107,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(FirebaseAuth.instance.currentUser?.uid)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
+            child: Builder(
+              builder: (context) {
+                final profileStream = _profileStream();
+                if (profileStream == null) {
                   return const Text('Loading...');
                 }
-                final data = snapshot.data?.data() as Map<String, dynamic>?;
+                return StreamBuilder<List<Map<String, dynamic>>>(
+                  stream: profileStream,
+                  builder: (context, snapshot) {
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Text('Loading...');
+                }
+                final data =
+                    SupabaseMappers.profileFromRow(snapshot.data!.first);
                 return Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      data?['businessName'] ?? 'Your Business',
+                      data['businessName']?.toString() ?? 'Your Business',
                       style: GoogleFonts.poppins(
                         textStyle: const TextStyle(
                           fontWeight: FontWeight.bold,
@@ -162,6 +146,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ),
                   ],
                 );
+                  },
+                );
               },
             ),
           ),
@@ -169,12 +155,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
-              await FirebaseAuth.instance.signOut();
-              Navigator.pushNamedAndRemoveUntil(
-                context,
-                '/login', // Adjust this to your actual login route
-                (route) => false,
-              );
+              await Supabase.instance.client.auth.signOut();
+              if (context.mounted) {
+                Navigator.pushNamedAndRemoveUntil(
+                  context,
+                  '/login',
+                  (route) => false,
+                );
+              }
             },
             tooltip: 'Logout',
           ),
@@ -183,15 +171,30 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  Widget _buildStatisticsCards() {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-    print("Current User ID: $userId");
+  Stream<List<Map<String, dynamic>>>? _profileStream() {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return null;
+    return Supabase.instance.client
+        .from('profiles')
+        .stream(primaryKey: ['id']).eq('id', uid);
+  }
 
-    return StreamBuilder<QuerySnapshot>(
-      stream: FirebaseFirestore.instance
-          .collection('bills')
-          .where('userId', isEqualTo: userId)
-          .snapshots(),
+  Stream<List<Map<String, dynamic>>>? _billsStream() {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) return null;
+    return Supabase.instance.client
+        .from('bills')
+        .stream(primaryKey: ['id']).eq('user_id', uid);
+  }
+
+  Widget _buildStatisticsCards() {
+    final stream = _billsStream();
+    if (stream == null) {
+      return const Center(child: Text('Please log in'));
+    }
+
+    return StreamBuilder<List<Map<String, dynamic>>>(
+      stream: stream,
       builder: (context, snapshot) {
         if (!snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
@@ -201,15 +204,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         int completedTransactions = 0;
         int pendingTransactions = 0;
 
-        for (var doc in snapshot.data!.docs) {
-          final data = doc.data() as Map<String, dynamic>;
+        for (final row in snapshot.data!) {
+          final data = SupabaseMappers.billFromRow(row);
 
-          // Debugging: Log the fetched bill documents
-          print("Bill Doc: ${data}");
-          print(
-              "Total Amount: ${data['totalAmount']}, Payment Status: ${data['paymentStatus']}, Paid Amount: ${data['paidAmount']}");
-
-          // Determine revenue based on payment status
           if (data['paymentStatus'] == 'complete') {
             totalRevenue += (data['totalAmount'] ?? 0).toDouble();
             completedTransactions++;
@@ -217,7 +214,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             totalRevenue += (data['paidAmount'] ?? 0).toDouble();
             pendingTransactions++;
           } else {
-            // Handle other payment statuses if needed
             pendingTransactions++;
           }
         }
@@ -236,7 +232,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 Colors.green),
             _buildStatCard(
                 'Total Transactions',
-                '${snapshot.data!.docs.length}',
+                '${snapshot.data!.length}',
                 Icons.receipt_long,
                 Colors.blue),
             _buildStatCard('Completed', '$completedTransactions',
@@ -362,10 +358,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildRecentTransactions() {
-    final userId = FirebaseAuth.instance.currentUser?.uid;
-
-    // If no user is logged in, show appropriate message
-    if (userId == null) {
+    final stream = _billsStream();
+    if (stream == null) {
       return const Center(
         child: Text(
           'Please log in to view recent bills',
@@ -390,24 +384,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ),
               ),
             ),
-            // TextButton(
-            //   onPressed: () {},
-            //   child: const Text('See All'),
-            // ),
           ],
         ),
-        StreamBuilder<QuerySnapshot>(
-          stream: FirebaseFirestore.instance
-              .collection('bills')
-              .where('userId',
-                  isEqualTo: userId) // Changed from businessId to userId
-              .orderBy('createdAt', descending: true)
-              .limit(5)
-              .snapshots(),
+        StreamBuilder<List<Map<String, dynamic>>>(
+          stream: stream,
           builder: (context, snapshot) {
-            // Handle permission error specifically
             if (snapshot.hasError) {
-              print("Snapshot Error: ${snapshot.error}");
               if (snapshot.error.toString().contains('permission')) {
                 return const Center(
                   child: Text(
@@ -425,11 +407,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }
 
-            if (snapshot.connectionState == ConnectionState.waiting) {
+            if (snapshot.connectionState == ConnectionState.waiting &&
+                !snapshot.hasData) {
               return const Center(child: CircularProgressIndicator());
             }
 
-            if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return const Center(
                 child: Text(
                   "No bills found",
@@ -438,13 +421,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               );
             }
 
+            final rows = List<Map<String, dynamic>>.from(snapshot.data!);
+            rows.sort((a, b) => SupabaseMappers.parseDate(b['created_at'])
+                .compareTo(SupabaseMappers.parseDate(a['created_at'])));
+            final recent = rows.take(5).toList();
+
             return ListView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: snapshot.data!.docs.length,
+              itemCount: recent.length,
               itemBuilder: (context, index) {
-                final data =
-                    snapshot.data!.docs[index].data() as Map<String, dynamic>;
+                final data = SupabaseMappers.billFromRow(recent[index]);
                 if (!_isValidBillData(data)) {
                   return const SizedBox.shrink();
                 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:inventopos/screens/register/signUpScreen.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class LoginController {
   final formKey = GlobalKey<FormState>();
@@ -37,25 +37,26 @@ class LoginController {
 
     isLoadingNotifier.value = true;
     try {
-      final credential = await FirebaseAuth.instance.signInWithEmailAndPassword(
+      await Supabase.instance.client.auth.signInWithPassword(
         email: emailController.text.trim(),
         password: passwordController.text,
       );
 
-      if (credential.user != null) {
+      if (context.mounted) {
         Navigator.pushReplacementNamed(context, '/home');
       }
-    } on FirebaseAuthException catch (e) {
+    } on AuthException catch (e) {
       String errorMessage = 'Wrong email or password';
-      if (e.code == 'user-not-found') {
-        errorMessage = 'No user found for that email.';
-      } else if (e.code == 'wrong-password') {
-        errorMessage = 'Wrong password provided.';
+      final msg = e.message.toLowerCase();
+      if (msg.contains('invalid login') || msg.contains('invalid credentials')) {
+        errorMessage = 'Wrong email or password';
       }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(errorMessage)),
-      );
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(errorMessage)),
+        );
+      }
     } finally {
       isLoadingNotifier.value = false;
     }

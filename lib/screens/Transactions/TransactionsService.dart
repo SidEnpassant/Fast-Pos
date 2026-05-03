@@ -1,79 +1,64 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class TransactionsService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SupabaseClient _client = Supabase.instance.client;
 
-  Stream<QuerySnapshot> getCompleteTransactions({
+  Stream<List<Map<String, dynamic>>> getCompleteTransactions({
     DateTime? startDate,
     DateTime? endDate,
     String? searchQuery,
   }) {
-    // Get current user ID
-    final String? userId = _auth.currentUser?.uid;
+    final String? userId = _client.auth.currentUser?.id;
     if (userId == null) {
       throw Exception('No authenticated user found');
     }
 
-    // Start with base query
-    Query query = _firestore
-        .collection('transactions')
-        .where('businessId', isEqualTo: userId);
+    return _client
+        .from('transactions')
+        .stream(primaryKey: ['id']).eq('business_id', userId).map((rows) {
+      var list = rows.where((r) => r['is_complete'] == true).toList();
 
-    // Add multiple status conditions using 'where in' to check for both COMPLETE and PAID
-    query = query.where('status', whereIn: [
-      'COMPLETE',
-      'PAID',
-      'complete',
-      'paid',
-      'Full Paid',
-      'FULL_PAID'
-    ]);
+      if (startDate != null && endDate != null) {
+        final end = endDate.add(const Duration(days: 1));
+        list = list.where((r) {
+          final d = DateTime.tryParse(r['created_at'].toString());
+          if (d == null) return false;
+          return !d.isBefore(startDate) && d.isBefore(end);
+        }).toList();
+      }
 
-    // Add date range if provided
-    if (startDate != null && endDate != null) {
-      query = query.where('createdAt',
-          isGreaterThanOrEqualTo: Timestamp.fromDate(startDate),
-          isLessThanOrEqualTo:
-              Timestamp.fromDate(endDate.add(const Duration(days: 1))));
-    }
+      if (searchQuery != null && searchQuery.isNotEmpty) {
+        final q = searchQuery.toLowerCase();
+        list = list.where((r) {
+          final name = (r['customer_name'] as String?)?.toLowerCase() ?? '';
+          return name.contains(q);
+        }).toList();
+      }
 
-    // Order by creation date
-    query = query.orderBy('createdAt', descending: true);
+      list.sort((a, b) {
+        final da = DateTime.tryParse(a['created_at'].toString());
+        final db = DateTime.tryParse(b['created_at'].toString());
+        if (da == null || db == null) return 0;
+        return db.compareTo(da);
+      });
 
-    // Add search query if provided
-    if (searchQuery != null && searchQuery.isNotEmpty) {
-      final searchLower = searchQuery.toLowerCase();
-      query = query
-          .where('customerNameLower', isGreaterThanOrEqualTo: searchLower)
-          .where('customerNameLower',
-              isLessThanOrEqualTo: searchLower + '\uf8ff');
-    }
-
-    return query.snapshots();
+      return list;
+    });
   }
 
-  // Helper method to check transactions directly
   Future<void> debugCheckTransactions() async {
     try {
-      final userId = _auth.currentUser?.uid;
+      final userId = _client.auth.currentUser?.id;
       print('Checking transactions for user: $userId');
 
-      final QuerySnapshot completeSnapshot = await _firestore
-          .collection('transactions')
-          .where('businessId', isEqualTo: userId)
-          .get();
+      final list = await _client
+          .from('transactions')
+          .select()
+          .eq('business_id', userId ?? '');
 
-      print('Total transactions found: ${completeSnapshot.docs.length}');
-
-      for (var doc in completeSnapshot.docs) {
-        final data = doc.data() as Map<String, dynamic>;
-        print('Transaction ID: ${doc.id}');
-        print('Status: ${data['status']}');
-        print('Payment Status: ${data['paymentStatus']}');
-        print('Created At: ${data['createdAt']}');
-        print('-------------------');
+      print('Total transactions found: ${list.length}');
+      for (var row in list) {
+        print('Transaction: $row');
       }
     } catch (e) {
       print('Debug Error: $e');

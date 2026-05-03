@@ -1,9 +1,6 @@
 plugins {
     id 'org.jetbrains.kotlin.android' version '1.9.22' apply false
     id "com.android.application"
-    // START: FlutterFire Configuration
-    id 'com.google.gms.google-services'
-    // END: FlutterFire Configuration
     id "kotlin-android"
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
@@ -17,7 +14,7 @@ if (keyPropertiesFile.exists()) {
 
 android {
     namespace = "com.siddhes.inventopos"
-    compileSdk = 34
+    compileSdk = 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -36,7 +33,7 @@ android {
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 23
-        targetSdk = 34
+        targetSdk = 35
         versionCode = flutter.versionCode
         versionName = flutter.versionName
         multiDexEnabled true
@@ -66,16 +63,9 @@ android {
 }
 dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.4'
-    // Firebase SDK for App Check (Debug Provider)
-    implementation 'com.google.firebase:firebase-appcheck-debug:17.1.1'
-    // Also make sure you have core
-    implementation 'com.google.firebase:firebase-common:20.4.1'
-    implementation 'com.google.firebase:firebase-appcheck:17.1.1'
-
 }
 
 
 flutter {
     source = "../.."
 }
-apply plugin: 'com.google.gms.google-services'
