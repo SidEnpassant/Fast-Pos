@@ -21,14 +21,6 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
-  if (kDebugMode &&
-      !SupabaseConfig.anonKey.startsWith('eyJ') &&
-      SupabaseConfig.anonKey != 'YOUR_ANON_JWT_MUST_START_WITH_eyJ') {
-    debugPrint(
-      'Supabase: anon key should be the JWT from Dashboard → Settings → API '
-      '(starts with eyJ). sb_publishable_ and similar values are not valid.',
-    );
-  }
   runApp(const MyApp());
 }
 
