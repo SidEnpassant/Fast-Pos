@@ -22,7 +22,7 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:speech_to_text/speech_to_text.dart';
 
 class BillGenerationScreen extends StatefulWidget {
-  const BillGenerationScreen({Key? key}) : super(key: key);
+  const BillGenerationScreen({super.key});
 
   @override
   State<BillGenerationScreen> createState() => _BillGenerationScreenState();
@@ -69,19 +69,25 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
       (sum, item) => sum + (item.price * item.quantity),
     );
 
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          'Generate Bill',
-          style: GoogleFonts.poppins(
-            fontWeight: FontWeight.w600,
+    return Material(
+      color: Colors.white,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          AppBar(
+            title: Text(
+              'Generate Bill',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                fontSize: 25,
+              ),
+            ),
+            elevation: 0,
+            backgroundColor: Colors.white,
+            centerTitle: true,
           ),
-        ),
-        elevation: 0,
-        backgroundColor: Colors.white,
-        centerTitle: true,
-      ),
-      body: _isLoading
+          Expanded(
+            child: _isLoading
           ? Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -397,6 +403,9 @@ class _BillGenerationScreenState extends State<BillGenerationScreen> {
                 ],
               ),
             ),
+          ),
+        ],
+      ),
     );
   }
 

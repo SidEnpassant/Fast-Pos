@@ -1,6 +1,6 @@
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -344,10 +344,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }, onConflict: 'id');
 
         if (mounted) {
-          Navigator.pushReplacementNamed(
-            context,
+          context.go(
             '/verify-email',
-            arguments: _emailController.text,
+            extra: _emailController.text.trim(),
           );
         }
       } on AuthException catch (e, st) {

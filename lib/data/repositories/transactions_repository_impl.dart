@@ -1,8 +1,14 @@
+import 'package:inventopos/domain/repositories/transactions_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class TransactionsService {
-  final SupabaseClient _client = Supabase.instance.client;
+/// Supabase implementation for [TransactionsRepository].
+class TransactionsRepositoryImpl implements TransactionsRepository {
+  TransactionsRepositoryImpl({SupabaseClient? client})
+      : _client = client ?? Supabase.instance.client;
 
+  final SupabaseClient _client;
+
+  @override
   Stream<List<Map<String, dynamic>>> getCompleteTransactions({
     DateTime? startDate,
     DateTime? endDate,
@@ -44,24 +50,5 @@ class TransactionsService {
 
       return list;
     });
-  }
-
-  Future<void> debugCheckTransactions() async {
-    try {
-      final userId = _client.auth.currentUser?.id;
-      print('Checking transactions for user: $userId');
-
-      final list = await _client
-          .from('transactions')
-          .select()
-          .eq('business_id', userId ?? '');
-
-      print('Total transactions found: ${list.length}');
-      for (var row in list) {
-        print('Transaction: $row');
-      }
-    } catch (e) {
-      print('Debug Error: $e');
-    }
   }
 }

@@ -1,5 +1,5 @@
-import 'package:inventopos/screens/register/signUpScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ForgotPassword extends StatefulWidget {
@@ -149,11 +149,7 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               ),
                               GestureDetector(
                                 onTap: () {
-                                  Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                          builder: (context) =>
-                                              RegisterScreen()));
+                                  context.push('/signup');
                                 },
                                 child: const Text(
                                   "Create",

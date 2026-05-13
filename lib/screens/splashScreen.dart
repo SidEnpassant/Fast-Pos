@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
 import 'package:inventopos/screens/login/loginScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+/// Legacy splash using Supabase stream directly.
+/// Prefer the app entry in [main.dart] with go_router.
 
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
@@ -20,9 +22,15 @@ class SplashScreen extends StatelessWidget {
             final session = snapshot.data?.session ??
                 Supabase.instance.client.auth.currentSession;
             if (session != null) {
-              return NavBarScreen();
+              return const Scaffold(
+                body: Center(
+                  child: Text(
+                    'You are signed in. Use the main app entry (go_router).',
+                  ),
+                ),
+              );
             }
-            return LoginScreen();
+            return const LoginScreen();
           },
         ),
       ),

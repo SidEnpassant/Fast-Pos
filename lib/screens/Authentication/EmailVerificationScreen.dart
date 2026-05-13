@@ -1049,6 +1049,7 @@
 
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class RegistrationSuccessScreen extends StatefulWidget {
   final String email;
@@ -1113,7 +1114,7 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
   void _navigateToHome() {
     Future.delayed(const Duration(milliseconds: 200), () {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed('/home');
+        context.go('/app/dashboard');
       }
     });
   }

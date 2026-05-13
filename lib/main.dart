@@ -1,17 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:inventopos/screens/Account/myAccount.dart';
-import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
-import 'package:inventopos/screens/bottom%20navigation%20bar/bottomNavbar.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inventopos/core/router/app_router.dart';
+import 'package:inventopos/core/theme/app_theme.dart';
+import 'package:inventopos/data/repositories/auth_repository_impl.dart';
+import 'package:inventopos/data/repositories/bills_repository_impl.dart';
+import 'package:inventopos/data/repositories/notifications_repository_impl.dart';
+import 'package:inventopos/data/repositories/profile_repository_impl.dart';
+import 'package:inventopos/data/repositories/transactions_repository_impl.dart';
+import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/domain/repositories/bills_repository.dart';
+import 'package:inventopos/domain/repositories/notifications_repository.dart';
+import 'package:inventopos/domain/repositories/profile_repository.dart';
+import 'package:inventopos/domain/repositories/transactions_repository.dart';
+import 'package:inventopos/presentation/auth/cubit/auth_cubit.dart';
 import 'package:inventopos/supabase_config.dart';
-import 'package:inventopos/screens/Notification/notificationsScreen.dart';
-import 'package:inventopos/screens/login/loginScreen.dart';
-import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
-import 'package:inventopos/screens/Transactions/CompleteTransactionsScreen.dart';
-import 'package:inventopos/screens/Authentication/EmailVerificationScreen.dart';
-import 'package:inventopos/screens/Transactions/IncompleteTransactionsScreen.dart';
-import 'package:inventopos/screens/Authentication/forgotPassword.dart';
-import 'package:inventopos/screens/register/signUpScreen.dart';
-import 'package:inventopos/screens/splashScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {
@@ -20,36 +23,62 @@ void main() async {
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
   );
-  runApp(const MyApp());
+
+  final authRepository = AuthRepositoryImpl();
+  final billsRepository = BillsRepositoryImpl();
+  final profileRepository = ProfileRepositoryImpl();
+  final notificationsRepository = NotificationsRepositoryImpl();
+  final transactionsRepository = TransactionsRepositoryImpl();
+
+  runApp(
+    MultiRepositoryProvider(
+      providers: [
+        RepositoryProvider<AuthRepository>.value(value: authRepository),
+        RepositoryProvider<BillsRepository>.value(value: billsRepository),
+        RepositoryProvider<ProfileRepository>.value(value: profileRepository),
+        RepositoryProvider<NotificationsRepository>.value(
+          value: notificationsRepository,
+        ),
+        RepositoryProvider<TransactionsRepository>.value(
+          value: transactionsRepository,
+        ),
+      ],
+      child: BlocProvider(
+        create: (_) => AuthCubit(authRepository),
+        child: const MyApp(),
+      ),
+    ),
+  );
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  AuthRouterRefresh? _authRefresh;
+  GoRouter? _router;
+
+  @override
+  void dispose() {
+    _authRefresh?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    final auth = context.read<AuthCubit>();
+    _authRefresh ??= AuthRouterRefresh(auth);
+    _router ??= createAppRouter(auth, _authRefresh!);
+
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: 'Fast Pos',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      home: SplashScreen(),
-      routes: {
-        '/verify-email': (context) => RegistrationSuccessScreen(
-              email: ModalRoute.of(context)?.settings.arguments as String,
-            ),
-        '/login': (context) => LoginScreen(),
-        '/signup': (context) => RegisterScreen(),
-        '/home': (context) => NavBarScreen(),
-        '/forgot-password': (context) => ForgotPassword(),
-        '/create-bill': (context) => BillGenerationScreen(),
-        '/complete-transactions': (context) => CompleteTransactionsScreen(),
-        '/incomplete-transactions': (context) => IncompleteTransactionsScreen(),
-        '/profile': (context) => MyAccountPage(),
-        '/notification': (context) => NotificationsScreen(),
-        '/AnalyticsDashboard': (context) => MonthlyRevenueAnalysis(),
-      },
+      theme: AppTheme.light(),
+      routerConfig: _router!,
     );
   }
 }

@@ -4,15 +4,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:inventopos/supabase_mappers.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:fl_chart/fl_chart.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 import 'package:flutter/services.dart';
-import 'package:glassmorphism/glassmorphism.dart';
 import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:shimmer/shimmer.dart';
 
 class MyAccountPage extends StatefulWidget {
+  const MyAccountPage({super.key});
+
   @override
   _MyAccountPageState createState() => _MyAccountPageState();
 }
@@ -513,98 +512,105 @@ class _MyAccountPageState extends State<MyAccountPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Color(0xFFF8F9FB),
-      appBar: AppBar(
-        title: Text(
-          'My Account',
-          style: TextStyle(
-            color: Color(0xFF1A1D29),
-            fontWeight: FontWeight.w700,
-            fontSize: 20,
-          ),
-        ),
-        backgroundColor: Colors.white,
-        elevation: 0,
-        systemOverlayStyle: SystemUiOverlayStyle.dark,
-      ),
-      body: Stack(
+    return Material(
+      color: const Color(0xFFF8F9FB),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SafeArea(
-            child: FadeTransition(
-              opacity: _animation,
-              child: RefreshIndicator(
-                onRefresh: () async => _loadUserData(),
-                color: Color(0xFF3B82F6),
-                backgroundColor: Colors.white,
-                child: SingleChildScrollView(
-                  physics: BouncingScrollPhysics(),
-                  child: Column(
-                    children: [
-                      _buildProfileHeader(),
-                      Padding(
-                        padding: EdgeInsets.symmetric(horizontal: 20),
+          AppBar(
+            title: Text(
+              'My Account',
+              style: TextStyle(
+                color: Color(0xFF1A1D29),
+                fontWeight: FontWeight.w700,
+                fontSize: 20,
+              ),
+            ),
+            backgroundColor: Colors.white,
+            elevation: 0,
+            systemOverlayStyle: SystemUiOverlayStyle.dark,
+          ),
+          Expanded(
+            child: Stack(
+              children: [
+                SafeArea(
+                  child: FadeTransition(
+                    opacity: _animation,
+                    child: RefreshIndicator(
+                      onRefresh: () async => _loadUserData(),
+                      color: Color(0xFF3B82F6),
+                      backgroundColor: Colors.white,
+                      child: SingleChildScrollView(
+                        physics: BouncingScrollPhysics(),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Personal Information',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1D29),
+                            _buildProfileHeader(),
+                            Padding(
+                              padding: EdgeInsets.symmetric(horizontal: 20),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Personal Information',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1A1D29),
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  _buildEditableField(
+                                      'Name', 'name', Icons.person_outline),
+                                  _buildEditableField('Phone Number', 'phoneNumber',
+                                      Icons.phone_outlined),
+                                  SizedBox(height: 24),
+                                  Text(
+                                    'Business Information',
+                                    style: TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF1A1D29),
+                                    ),
+                                  ),
+                                  SizedBox(height: 16),
+                                  _buildEditableField('Business Name', 'businessName',
+                                      Icons.business_outlined),
+                                  _buildEditableField('Business Address',
+                                      'businessAddress', Icons.location_on_outlined),
+                                  _buildEditableField('GST Number', 'gstNumber',
+                                      Icons.receipt_long_outlined),
+                                  _buildEditableField(
+                                      'Bill Rules', 'billRules', Icons.rule_outlined),
+                                  SizedBox(height: 40),
+                                ],
                               ),
                             ),
-                            SizedBox(height: 16),
-                            _buildEditableField(
-                                'Name', 'name', Icons.person_outline),
-                            _buildEditableField('Phone Number', 'phoneNumber',
-                                Icons.phone_outlined),
-                            SizedBox(height: 24),
-                            Text(
-                              'Business Information',
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFF1A1D29),
-                              ),
-                            ),
-                            SizedBox(height: 16),
-                            _buildEditableField('Business Name', 'businessName',
-                                Icons.business_outlined),
-                            _buildEditableField('Business Address',
-                                'businessAddress', Icons.location_on_outlined),
-                            _buildEditableField('GST Number', 'gstNumber',
-                                Icons.receipt_long_outlined),
-                            _buildEditableField(
-                                'Bill Rules', 'billRules', Icons.rule_outlined),
-                            SizedBox(height: 40),
                           ],
                         ),
                       ),
-                    ],
+                    ),
                   ),
                 ),
-              ),
+                if (_isLoading)
+                  Container(
+                    color: Colors.black.withOpacity(0.3),
+                    child: Center(
+                      child: Container(
+                        padding: EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: LoadingAnimationWidget.staggeredDotsWave(
+                          color: Color(0xFF3B82F6),
+                          size: 40,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
             ),
           ),
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: Center(
-                child: Container(
-                  padding: EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: LoadingAnimationWidget.staggeredDotsWave(
-                    color: Color(0xFF3B82F6),
-                    size: 40,
-                  ),
-                ),
-              ),
-            ),
         ],
       ),
     );

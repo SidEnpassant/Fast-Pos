@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:inventopos/screens/register/signUpScreen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:go_router/go_router.dart';
 
+/// Form + validation only; auth is handled by [AuthCubit].
 class LoginController {
   final formKey = GlobalKey<FormState>();
 
@@ -32,43 +32,8 @@ class LoginController {
     obscureTextNotifier.value = !obscureTextNotifier.value;
   }
 
-  void handleLogin(BuildContext context) async {
-    if (!formKey.currentState!.validate()) return;
-
-    isLoadingNotifier.value = true;
-    try {
-      await Supabase.instance.client.auth.signInWithPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text,
-      );
-
-      if (context.mounted) {
-        Navigator.pushReplacementNamed(context, '/home');
-      }
-    } on AuthException catch (e) {
-      String errorMessage = 'Wrong email or password';
-      final msg = e.message.toLowerCase();
-      if (msg.contains('invalid login') || msg.contains('invalid credentials')) {
-        errorMessage = 'Wrong email or password';
-      }
-
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMessage)),
-        );
-      }
-    } finally {
-      isLoadingNotifier.value = false;
-    }
-  }
-
   VoidCallback goToRegisterScreen(BuildContext context) {
-    return () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => const RegisterScreen()),
-      );
-    };
+    return () => context.push('/signup');
   }
 
   void dispose() {

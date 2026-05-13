@@ -1,52 +1,64 @@
-import 'package:flutter/material.dart';
-import 'package:inventopos/supabase_mappers.dart';
-import 'package:intl/intl.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:shimmer/shimmer.dart';
-import 'package:animate_do/animate_do.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/presentation/analytics/cubit/analytics_cubit.dart';
+import 'package:inventopos/presentation/analytics/cubit/analytics_state.dart';
+import 'package:intl/intl.dart';
+import 'package:shimmer/shimmer.dart';
 
-class MonthlyRevenueAnalysis extends StatefulWidget {
-  const MonthlyRevenueAnalysis({Key? key}) : super(key: key);
-
-  @override
-  State<MonthlyRevenueAnalysis> createState() => _MonthlyRevenueAnalysisState();
-}
-
-class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
-  String? selectedMonth;
-  bool showChart = true;
+class MonthlyRevenueAnalysis extends StatelessWidget {
+  const MonthlyRevenueAnalysis({super.key});
 
   @override
-  void initState() {
-    super.initState();
-    // Initialize selectedMonth in initState
-    selectedMonth = DateFormat('MMM yyyy').format(DateTime.now());
+  Widget build(BuildContext context) {
+    return BlocBuilder<AnalyticsCubit, AnalyticsState>(
+      builder: (context, state) {
+        return Material(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              _buildAppBar(context, state),
+              Expanded(
+                child: !state.ready
+                    ? _buildShimmerLoading()
+                    : !state.hasRevenueData
+                        ? _buildErrorWidget(
+                            'No transaction data available',
+                          )
+                        : _buildBody(context, state),
+              ),
+            ],
+          ),
+        );
+      },
+    );
   }
 
-  PreferredSizeWidget _buildAppBar() {
+  PreferredSizeWidget _buildAppBar(BuildContext context, AnalyticsState state) {
     return AppBar(
       title: Row(
         children: [
           const Icon(Icons.analytics_outlined),
           const SizedBox(width: 8),
-          Text(
-            'Revenue Analysis',
-            style: GoogleFonts.poppins(
-              fontSize: 20,
-              fontWeight: FontWeight.w600,
+          Expanded(
+            child: Text(
+              'Revenue Analysis',
+              style: GoogleFonts.poppins(
+                fontSize: 20,
+                fontWeight: FontWeight.w600,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
-          ),
-          SizedBox(
-            width: 116,
           ),
           IconButton(
             icon: Icon(
-              showChart ? Icons.table_chart : Icons.show_chart,
-              color: Theme.of(context).primaryColor,
+              state.showChart ? Icons.table_chart : Icons.show_chart,
+              color: Theme.of(context).colorScheme.primary,
             ),
-            onPressed: () => setState(() => showChart = !showChart),
+            onPressed: () =>
+                context.read<AnalyticsCubit>().toggleChartTable(),
           ),
         ],
       ),
@@ -99,181 +111,111 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
             color: Colors.red,
             fontSize: 16,
           ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
   }
 
-  Widget _buildMonthlyRevenueSection() {
-    final userId = Supabase.instance.client.auth.currentUser?.id;
-    if (userId == null) {
-      return _buildErrorWidget('User not authenticated');
-    }
+  Widget _buildBody(BuildContext context, AnalyticsState state) {
+    final sortedMonths = state.sortedMonths;
+    final monthlyRevenues = state.monthlyRevenues;
+    final monthlyTransactions = state.monthlyTransactions;
+    final selectedMonth = state.selectedMonth;
 
-    return Scaffold(
-      appBar: _buildAppBar(),
-      body: StreamBuilder<List<Map<String, dynamic>>>(
-        stream: Supabase.instance.client
-            .from('bills')
-            .stream(primaryKey: ['id']).eq('user_id', userId),
-        builder: (context, snapshot) {
-          if (snapshot.hasError) {
-            return _buildErrorWidget('Error loading data: ${snapshot.error}');
-          }
-
-          if (!snapshot.hasData) {
-            return _buildShimmerLoading();
-          }
-
-          // Process data to get monthly revenues
-          Map<String, double> monthlyRevenues = {};
-          Map<String, int> monthlyTransactions = {};
-
-          for (final row in snapshot.data!) {
-            try {
-              final data = SupabaseMappers.billFromRow(row);
-
-              final timestamp = data['createdAt'] as DateTime;
-
-              final monthYear = DateFormat('MMM yyyy').format(timestamp);
-
-              double amount = 0;
-              if (data['paymentStatus'] == 'complete') {
-                amount = (data['totalAmount'] ?? 0).toDouble();
-              } else if (data['paymentStatus'] == 'partial') {
-                amount = (data['paidAmount'] ?? 0).toDouble();
-              }
-
-              monthlyRevenues.update(
-                monthYear,
-                (value) => value + amount,
-                ifAbsent: () => amount,
-              );
-
-              monthlyTransactions.update(
-                monthYear,
-                (value) => value + 1,
-                ifAbsent: () => 1,
-              );
-            } catch (e) {
-              debugPrint('Error processing document: $e');
-              continue;
-            }
-          }
-
-          if (monthlyRevenues.isEmpty) {
-            return _buildErrorWidget('No transaction data available');
-          }
-
-          final sortedMonths = monthlyRevenues.keys.toList()
-            ..sort((a, b) => DateFormat('MMM yyyy')
-                .parse(b)
-                .compareTo(DateFormat('MMM yyyy').parse(a)));
-
-          if (selectedMonth == null || !sortedMonths.contains(selectedMonth)) {
-            selectedMonth = sortedMonths.first;
-          }
-
-          return LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                child: Container(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                    maxWidth: constraints.maxWidth,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      // View Toggle
-                      Padding(
-                        padding: const EdgeInsets.all(16.0),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                        ),
-                      ),
-
-                      // Month Filter
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.grey[300]!),
-                          ),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<String>(
-                              value: selectedMonth,
-                              isExpanded: true,
-                              items: sortedMonths.map((String month) {
-                                return DropdownMenuItem<String>(
-                                  value: month,
-                                  child: Text(
-                                    month,
-                                    style: GoogleFonts.poppins(),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (String? newValue) {
-                                if (newValue != null) {
-                                  setState(() => selectedMonth = newValue);
-                                }
-                              },
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          child: Container(
+            constraints: BoxConstraints(
+              minHeight: constraints.maxHeight,
+              maxWidth: constraints.maxWidth,
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey[300]!),
+                    ),
+                    child: DropdownButtonHideUnderline(
+                      child: DropdownButton<String>(
+                        value: selectedMonth,
+                        isExpanded: true,
+                        items: sortedMonths.map((String month) {
+                          return DropdownMenuItem<String>(
+                            value: month,
+                            child: Text(
+                              month,
+                              style: GoogleFonts.poppins(),
                             ),
+                          );
+                        }).toList(),
+                        onChanged: (String? newValue) {
+                          if (newValue != null) {
+                            context.read<AnalyticsCubit>().setSelectedMonth(
+                                  newValue,
+                                );
+                          }
+                        },
+                      ),
+                    ),
+                  ),
+                ),
+                if (selectedMonth != null) ...[
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: _buildStatsCard(
+                            'Revenue',
+                            '₹${NumberFormat('#,##,###.##').format(monthlyRevenues[selectedMonth] ?? 0)}',
+                            Icons.account_balance_wallet,
+                            Colors.blue,
                           ),
                         ),
-                      ),
-
-                      // Stats Cards
-                      if (selectedMonth != null) ...[
-                        Padding(
-                          padding: const EdgeInsets.all(16.0),
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: _buildStatsCard(
-                                  'Revenue',
-                                  '₹${NumberFormat('#,##,###.##').format(monthlyRevenues[selectedMonth] ?? 0)}',
-                                  Icons.account_balance_wallet,
-                                  Colors.blue,
-                                ),
-                              ),
-                              const SizedBox(width: 16),
-                              Expanded(
-                                child: _buildStatsCard(
-                                  'Transactions',
-                                  '${monthlyTransactions[selectedMonth] ?? 0}',
-                                  Icons.receipt_long,
-                                  Colors.green,
-                                ),
-                              ),
-                            ],
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: _buildStatsCard(
+                            'Transactions',
+                            '${monthlyTransactions[selectedMonth] ?? 0}',
+                            Icons.receipt_long,
+                            Colors.green,
                           ),
                         ),
                       ],
-
-                      // Chart or Table
-                      if (showChart)
-                        _buildRevenueChart(sortedMonths, monthlyRevenues)
-                      else
-                        _buildRevenueTable(
-                            sortedMonths, monthlyRevenues, monthlyTransactions),
-                    ],
+                    ),
                   ),
-                ),
-              );
-            },
-          );
-        },
-      ),
+                ],
+                if (state.showChart)
+                  _buildRevenueChart(context, sortedMonths, monthlyRevenues)
+                else
+                  _buildRevenueTable(
+                    sortedMonths,
+                    monthlyRevenues,
+                    monthlyTransactions,
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
   Widget _buildStatsCard(
-      String title, String value, IconData icon, Color color) {
+    String title,
+    String value,
+    IconData icon,
+    Color color,
+  ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -316,16 +258,21 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
     );
   }
 
-  Widget _buildRevenueChart(List<String> months, Map<String, double> revenues) {
+  Widget _buildRevenueChart(
+    BuildContext context,
+    List<String> months,
+    Map<String, double> revenues,
+  ) {
     try {
-      // Take only the last 6 months
       final recentMonths = months.take(6).toList().reversed.toList();
       final revenueData = recentMonths.map((m) => revenues[m] ?? 0).toList();
+      if (revenueData.isEmpty) {
+        return _buildErrorWidget('Error displaying chart');
+      }
 
-      // Find max revenue for better scaling
       final maxRevenue =
           revenueData.reduce((max, value) => value > max ? value : max);
-      final yInterval = (maxRevenue / 5).roundToDouble();
+      final yInterval = maxRevenue > 0 ? (maxRevenue / 5).roundToDouble() : 1.0;
 
       return Container(
         height: 300,
@@ -344,7 +291,7 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
               horizontalInterval: yInterval,
               getDrawingHorizontalLine: (value) {
                 return FlLine(
-                  color: Colors.grey[400]!.withOpacity(0.5),
+                  color: Colors.grey[400]!.withValues(alpha: 0.5),
                   strokeWidth: 1,
                 );
               },
@@ -383,8 +330,9 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
                 ),
               ),
               rightTitles:
-                  AxisTitles(sideTitles: SideTitles(showTitles: false)),
-              topTitles: AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+              topTitles:
+                  const AxisTitles(sideTitles: SideTitles(showTitles: false)),
             ),
             borderData: FlBorderData(show: false),
             lineBarsData: [
@@ -394,7 +342,7 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
                   (index) => FlSpot(index.toDouble(), revenueData[index]),
                 ),
                 isCurved: true,
-                color: Theme.of(context).primaryColor,
+                color: Theme.of(context).colorScheme.primary,
                 barWidth: 3,
                 isStrokeCapRound: true,
                 dotData: FlDotData(
@@ -404,13 +352,16 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
                       radius: 4,
                       color: Colors.white,
                       strokeWidth: 2,
-                      strokeColor: Theme.of(context).primaryColor,
+                      strokeColor: Theme.of(context).colorScheme.primary,
                     );
                   },
                 ),
                 belowBarData: BarAreaData(
                   show: true,
-                  color: Theme.of(context).primaryColor.withOpacity(0.1),
+                  color: Theme.of(context)
+                      .colorScheme
+                      .primary
+                      .withValues(alpha: 0.1),
                 ),
               ),
             ],
@@ -451,7 +402,8 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
               cells: [
                 DataCell(Text(month)),
                 DataCell(
-                    Text('₹${NumberFormat('#,##,###.##').format(revenue)}')),
+                  Text('₹${NumberFormat('#,##,###.##').format(revenue)}'),
+                ),
                 DataCell(Text('$transactionCount')),
               ],
             );
@@ -460,311 +412,4 @@ class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
       ),
     );
   }
-
-  @override
-  Widget build(BuildContext context) {
-    return _buildMonthlyRevenueSection();
-  }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// import 'package:flutter/material.dart';
-// import 'package:cloud_firestore/cloud_firestore.dart';
-// import 'package:firebase_auth/firebase_auth.dart';
-// import 'package:intl/intl.dart';
-// import 'package:fl_chart/fl_chart.dart';
-// import 'package:shimmer/shimmer.dart';
-// import 'package:animate_do/animate_do.dart';
-// import 'package:google_fonts/google_fonts.dart';
-
-// class MonthlyRevenueAnalysis extends StatefulWidget {
-//   const MonthlyRevenueAnalysis({Key? key}) : super(key: key);
-
-//   @override
-//   State<MonthlyRevenueAnalysis> createState() => _MonthlyRevenueAnalysisState();
-// }
-
-// class _MonthlyRevenueAnalysisState extends State<MonthlyRevenueAnalysis> {
-//   String? selectedMonth;
-//   bool showChart = true;
-
-//   @override
-//   void initState() {
-//     super.initState();
-//     selectedMonth = DateFormat('MMM yyyy').format(DateTime.now());
-//   }
-
-//   PreferredSizeWidget _buildAppBar() {
-//     return AppBar(
-//       leading: IconButton(
-//         icon: const Icon(Icons.arrow_back_ios),
-//         onPressed: () => Navigator.of(context).pop(),
-//       ),
-//       title: Row(
-//         children: [
-//           const Icon(Icons.analytics_outlined),
-//           const SizedBox(width: 8),
-//           Text(
-//             'Revenue Analysis',
-//             style: GoogleFonts.poppins(
-//               fontSize: 20,
-//               fontWeight: FontWeight.w600,
-//             ),
-//           ),
-//         ],
-//       ),
-//       elevation: 0,
-//       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
-//       iconTheme: IconThemeData(
-//         color: Theme.of(context).textTheme.bodyLarge?.color,
-//       ),
-//       titleTextStyle: TextStyle(
-//         color: Theme.of(context).textTheme.bodyLarge?.color,
-//       ),
-//     );
-//   }
-
-//   // ... [Keep all the existing helper methods like _buildShimmerLoading, _buildErrorWidget, etc.]
-
-//   Widget _buildMonthlyRevenueSection() {
-//     final userId = FirebaseAuth.instance.currentUser?.uid;
-//     if (userId == null) {
-//       return _buildErrorWidget('User not authenticated');
-//     }
-
-//     return Scaffold(
-//       appBar: _buildAppBar(),
-//       body: StreamBuilder<QuerySnapshot>(
-//         stream: FirebaseFirestore.instance
-//             .collection('bills')
-//             .where('userId', isEqualTo: userId)
-//             .orderBy('createdAt', descending: true)
-//             .snapshots(),
-//         builder: (context, snapshot) {
-//           if (snapshot.hasError) {
-//             return _buildErrorWidget('Error loading data: ${snapshot.error}');
-//           }
-
-//           if (!snapshot.hasData) {
-//             return _buildShimmerLoading();
-//           }
-
-//           // Process data to get monthly revenues
-//           Map<String, double> monthlyRevenues = {};
-//           Map<String, int> monthlyTransactions = {};
-          
-//           for (var doc in snapshot.data!.docs) {
-//             try {
-//               final data = doc.data() as Map<String, dynamic>;
-              
-//               DateTime timestamp;
-//               if (data['createdAt'] is Timestamp) {
-//                 timestamp = (data['createdAt'] as Timestamp).toDate();
-//               } else {
-//                 continue;
-//               }
-              
-//               final monthYear = DateFormat('MMM yyyy').format(timestamp);
-              
-//               double amount = 0;
-//               if (data['paymentStatus'] == 'complete') {
-//                 amount = (data['totalAmount'] ?? 0).toDouble();
-//               } else if (data['paymentStatus'] == 'partial') {
-//                 amount = (data['paidAmount'] ?? 0).toDouble();
-//               }
-              
-//               monthlyRevenues.update(
-//                 monthYear,
-//                 (value) => value + amount,
-//                 ifAbsent: () => amount,
-//               );
-              
-//               monthlyTransactions.update(
-//                 monthYear,
-//                 (value) => value + 1,
-//                 ifAbsent: () => 1,
-//               );
-//             } catch (e) {
-//               debugPrint('Error processing document: $e');
-//               continue;
-//             }
-//           }
-
-//           if (monthlyRevenues.isEmpty) {
-//             return _buildErrorWidget('No transaction data available');
-//           }
-
-//           final sortedMonths = monthlyRevenues.keys.toList()
-//             ..sort((a, b) => DateFormat('MMM yyyy')
-//                 .parse(b)
-//                 .compareTo(DateFormat('MMM yyyy').parse(a)));
-
-//           if (selectedMonth == null || !sortedMonths.contains(selectedMonth)) {
-//             selectedMonth = sortedMonths.first;
-//           }
-
-//           return LayoutBuilder(
-//             builder: (context, constraints) {
-//               return SingleChildScrollView(
-//                 child: Container(
-//                   constraints: BoxConstraints(
-//                     minHeight: constraints.maxHeight,
-//                     maxWidth: constraints.maxWidth,
-//                   ),
-//                   child: Column(
-//                     crossAxisAlignment: CrossAxisAlignment.start,
-//                     children: [
-//                       // View Toggle
-//                       Padding(
-//                         padding: const EdgeInsets.all(16.0),
-//                         child: Align(
-//                           alignment: Alignment.centerRight,
-//                           child: IconButton(
-//                             icon: Icon(
-//                               showChart ? Icons.table_chart : Icons.show_chart,
-//                               color: Theme.of(context).primaryColor,
-//                             ),
-//                             onPressed: () => setState(() => showChart = !showChart),
-//                           ),
-//                         ),
-//                       ),
-
-//                       // Month Filter
-//                       Padding(
-//                         padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//                         child: Container(
-//                           width: double.infinity,
-//                           padding: const EdgeInsets.symmetric(horizontal: 16.0),
-//                           decoration: BoxDecoration(
-//                             color: Colors.white,
-//                             borderRadius: BorderRadius.circular(12),
-//                             border: Border.all(color: Colors.grey[300]!),
-//                           ),
-//                           child: DropdownButtonHideUnderline(
-//                             child: DropdownButton<String>(
-//                               value: selectedMonth,
-//                               isExpanded: true,
-//                               items: sortedMonths.map((String month) {
-//                                 return DropdownMenuItem<String>(
-//                                   value: month,
-//                                   child: Text(
-//                                     month,
-//                                     style: GoogleFonts.poppins(),
-//                                   ),
-//                                 );
-//                               }).toList(),
-//                               onChanged: (String? newValue) {
-//                                 if (newValue != null) {
-//                                   setState(() => selectedMonth = newValue);
-//                                 }
-//                               },
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-
-//                       // Stats Cards
-//                       if (selectedMonth != null) ...[
-//                         Padding(
-//                           padding: const EdgeInsets.all(16.0),
-//                           child: Row(
-//                             children: [
-//                               Expanded(
-//                                 child: _buildStatsCard(
-//                                   'Revenue',
-//                                   '₹${NumberFormat('#,##,###.##').format(monthlyRevenues[selectedMonth] ?? 0)}',
-//                                   Icons.account_balance_wallet,
-//                                   Colors.blue,
-//                                 ),
-//                               ),
-//                               const SizedBox(width: 16),
-//                               Expanded(
-//                                 child: _buildStatsCard(
-//                                   'Transactions',
-//                                   '${monthlyTransactions[selectedMonth] ?? 0}',
-//                                   Icons.receipt_long,
-//                                   Colors.green,
-//                                 ),
-//                               ),
-//                             ],
-//                           ),
-//                         ),
-//                       ],
-
-//                       // Chart or Table
-//                       if (showChart)
-//                         _buildRevenueChart(sortedMonths, monthlyRevenues)
-//                       else
-//                         _buildRevenueTable(sortedMonths, monthlyRevenues, monthlyTransactions),
-//                     ],
-//                   ),
-//                 ),
-//               );
-//             },
-//           );
-//         },
-//       ),
-//     );
-//   }
-
-//   // ... [Keep all the existing helper methods like _buildStatsCard, _buildRevenueChart, _buildRevenueTable]
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return _buildMonthlyRevenueSection();
-//   }
-// }

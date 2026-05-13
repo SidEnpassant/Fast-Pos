@@ -1,14 +1,20 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:inventopos/core/utils/date_picker_utils.dart';
+import 'package:inventopos/domain/repositories/bills_repository.dart';
+import 'package:inventopos/presentation/transactions/cubit/incomplete_transactions_cubit.dart';
+import 'package:inventopos/presentation/transactions/cubit/incomplete_transactions_state.dart';
 import 'package:inventopos/supabase_mappers.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class IncompleteTransactionsScreen extends StatefulWidget {
-  const IncompleteTransactionsScreen({Key? key}) : super(key: key);
+  const IncompleteTransactionsScreen({super.key});
 
   @override
   _IncompleteTransactionsScreenState createState() =>
@@ -18,9 +24,6 @@ class IncompleteTransactionsScreen extends StatefulWidget {
 class _IncompleteTransactionsScreenState
     extends State<IncompleteTransactionsScreen> {
   final TextEditingController _searchController = TextEditingController();
-  String searchQuery = '';
-  bool isSearching = false;
-  DateTime? selectedDate;
 
   @override
   void dispose() {
@@ -30,185 +33,181 @@ class _IncompleteTransactionsScreenState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: isSearching
-            ? _buildSearchField()
-            : Text(
-                'Pending Transactions',
-                style: GoogleFonts.poppins(
-                  fontWeight: FontWeight.w600,
+    return BlocProvider(
+      create: (_) =>
+          IncompleteTransactionsCubit(context.read<BillsRepository>()),
+      child: Builder(
+        builder: (blocContext) {
+          return BlocBuilder<IncompleteTransactionsCubit,
+              IncompleteTransactionsViewState>(
+            builder: (context, txState) {
+              return Scaffold(
+                appBar: AppBar(
+                  title: txState.isSearching
+                      ? _buildSearchField(blocContext)
+                      : Align(
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          'Pending Transactions',
+                          style: GoogleFonts.poppins(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ),
+                  actions: [
+                    IconButton(
+                      icon: Icon(txState.isSearching ? Icons.close : Icons.search),
+                      onPressed: () {
+                        if (txState.isSearching) {
+                          _searchController.clear();
+                        }
+                        blocContext
+                            .read<IncompleteTransactionsCubit>()
+                            .toggleSearchMode();
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today),
+                      onPressed: () async {
+                        final lastSelectable = DateTime.now();
+                        final firstSelectable = DateTime(2000);
+                        DateTime? pickedDate = await showDatePicker(
+                          context: blocContext,
+                          initialDate: DatePickerUtils.clampInitial(
+                            preferred: txState.selectedDate,
+                            fallback: lastSelectable,
+                            first: firstSelectable,
+                            last: lastSelectable,
+                          ),
+                          firstDate: firstSelectable,
+                          lastDate: lastSelectable,
+                        );
+
+                        if (pickedDate != null) {
+                          blocContext
+                              .read<IncompleteTransactionsCubit>()
+                              .setSelectedDate(pickedDate);
+                        }
+                      },
+                    ),
+                  ],
                 ),
-              ),
-        actions: [
-          IconButton(
-            icon: Icon(isSearching ? Icons.close : Icons.search),
-            onPressed: () {
-              setState(() {
-                isSearching = !isSearching;
-                if (!isSearching) {
-                  _searchController.clear();
-                  searchQuery = '';
-                }
-              });
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.calendar_today),
-            onPressed: () async {
-              DateTime? pickedDate = await showDatePicker(
-                context: context,
-                initialDate: selectedDate ?? DateTime.now(),
-                firstDate: DateTime(2000),
-                lastDate: DateTime.now(),
+                body: Builder(
+                  builder: (bodyContext) {
+                    final user = Supabase.instance.client.auth.currentUser;
+                    if (user == null) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Please login to view transactions'),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () {
+                                bodyContext.go('/login');
+                              },
+                              child: const Text('Go to Login'),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    _checkForOverdueTransactions(user.id);
+
+                    if (txState.rawBillRows.isEmpty) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    final partialRows = txState.rawBillRows
+                        .where((r) => r['payment_status'] == 'partial')
+                        .toList();
+
+                    if (partialRows.isEmpty) {
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.payment,
+                                size: 64, color: Colors.grey[400]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'No pending payments',
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: Colors.grey[600],
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }
+
+                    final filteredBills = partialRows.where((row) {
+                      final data = SupabaseMappers.billFromRow(row);
+                      final customerName = data['customerName'] as String;
+                      return customerName
+                          .toLowerCase()
+                          .contains(txState.searchQuery);
+                    }).toList();
+
+                    final dateFilteredBills = txState.selectedDate != null
+                        ? filteredBills.where((row) {
+                            final data = SupabaseMappers.billFromRow(row);
+                            final createdAt = data['createdAt'] as DateTime;
+                            return DateFormat('yyyy-MM-dd').format(createdAt) ==
+                                DateFormat('yyyy-MM-dd')
+                                    .format(txState.selectedDate!);
+                          }).toList()
+                        : filteredBills;
+
+                    final Map<String, List<Map<String, dynamic>>> groupedBills =
+                        {};
+                    for (final row in dateFilteredBills) {
+                      final data = SupabaseMappers.billFromRow(row);
+                      final date = DateFormat('yyyy-MM-dd')
+                          .format(data['createdAt'] as DateTime);
+                      groupedBills.putIfAbsent(date, () => []);
+                      groupedBills[date]!.add(row);
+                    }
+
+                    return ListView.builder(
+                      itemCount: groupedBills.length,
+                      itemBuilder: (context, index) {
+                        final date = groupedBills.keys.elementAt(index);
+                        final bills = groupedBills[date]!;
+
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Text(
+                                DateFormat('MMMM dd, yyyy')
+                                    .format(DateTime.parse(date)),
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            ...bills.map((row) {
+                              final data = SupabaseMappers.billFromRow(row);
+                              final id = row['id'] as String;
+                              return _buildBillCard(context, id, data);
+                            }).toList(),
+                          ],
+                        );
+                      },
+                    );
+                  },
+                ),
               );
-
-              if (pickedDate != null) {
-                setState(() {
-                  selectedDate = pickedDate;
-                });
-              }
             },
-          ),
-        ],
-      ),
-      body: Builder(
-        builder: (context) {
-          final user = Supabase.instance.client.auth.currentUser;
-          if (user == null) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('Please login to view transactions'),
-                  const SizedBox(height: 16),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.of(context).pushReplacementNamed('/login');
-                    },
-                    child: const Text('Go to Login'),
-                  ),
-                ],
-              ),
-            );
-          }
-
-          return _buildBody(user.id);
+          );
         },
       ),
-    );
-  }
-
-  Widget _buildBody(String userId) {
-    // Check for overdue transactions and create notifications
-    _checkForOverdueTransactions(userId);
-
-    return StreamBuilder<List<Map<String, dynamic>>>(
-      stream: Supabase.instance.client
-          .from('bills')
-          .stream(primaryKey: ['id']).eq('user_id', userId),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting &&
-            !snapshot.hasData) {
-          return const Center(child: CircularProgressIndicator());
-        }
-
-        if (snapshot.hasError) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.red,
-                  size: 60,
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Error: ${snapshot.error}',
-                  style: const TextStyle(color: Colors.red),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final partialRows = (snapshot.data ?? [])
-            .where((r) => r['payment_status'] == 'partial')
-            .toList();
-
-        if (partialRows.isEmpty) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.payment, size: 64, color: Colors.grey[400]),
-                const SizedBox(height: 16),
-                Text(
-                  'No pending payments',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Colors.grey[600],
-                  ),
-                ),
-              ],
-            ),
-          );
-        }
-
-        final filteredBills = partialRows.where((row) {
-          final data = SupabaseMappers.billFromRow(row);
-          final customerName = data['customerName'] as String;
-          return customerName.toLowerCase().contains(searchQuery);
-        }).toList();
-
-        final dateFilteredBills = selectedDate != null
-            ? filteredBills.where((row) {
-                final data = SupabaseMappers.billFromRow(row);
-                final createdAt = data['createdAt'] as DateTime;
-                return DateFormat('yyyy-MM-dd').format(createdAt) ==
-                    DateFormat('yyyy-MM-dd').format(selectedDate!);
-              }).toList()
-            : filteredBills;
-
-        final Map<String, List<Map<String, dynamic>>> groupedBills = {};
-        for (final row in dateFilteredBills) {
-          final data = SupabaseMappers.billFromRow(row);
-          final date = DateFormat('yyyy-MM-dd')
-              .format(data['createdAt'] as DateTime);
-          groupedBills.putIfAbsent(date, () => []);
-          groupedBills[date]!.add(row);
-        }
-
-        return ListView.builder(
-          itemCount: groupedBills.length,
-          itemBuilder: (context, index) {
-            final date = groupedBills.keys.elementAt(index);
-            final bills = groupedBills[date]!;
-
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Text(
-                    DateFormat('MMMM dd, yyyy').format(DateTime.parse(date)),
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                ...bills.map((row) {
-                  final data = SupabaseMappers.billFromRow(row);
-                  final id = row['id'] as String;
-                  return _buildBillCard(context, id, data);
-                }).toList(),
-              ],
-            );
-          },
-        );
-      },
     );
   }
 
@@ -367,7 +366,7 @@ class _IncompleteTransactionsScreenState
     }
   }
 
-  Widget _buildSearchField() {
+  Widget _buildSearchField(BuildContext blocContext) {
     return TextField(
       controller: _searchController,
       decoration: const InputDecoration(
@@ -375,9 +374,9 @@ class _IncompleteTransactionsScreenState
         border: InputBorder.none,
       ),
       onChanged: (value) {
-        setState(() {
-          searchQuery = value.toLowerCase();
-        });
+        blocContext
+            .read<IncompleteTransactionsCubit>()
+            .setSearchQuery(value.toLowerCase());
       },
     );
   }
@@ -394,20 +393,6 @@ class _IncompleteTransactionsScreenState
     await Supabase.instance.client.from('bills').update({
       'paid_amount': newPaidAmount,
       'payment_status': newPaidAmount >= totalAmount ? 'complete' : 'partial',
-      'last_updated': DateTime.now().toUtc().toIso8601String(),
-    }).eq('id', billId);
-  }
-
-  Future<void> _markAsFullyPaid(
-    BuildContext context,
-    String billId,
-    Map<String, dynamic> billData,
-  ) async {
-    final totalAmount = (billData['totalAmount'] as num).toDouble();
-
-    await Supabase.instance.client.from('bills').update({
-      'paid_amount': totalAmount,
-      'payment_status': 'complete',
       'last_updated': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', billId);
   }
