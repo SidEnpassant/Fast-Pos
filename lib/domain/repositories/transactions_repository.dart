@@ -5,4 +5,11 @@ abstract class TransactionsRepository {
     DateTime? endDate,
     String? searchQuery,
   });
+
+  /// Inserts a transaction row linked to the current business user.
+  Future<void> recordBillTransaction({
+    required String customerName,
+    required double amount,
+    required bool isComplete,
+  });
 }

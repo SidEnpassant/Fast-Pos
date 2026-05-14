@@ -1,3 +1,6 @@
+import 'package:inventopos/core/supabase/guard_supabase_postgres_stream.dart';
+import 'package:inventopos/data/mappers/pos_notification_mapper.dart';
+import 'package:inventopos/domain/entities/pos_notification.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -8,10 +11,16 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   final SupabaseClient _client;
 
   @override
-  Stream<List<Map<String, dynamic>>> watchNotifications(String userId) {
-    return _client
-        .from('notifications')
-        .stream(primaryKey: ['id']).eq('user_id', userId);
+  Stream<List<PosNotification>> watchNotifications(String userId) {
+    return guardSupabasePostgresStream(
+      _client
+          .from('notifications')
+          .stream(primaryKey: ['id'])
+          .eq('user_id', userId)
+          .map(
+            (rows) => rows.map(PosNotificationMapper.fromSupabaseRow).toList(),
+          ),
+    );
   }
 
   @override

@@ -2,32 +2,53 @@ import 'dart:async';
 
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
-import 'package:inventopos/presentation/transactions/cubit/complete_transactions_cubit.dart';
-import 'package:inventopos/presentation/transactions/cubit/complete_transactions_state.dart';
+import 'package:inventopos/presentation/transactions/bloc/complete_transac_bloc/complete_transactions_bloc.dart';
+import 'package:inventopos/presentation/transactions/bloc/complete_transac_bloc/complete_transactions_event.dart';
+import 'package:inventopos/presentation/transactions/bloc/complete_transac_bloc/complete_transactions_state.dart';
 
 class _StubBillsRepo implements BillsRepository {
   _StubBillsRepo(this._stream);
 
-  final Stream<List<Map<String, dynamic>>> _stream;
+  final Stream<List<Bill>> _stream;
 
   @override
-  Stream<List<Map<String, dynamic>>> watchBillsForCurrentUser() => _stream;
+  Stream<List<Bill>> watchBillsForCurrentUser() => _stream;
+
+  @override
+  Future<String> createBill({
+    required String businessName,
+    required String customerName,
+    required String customerPhone,
+    required List<Map<String, dynamic>> productsJson,
+    required double totalAmount,
+    required double paidAmount,
+    required String paymentMethod,
+    required String paymentStatus,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<String> nextBillSequenceNumber() => throw UnimplementedError();
 }
 
 void main() {
-  group('CompleteTransactionsCubit', () {
-    late StreamController<List<Map<String, dynamic>>> sc;
+  group('CompleteTransactionsBloc', () {
+    late StreamController<List<Bill>> sc;
 
-    setUp(() => sc = StreamController<List<Map<String, dynamic>>>.broadcast());
+    setUp(() => sc = StreamController<List<Bill>>.broadcast());
     tearDown(() async {
       await sc.close();
     });
 
-    blocTest<CompleteTransactionsCubit, CompleteTransactionsViewState>(
+    blocTest<CompleteTransactionsBloc, CompleteTransactionsViewState>(
       'setSearchQuery updates state',
-      build: () => CompleteTransactionsCubit(_StubBillsRepo(sc.stream)),
-      act: (c) => c.setSearchQuery('acme'),
+      build: () => CompleteTransactionsBloc(
+        ObserveBillsUseCase(_StubBillsRepo(sc.stream)),
+      ),
+      act: (b) => b.add(const CompleteSearchQueryChanged('acme')),
       expect: () => [
         const CompleteTransactionsViewState(searchQuery: 'acme'),
       ],

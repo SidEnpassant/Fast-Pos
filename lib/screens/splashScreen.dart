@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:inventopos/screens/login/loginScreen.dart';
+import 'package:inventopos/presentation/auth_login/view/loginScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Legacy splash using Supabase stream directly.

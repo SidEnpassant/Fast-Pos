@@ -1,6 +1,8 @@
+import 'package:inventopos/domain/entities/pos_notification.dart';
+
 /// Notifications for a given user id.
 abstract class NotificationsRepository {
-  Stream<List<Map<String, dynamic>>> watchNotifications(String userId);
+  Stream<List<PosNotification>> watchNotifications(String userId);
 
   Future<void> deleteNotification(String id);
 }

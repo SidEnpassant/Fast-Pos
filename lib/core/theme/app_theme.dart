@@ -13,7 +13,7 @@ abstract final class AppTheme {
     return ThemeData(
       useMaterial3: true,
       colorScheme: colorScheme,
-      scaffoldBackgroundColor: Colors.grey[100],
+      scaffoldBackgroundColor: colorScheme.surfaceContainerLowest,
       textTheme: textTheme,
       appBarTheme: AppBarTheme(
         elevation: 0,
@@ -34,12 +34,12 @@ abstract final class AppTheme {
         height: 72,
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         indicatorColor: colorScheme.primaryContainer,
-        backgroundColor: Colors.grey[100],
+        backgroundColor: colorScheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
         elevation: 8,
       ),
       navigationRailTheme: NavigationRailThemeData(
-        backgroundColor: Colors.grey[100],
+        backgroundColor: colorScheme.surfaceContainerLowest,
         indicatorColor: colorScheme.primaryContainer,
         labelType: NavigationRailLabelType.all,
       ),

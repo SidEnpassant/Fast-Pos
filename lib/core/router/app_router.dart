@@ -1,51 +1,70 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inventopos/domain/repositories/bills_repository.dart';
+import 'package:inventopos/application/auth/request_password_reset_use_case.dart';
+import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/application/billing/submit_bill_use_case.dart';
+import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
+import 'package:inventopos/application/registration/register_account_use_case.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
-import 'package:inventopos/presentation/analytics/cubit/analytics_cubit.dart';
-import 'package:inventopos/presentation/auth/cubit/auth_cubit.dart';
-import 'package:inventopos/presentation/auth/cubit/auth_flow_state.dart';
-import 'package:inventopos/presentation/dashboard/cubit/dashboard_cubit.dart';
-import 'package:inventopos/presentation/notifications/cubit/notifications_cubit.dart';
+import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
+import 'package:inventopos/presentation/account/view/myAccount.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
+import 'package:inventopos/presentation/analytics/view/MonthlyRevenueAnalysis.dart';
+import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
+import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
+import 'package:inventopos/presentation/auth_login/view/loginScreen.dart';
+import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
+import 'package:inventopos/presentation/billing/bloc/bill_submission_bloc.dart';
+import 'package:inventopos/presentation/billing/view/bill_generation_page.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_bloc.dart';
+import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
+import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
+import 'package:inventopos/presentation/forgot_password/view/forgot_password_page.dart';
+import 'package:inventopos/presentation/notifications/bloc/notifications_bloc.dart';
+import 'package:inventopos/presentation/notifications/view/notificationsScreen.dart';
+import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
+import 'package:inventopos/presentation/register/view/register_screen.dart';
+import 'package:inventopos/presentation/registration_success/bloc/registration_success_bloc.dart';
+import 'package:inventopos/presentation/registration_success/view/registration_success_screen.dart';
 import 'package:inventopos/presentation/shell/view/shell_page.dart';
-import 'package:inventopos/screens/Account/myAccount.dart';
-import 'package:inventopos/screens/Authentication/EmailVerificationScreen.dart';
-import 'package:inventopos/screens/Authentication/forgotPassword.dart';
-import 'package:inventopos/screens/Bill/BillGenerationScreen.dart';
-import 'package:inventopos/screens/Dashboard/DashboardScreen.dart';
-import 'package:inventopos/screens/Dashboard/MonthlyRevenueAnalysis.dart';
-import 'package:inventopos/screens/Notification/notificationsScreen.dart';
-import 'package:inventopos/screens/Transactions/CompleteTransactionsScreen.dart';
-import 'package:inventopos/screens/Transactions/IncompleteTransactionsScreen.dart';
-import 'package:inventopos/screens/login/loginScreen.dart';
-import 'package:inventopos/screens/register/signUpScreen.dart';
+import 'package:inventopos/presentation/transactions/view/complete_transaction/CompleteTransactionsScreen.dart';
+import 'package:inventopos/presentation/transactions/view/incomplete_transaction/IncompleteTransactionsScreen.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Root navigator for full-screen routes that sit above the tab shell.
 final GlobalKey<NavigatorState> appRootNavigatorKey =
     GlobalKey<NavigatorState>(debugLabel: 'root');
 
-/// Notifies [GoRouter] when [AuthCubit] emits so [redirect] re-runs.
+/// Notifies [GoRouter] when [AuthBloc] emits so [redirect] re-runs.
 class AuthRouterRefresh extends ChangeNotifier {
-  AuthRouterRefresh(this._authCubit) {
-    _subscription = _authCubit.stream.listen((_) => notifyListeners());
+  AuthRouterRefresh(this._authBloc) {
+    _subscription = _authBloc.stream.listen((_) {
+      // Defer so [GoRouter] does not refresh during another widget's build or
+      // during router delegate updates (avoids setState-during-build asserts).
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (!_disposed) notifyListeners();
+      });
+    });
   }
 
-  final AuthCubit _authCubit;
+  final AuthBloc _authBloc;
   late final StreamSubscription<AuthFlowState> _subscription;
+  bool _disposed = false;
 
   @override
   void dispose() {
+    _disposed = true;
     _subscription.cancel();
     super.dispose();
   }
 }
 
-GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
+GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
   return GoRouter(
     navigatorKey: appRootNavigatorKey,
     initialLocation: '/',
@@ -115,20 +134,30 @@ GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
       GoRoute(
         path: '/signup',
         parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) => const RegisterScreen(),
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => RegisterBloc(ctx.read<RegisterAccountUseCase>()),
+          child: const RegisterScreen(),
+        ),
       ),
       GoRoute(
         path: '/forgot-password',
         parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) => const ForgotPassword(),
+        builder: (context, state) => BlocProvider(
+          create: (ctx) =>
+              ForgotPasswordBloc(ctx.read<RequestPasswordResetUseCase>()),
+          child: const ForgotPassword(),
+        ),
       ),
       GoRoute(
         path: '/verify-email',
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) {
           final email = state.extra as String? ?? '';
-          return RegistrationSuccessScreen(
-            email: email.isEmpty ? 'your email' : email,
+          return BlocProvider(
+            create: (_) => RegistrationSuccessBloc(),
+            child: RegistrationSuccessScreen(
+              email: email.isEmpty ? 'your email' : email,
+            ),
           );
         },
       ),
@@ -152,8 +181,8 @@ GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
               GoRoute(
                 path: '/app/dashboard',
                 builder: (context, state) => BlocProvider(
-                  create: (ctx) => DashboardCubit(
-                    ctx.read<BillsRepository>(),
+                  create: (ctx) => DashboardBloc(
+                    ctx.read<ObserveBillsUseCase>(),
                     ctx.read<ProfileRepository>(),
                   ),
                   child: const DashboardScreen(),
@@ -166,7 +195,8 @@ GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
               GoRoute(
                 path: '/app/analysis',
                 builder: (context, state) => BlocProvider(
-                  create: (ctx) => AnalyticsCubit(ctx.read<BillsRepository>()),
+                  create: (ctx) =>
+                      AnalyticsBloc(ctx.read<ObserveBillsUseCase>()),
                   child: const MonthlyRevenueAnalysis(),
                 ),
               ),
@@ -176,7 +206,15 @@ GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
             routes: [
               GoRoute(
                 path: '/app/new-bill',
-                builder: (context, state) => const BillGenerationScreen(),
+                builder: (context, state) => BlocProvider(
+                  create: (ctx) => BillSubmissionBloc(
+                    ctx.read<SubmitBillUseCase>(),
+                  ),
+                  child: BlocProvider(
+                    create: (_) => BillDraftBloc(),
+                    child: const BillGenerationPage(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -185,14 +223,15 @@ GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
               GoRoute(
                 path: '/app/notifications',
                 builder: (context, state) {
-                  final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+                  final uid =
+                      Supabase.instance.client.auth.currentUser?.id ?? '';
                   if (uid.isEmpty) {
                     return const Scaffold(
                       body: Center(child: Text('Please log in')),
                     );
                   }
                   return BlocProvider(
-                    create: (ctx) => NotificationsCubit(
+                    create: (ctx) => NotificationsBloc(
                       ctx.read<NotificationsRepository>(),
                       uid,
                     ),
@@ -206,7 +245,12 @@ GoRouter createAppRouter(AuthCubit auth, Listenable refresh) {
             routes: [
               GoRoute(
                 path: '/app/profile',
-                builder: (context, state) => const MyAccountPage(),
+                builder: (context, state) => BlocProvider(
+                  create: (ctx) => AccountBloc(
+                    ctx.read<ObserveProfileForCurrentUserUseCase>(),
+                  ),
+                  child: const MyAccountPage(),
+                ),
               ),
             ],
           ),
