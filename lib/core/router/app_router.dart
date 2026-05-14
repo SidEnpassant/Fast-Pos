@@ -5,10 +5,14 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/application/auth/request_password_reset_use_case.dart';
+import 'package:inventopos/application/auth/sign_in_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/billing/submit_bill_use_case.dart';
 import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
+import 'package:inventopos/application/profile/patch_account_profile_field_use_case.dart';
+import 'package:inventopos/application/profile/replace_account_signature_use_case.dart';
 import 'package:inventopos/application/registration/register_account_use_case.dart';
+import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
@@ -17,6 +21,7 @@ import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
 import 'package:inventopos/presentation/analytics/view/MonthlyRevenueAnalysis.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
+import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
 import 'package:inventopos/presentation/auth_login/view/loginScreen.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_submission_bloc.dart';
@@ -34,7 +39,6 @@ import 'package:inventopos/presentation/registration_success/view/registration_s
 import 'package:inventopos/presentation/shell/view/shell_page.dart';
 import 'package:inventopos/presentation/transactions/view/complete_transaction/CompleteTransactionsScreen.dart';
 import 'package:inventopos/presentation/transactions/view/incomplete_transaction/IncompleteTransactionsScreen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Root navigator for full-screen routes that sit above the tab shell.
 final GlobalKey<NavigatorState> appRootNavigatorKey =
@@ -129,7 +133,10 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
       GoRoute(
         path: '/login',
         parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) => const LoginScreen(),
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => LoginBloc(ctx.read<SignInUseCase>()),
+          child: const LoginScreen(),
+        ),
       ),
       GoRoute(
         path: '/signup',
@@ -224,7 +231,8 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                 path: '/app/notifications',
                 builder: (context, state) {
                   final uid =
-                      Supabase.instance.client.auth.currentUser?.id ?? '';
+                      context.read<AuthRepository>().currentSession?.userId ??
+                          '';
                   if (uid.isEmpty) {
                     return const Scaffold(
                       body: Center(child: Text('Please log in')),
@@ -248,6 +256,10 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                 builder: (context, state) => BlocProvider(
                   create: (ctx) => AccountBloc(
                     ctx.read<ObserveProfileForCurrentUserUseCase>(),
+                    ctx.read<PatchAccountProfileFieldUseCase>(),
+                    ctx.read<ReplaceAccountSignatureUseCase>(),
+                    ctx.read<ProfileRepository>(),
+                    ctx.read<AuthRepository>(),
                   ),
                   child: const MyAccountPage(),
                 ),

@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:inventopos/core/supabase/guard_supabase_postgres_stream.dart';
 import 'package:inventopos/data/mappers/bill_mapper.dart';
 import 'package:inventopos/domain/entities/bill.dart';
@@ -67,5 +69,60 @@ class BillsRepositoryImpl implements BillsRepository {
       params: {'p_user_id': user.id},
     );
     return n.toString();
+  }
+
+  @override
+  Future<List<Bill>> fetchPartialBillsForUser(String userId) async {
+    final rows = await _client
+        .from('bills')
+        .select()
+        .eq('user_id', userId)
+        .eq('payment_status', 'partial');
+    return (rows as List<dynamic>)
+        .map((e) => BillMapper.fromSupabaseRow(Map<String, dynamic>.from(e as Map)))
+        .toList();
+  }
+
+  @override
+  Future<void> replaceSignedBillFromLocalFile({
+    required String billId,
+    required String localFilePath,
+  }) async {
+    final bucket = _client.storage.from('signed_bills');
+    try {
+      await bucket.remove(['$billId.jpg']);
+    } catch (_) {}
+    await bucket.upload(
+      '$billId.jpg',
+      File(localFilePath),
+      fileOptions: const FileOptions(upsert: true),
+    );
+    final downloadUrl = bucket.getPublicUrl('$billId.jpg');
+    await _client.from('bills').update({
+      'signed_bill_url': downloadUrl,
+      'last_signed_bill_update': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', billId);
+  }
+
+  @override
+  Future<void> deleteBillById(String billId) async {
+    try {
+      await _client.storage.from('signed_bills').remove(['$billId.jpg']);
+    } catch (_) {}
+    await _client.from('bills').delete().eq('id', billId);
+  }
+
+  @override
+  Future<void> updateBillPayment({
+    required String billId,
+    required double newPaidAmount,
+    required double totalAmount,
+  }) async {
+    await _client.from('bills').update({
+      'paid_amount': newPaidAmount,
+      'payment_status':
+          newPaidAmount >= totalAmount ? 'complete' : 'partial',
+      'last_updated': DateTime.now().toUtc().toIso8601String(),
+    }).eq('id', billId);
   }
 }

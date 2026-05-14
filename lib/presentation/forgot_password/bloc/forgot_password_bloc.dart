@@ -1,8 +1,8 @@
 import 'package:bloc/bloc.dart';
 import 'package:inventopos/application/auth/request_password_reset_use_case.dart';
+import 'package:inventopos/domain/auth/auth_operation_failure.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_event.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ForgotPasswordBloc
     extends Bloc<ForgotPasswordEvent, ForgotPasswordState> {
@@ -23,7 +23,7 @@ class ForgotPasswordBloc
     try {
       await _requestPasswordReset(event.email.trim());
       emit(state.copyWith(status: ForgotPasswordStatus.success));
-    } on AuthException catch (e) {
+    } on AuthOperationFailure catch (e) {
       final msg = e.message;
       if (msg.contains('User not found') ||
           msg.toLowerCase().contains('not found')) {

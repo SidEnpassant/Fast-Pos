@@ -91,7 +91,8 @@ class BillGenerationDropdownField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return DropdownButtonFormField<String>(
-      value: value,
+      key: ValueKey<String>(value),
+      initialValue: value,
       decoration: billGenerationInputDecoration(label, prefixIcon),
       items: items.entries
           .map(

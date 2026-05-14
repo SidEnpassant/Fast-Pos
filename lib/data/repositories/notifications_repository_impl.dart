@@ -27,4 +27,16 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   Future<void> deleteNotification(String id) async {
     await _client.from('notifications').delete().eq('id', id);
   }
+
+  @override
+  Future<void> insertPaymentDueNotification({
+    required String userId,
+    required String customerName,
+  }) async {
+    await _client.from('notifications').insert({
+      'user_id': userId,
+      'message': 'You have a payment due for $customerName.',
+      'is_read': false,
+    });
+  }
 }

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/app/app_providers.dart';
-import 'package:inventopos/application/auth/sign_in_use_case.dart';
 import 'package:inventopos/application/auth/sign_out_use_case.dart';
 import 'package:inventopos/core/router/app_router.dart';
 import 'package:inventopos/core/theme/app_theme.dart';
@@ -16,7 +15,6 @@ Widget fastPosRoot() {
     child: BlocProvider(
       create: (c) => AuthBloc(
         c.read<AuthRepository>(),
-        c.read<SignInUseCase>(),
         c.read<SignOutUseCase>(),
       ),
       child: const FastPosApp(),

@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/auth_login/view/loginScreen.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Legacy splash using Supabase stream directly.
-/// Prefer the app entry in [main.dart] with go_router.
-
+/// Splash gate driven by [AuthRepository.sessionStream] (no Supabase in the widget).
+///
+/// Provide [AuthRepository] above this widget (same tree as [fastPosRoot]).
 class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final auth = context.read<AuthRepository>();
     return Scaffold(
       body: Center(
-        child: StreamBuilder<AuthState>(
-          stream: Supabase.instance.client.auth.onAuthStateChange,
+        child: StreamBuilder(
+          stream: auth.sessionStream,
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting &&
-                Supabase.instance.client.auth.currentSession == null) {
+                auth.currentSession == null) {
               return const CircularProgressIndicator();
             }
-            final session = snapshot.data?.session ??
-                Supabase.instance.client.auth.currentSession;
+            final session = snapshot.data ?? auth.currentSession;
             if (session != null) {
               return const Scaffold(
                 body: Center(

@@ -8,7 +8,7 @@ sealed class AccountEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class AccountProfilesReceived extends AccountEvent {
+final class AccountProfilesReceived extends AccountEvent {
   const AccountProfilesReceived(this.profiles);
 
   final List<UserProfile> profiles;
@@ -17,7 +17,7 @@ class AccountProfilesReceived extends AccountEvent {
   List<Object?> get props => [profiles];
 }
 
-class AccountFieldPatched extends AccountEvent {
+final class AccountFieldPatched extends AccountEvent {
   const AccountFieldPatched(this.field, this.value);
 
   final String field;
@@ -27,6 +27,32 @@ class AccountFieldPatched extends AccountEvent {
   List<Object?> get props => [field, value];
 }
 
-class AccountNoSession extends AccountEvent {
+final class AccountPatchFieldRequested extends AccountEvent {
+  const AccountPatchFieldRequested({
+    required this.fieldKey,
+    required this.value,
+  });
+
+  final String fieldKey;
+  final String value;
+
+  @override
+  List<Object?> get props => [fieldKey, value];
+}
+
+final class AccountReplaceSignatureRequested extends AccountEvent {
+  const AccountReplaceSignatureRequested(this.localFilePath);
+
+  final String localFilePath;
+
+  @override
+  List<Object?> get props => [localFilePath];
+}
+
+final class AccountUiFeedbackConsumed extends AccountEvent {
+  const AccountUiFeedbackConsumed();
+}
+
+final class AccountNoSession extends AccountEvent {
   const AccountNoSession();
 }

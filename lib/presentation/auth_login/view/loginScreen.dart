@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
-import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
-import 'package:inventopos/presentation/auth_login/view/login_controller.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
+import 'package:inventopos/presentation/auth_login/bloc/login_event.dart';
+import 'package:inventopos/presentation/auth_login/bloc/login_state.dart';
+import 'package:inventopos/presentation/auth_login/widgets/login_branding_header.dart';
+import 'package:inventopos/presentation/auth_login/widgets/login_credentials_fields.dart';
+import 'package:inventopos/presentation/auth_login/widgets/login_register_prompt.dart';
+import 'package:inventopos/presentation/auth_login/widgets/login_submit_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,179 +17,85 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final controller = LoginController();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   @override
   void dispose() {
-    controller.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
   void _submit() {
-    if (!controller.formKey.currentState!.validate()) return;
-    context.read<AuthBloc>().signInWithPassword(
-          email: controller.emailController.text.trim(),
-          password: controller.passwordController.text,
+    context.read<LoginBloc>().add(
+          LoginSubmitted(
+            email: _emailController.text,
+            password: _passwordController.text,
+          ),
         );
   }
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<AuthBloc, AuthFlowState>(
-      listenWhen: (prev, curr) =>
-          curr.errorMessage != null && curr.errorMessage != prev.errorMessage,
+    return BlocConsumer<LoginBloc, LoginState>(
+      listenWhen: (p, c) =>
+          c.errorMessage != null && c.errorMessage != p.errorMessage,
       listener: (context, state) {
         final msg = state.errorMessage;
         if (msg != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text(msg)),
           );
+          context.read<LoginBloc>().add(const LoginUiMessageConsumed());
         }
       },
-      child: Scaffold(
-        backgroundColor: Colors.white,
-        body: SafeArea(
-          child: SingleChildScrollView(
-            child: Padding(
+      builder: (context, state) {
+        return Scaffold(
+          backgroundColor: Colors.white,
+          body: SafeArea(
+            child: SingleChildScrollView(
               padding: const EdgeInsets.all(24.0),
-              child: Form(
-                key: controller.formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const SizedBox(height: 50),
-                    Center(
-                      child: Text(
-                        'FastPOS',
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const LoginBrandingHeader(),
+                  LoginCredentialsFields(
+                    emailController: _emailController,
+                    passwordController: _passwordController,
+                    obscurePassword: state.obscurePassword,
+                    onToggleObscure: () => context
+                        .read<LoginBloc>()
+                        .add(const LoginObscurePasswordToggled()),
+                    emailError: state.emailError,
+                    passwordError: state.passwordError,
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => context.push('/forgot-password'),
+                      child: const Text(
+                        'Forgot Password?',
                         style: TextStyle(
-                          fontSize: 40,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).colorScheme.primary,
+                          color: Colors.grey,
+                          fontStyle: FontStyle.italic,
                         ),
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Center(
-                      child: Text(
-                        'Welcome back!',
-                        style: TextStyle(
-                          fontSize: 20,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 50),
-                    TextFormField(
-                      controller: controller.emailController,
-                      decoration: InputDecoration(
-                        labelText: 'Email',
-                        prefixIcon: const Icon(Icons.email_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      validator: controller.validateEmail,
-                    ),
-                    const SizedBox(height: 16),
-                    ValueListenableBuilder<bool>(
-                      valueListenable: controller.obscureTextNotifier,
-                      builder: (context, obscureText, _) {
-                        return TextFormField(
-                          controller: controller.passwordController,
-                          obscureText: obscureText,
-                          decoration: InputDecoration(
-                            labelText: 'Password',
-                            prefixIcon: const Icon(Icons.lock_outline),
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                obscureText
-                                    ? Icons.visibility_off
-                                    : Icons.visibility,
-                              ),
-                              onPressed: controller.togglePasswordVisibility,
-                            ),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          validator: controller.validatePassword,
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Coming soon'),
-                              duration: Duration(seconds: 2),
-                            ),
-                          );
-                        },
-                        child: const Text(
-                          'Forgot Password?',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontStyle: FontStyle.italic,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    BlocBuilder<AuthBloc, AuthFlowState>(
-                      buildWhen: (a, b) =>
-                          a.isSubmitting != b.isSubmitting ||
-                          a.status != b.status,
-                      builder: (context, state) {
-                        final isLoading = state.isSubmitting;
-                        return SizedBox(
-                          width: double.infinity,
-                          height: 50,
-                          child: ElevatedButton(
-                            onPressed: isLoading ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: isLoading
-                                ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.white,
-                                    ),
-                                  )
-                                : const Text(
-                                    'Login',
-                                    style: TextStyle(fontSize: 16),
-                                  ),
-                          ),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text("Don't have an account?"),
-                        TextButton(
-                          onPressed:
-                              controller.goToRegisterScreen(context),
-                          child: const Text('Register'),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 24),
+                  LoginSubmitButton(
+                    isLoading: state.isSubmitting,
+                    onPressed: _submit,
+                  ),
+                  const SizedBox(height: 24),
+                  const LoginRegisterPrompt(),
+                ],
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 }

@@ -5,7 +5,8 @@ import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_event.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_view_state.dart';
 
-class NotificationsBloc extends Bloc<NotificationsEvent, NotificationsViewState> {
+class NotificationsBloc
+    extends Bloc<NotificationsEvent, NotificationsViewState> {
   NotificationsBloc(this._repository, this._userId)
       : super(const NotificationsViewState()) {
     on<NotificationsReceived>(_onReceived);

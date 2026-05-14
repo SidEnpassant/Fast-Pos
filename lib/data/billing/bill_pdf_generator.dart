@@ -124,7 +124,7 @@ class BillPdfGenerator {
                 },
                 children: [
                   pw.TableRow(
-                    decoration: pw.BoxDecoration(
+                    decoration: const pw.BoxDecoration(
                       color: PdfColors.grey300,
                     ),
                     children: [

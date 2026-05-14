@@ -5,4 +5,10 @@ abstract class NotificationsRepository {
   Stream<List<PosNotification>> watchNotifications(String userId);
 
   Future<void> deleteNotification(String id);
+
+  /// Inserts a payment-due style notification row.
+  Future<void> insertPaymentDueNotification({
+    required String userId,
+    required String customerName,
+  });
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
+import 'package:inventopos/presentation/shell/widgets/shell_navigation_config.dart';
 
 /// Signed-in root: adaptive [NavigationBar] / [NavigationRail] around
 /// [StatefulNavigationShell] from [go_router].
@@ -20,34 +21,6 @@ class _ShellScaffold extends StatelessWidget {
 
   final StatefulNavigationShell navigationShell;
 
-  static const _destinations = <NavigationDestination>[
-    NavigationDestination(
-      icon: Icon(Icons.dashboard_customize_outlined),
-      selectedIcon: Icon(Icons.dashboard_customize),
-      label: 'Dashboard',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.analytics_outlined),
-      selectedIcon: Icon(Icons.analytics),
-      label: 'Analysis',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.receipt_outlined),
-      selectedIcon: Icon(Icons.receipt),
-      label: 'New Bill',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.notifications_none_outlined),
-      selectedIcon: Icon(Icons.notifications),
-      label: 'Notifications',
-    ),
-    NavigationDestination(
-      icon: Icon(Icons.person_2_outlined),
-      selectedIcon: Icon(Icons.person_2),
-      label: 'Profile',
-    ),
-  ];
-
   @override
   Widget build(BuildContext context) {
     final index = navigationShell.currentIndex;
@@ -63,33 +36,7 @@ class _ShellScaffold extends StatelessWidget {
               selectedIndex: index,
               onDestinationSelected: onSelect,
               labelType: NavigationRailLabelType.all,
-              destinations: const [
-                NavigationRailDestination(
-                  icon: Icon(Icons.dashboard_customize_outlined),
-                  selectedIcon: Icon(Icons.dashboard_customize),
-                  label: Text('Dashboard'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.analytics_outlined),
-                  selectedIcon: Icon(Icons.analytics),
-                  label: Text('Analysis'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.receipt_outlined),
-                  selectedIcon: Icon(Icons.receipt),
-                  label: Text('New Bill'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.notifications_none_outlined),
-                  selectedIcon: Icon(Icons.notifications),
-                  label: Text('Notifications'),
-                ),
-                NavigationRailDestination(
-                  icon: Icon(Icons.person_2_outlined),
-                  selectedIcon: Icon(Icons.person_2),
-                  label: Text('Profile'),
-                ),
-              ],
+              destinations: ShellNavigationConfig.railDestinations,
             ),
             const VerticalDivider(width: 1, thickness: 1),
             Expanded(child: navigationShell),
@@ -103,7 +50,7 @@ class _ShellScaffold extends StatelessWidget {
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: onSelect,
-        destinations: _destinations,
+        destinations: ShellNavigationConfig.barDestinations,
       ),
     );
   }

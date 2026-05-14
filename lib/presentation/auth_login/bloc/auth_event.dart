@@ -1,5 +1,5 @@
 import 'package:equatable/equatable.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:inventopos/domain/entities/auth_session.dart';
 
 sealed class AuthEvent extends Equatable {
   const AuthEvent();
@@ -11,23 +11,10 @@ sealed class AuthEvent extends Equatable {
 final class AuthSessionChanged extends AuthEvent {
   const AuthSessionChanged(this.session);
 
-  final Session? session;
+  final AuthSession? session;
 
   @override
   List<Object?> get props => [session];
-}
-
-final class AuthLoginSubmitted extends AuthEvent {
-  const AuthLoginSubmitted({
-    required this.email,
-    required this.password,
-  });
-
-  final String email;
-  final String password;
-
-  @override
-  List<Object?> get props => [email, password];
 }
 
 final class AuthSignOutRequested extends AuthEvent {

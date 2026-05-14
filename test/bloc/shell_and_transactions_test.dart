@@ -32,6 +32,28 @@ class _StubBillsRepo implements BillsRepository {
 
   @override
   Future<String> nextBillSequenceNumber() => throw UnimplementedError();
+
+  @override
+  Future<List<Bill>> fetchPartialBillsForUser(String userId) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> replaceSignedBillFromLocalFile({
+    required String billId,
+    required String localFilePath,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> deleteBillById(String billId) => throw UnimplementedError();
+
+  @override
+  Future<void> updateBillPayment({
+    required String billId,
+    required double newPaidAmount,
+    required double totalAmount,
+  }) =>
+      throw UnimplementedError();
 }
 
 void main() {

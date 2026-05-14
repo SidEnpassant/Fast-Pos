@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:intl/intl.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
 import 'package:inventopos/core/widgets/app_section_header.dart';
 import 'package:inventopos/domain/entities/bill.dart';
-import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_state.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_header_bar.dart';
 
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
@@ -21,7 +20,7 @@ class DashboardScreen extends StatelessWidget {
       child: SafeArea(
         child: Column(
           children: [
-            const _DashboardHeaderBar(),
+            const DashboardHeaderBar(),
             Expanded(
               child: SingleChildScrollView(
                 padding: const EdgeInsets.all(16),
@@ -67,83 +66,6 @@ class DashboardScreen extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _DashboardHeaderBar extends StatelessWidget {
-  const _DashboardHeaderBar();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.08),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundColor: theme.colorScheme.primary,
-            child: Icon(Icons.store, color: theme.colorScheme.onPrimary),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: BlocBuilder<DashboardBloc, DashboardState>(
-              builder: (context, state) {
-                final profiles = state.profiles;
-                if (profiles == null || profiles.isEmpty) {
-                  return const Text('Loading...');
-                }
-                final p = profiles.first;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      p.businessName ?? 'Your Business',
-                      style: theme.textTheme.titleLarge?.copyWith(
-                            fontWeight: FontWeight.bold,
-                          ) ??
-                          GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
-                            ),
-                          ),
-                    ),
-                    Text(
-                      DateFormat('EEEE, d MMMM').format(DateTime.now()),
-                      style: theme.textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ) ??
-                          GoogleFonts.poppins(
-                            textStyle: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13,
-                            ),
-                          ),
-                    ),
-                  ],
-                );
-              },
-            ),
-          ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthBloc>().signOut(),
-            tooltip: 'Logout',
-          ),
-        ],
       ),
     );
   }

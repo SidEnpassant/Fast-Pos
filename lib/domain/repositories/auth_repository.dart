@@ -1,10 +1,10 @@
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:inventopos/domain/entities/auth_session.dart';
 
 /// Authentication boundary (DIP). Implementation lives in `lib/data/`.
 abstract class AuthRepository {
-  Stream<Session?> get sessionStream;
+  Stream<AuthSession?> get sessionStream;
 
-  Session? get currentSession;
+  AuthSession? get currentSession;
 
   Future<void> signInWithPassword({
     required String email,

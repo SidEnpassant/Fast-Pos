@@ -17,11 +17,11 @@ import 'package:inventopos/presentation/billing/bloc/bill_submission_event.dart'
 import 'package:inventopos/presentation/billing/bloc/bill_submission_state.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_generation_sections.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_invoice_download_demo.dart';
+import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:open_file/open_file.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:speech_to_text/speech_to_text.dart' as stt;
 import 'package:speech_to_text/speech_to_text.dart';
 
 class BillGenerationPage extends StatefulWidget {
@@ -42,7 +42,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   String _paymentMethod = 'cash';
   String _paymentStatus = 'complete';
   double _paidAmount = 0.0;
-  stt.SpeechToText _speech = stt.SpeechToText();
+  SpeechToText _speech = SpeechToText();
 
   bool _isListening = false;
   String _voiceInputText = '';
@@ -50,7 +50,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   @override
   void initState() {
     super.initState();
-    _speech = stt.SpeechToText();
+    _speech = SpeechToText();
   }
 
   @override
@@ -65,20 +65,12 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<BillSubmissionBloc, BillSubmissionState>(
-      listener: (context, submissionState) {
-        if (submissionState is BillSubmissionSuccess) {
-          context.read<BillDraftBloc>().add(const BillDraftCleared());
-          _customerNameController.clear();
-          _customerPhoneController.clear();
-          _showPDFOptionsDialog(submissionState.result.pdfPath);
-          context.read<BillSubmissionBloc>().add(const BillSubmissionHandled());
-        } else if (submissionState is BillSubmissionFailure) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(submissionState.message)),
-          );
-          context.read<BillSubmissionBloc>().add(const BillSubmissionHandled());
-        }
+    return BillSubmissionFeedbackListener(
+      onSuccess: (listenerContext, submissionState) {
+        listenerContext.read<BillDraftBloc>().add(const BillDraftCleared());
+        _customerNameController.clear();
+        _customerPhoneController.clear();
+        _showPDFOptionsDialog(submissionState.result.pdfPath);
       },
       child: BlocBuilder<BillDraftBloc, BillDraftState>(
         builder: (context, draft) {
@@ -96,7 +88,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                     'Generate Bill',
                     style: GoogleFonts.poppins(
                       fontWeight: FontWeight.w600,
-                      fontSize: 25,
+                      fontSize: 20,
                     ),
                   ),
                   elevation: 0,
@@ -216,7 +208,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
     final priceController = TextEditingController();
     final quantityController = TextEditingController(text: '1');
     final commentController = TextEditingController();
-    final stt = SpeechToText();
+    final speechToText = SpeechToText();
     bool isListening = false;
     final draftBloc = context.read<BillDraftBloc>();
 
@@ -294,10 +286,10 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                       ),
                       onPressed: () async {
                         if (!isListening) {
-                          bool available = await stt.initialize();
+                          bool available = await speechToText.initialize();
                           if (available) {
                             setDialogState(() => isListening = true);
-                            stt.listen(
+                            speechToText.listen(
                               onResult: (result) {
                                 setDialogState(() {
                                   commentController.text =
@@ -306,14 +298,16 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                               },
                               listenFor: const Duration(seconds: 30),
                               pauseFor: const Duration(seconds: 5),
-                              partialResults: true,
-                              cancelOnError: true,
-                              listenMode: ListenMode.confirmation,
+                              listenOptions: SpeechListenOptions(
+                                partialResults: true,
+                                cancelOnError: true,
+                                listenMode: ListenMode.confirmation,
+                              ),
                             );
                           }
                         } else {
                           setDialogState(() => isListening = false);
-                          stt.stop();
+                          speechToText.stop();
                         }
                       },
                     ),
@@ -368,6 +362,9 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   Future<String?> _showBarcodeScanner() async {
     final status = await Permission.camera.request();
     if (status.isDenied) {
+      return null;
+    }
+    if (!mounted) {
       return null;
     }
     String? productName;
@@ -448,16 +445,19 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                               final productName = product['product_name'];
 
                               // Close scanner and update the product name
-                              Navigator.pop(context, productName);
+                              if (context.mounted) {
+                                Navigator.pop(context, productName);
+                              }
                             } else {
-                              print('Product not found or error in response.');
+                              debugPrint(
+                                  'Product not found or error in response.');
                             }
                           } else {
-                            print(
+                            debugPrint(
                                 'Failed to lookup product. Status Code: ${response.statusCode}');
                           }
                         } catch (e) {
-                          print('Error looking up product: $e');
+                          debugPrint('Error looking up product: $e');
                         }
                       }
                     },
@@ -465,7 +465,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                   // Overlay for scan area
                   Container(
                     decoration: BoxDecoration(
-                      color: Colors.black.withOpacity(0.5),
+                      color: Colors.black.withValues(alpha: 0.5),
                     ),
                     child: Stack(
                       children: [
@@ -519,6 +519,8 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
     final inputImage = InputImage.fromFilePath(image.path);
     final RecognizedText recognizedText =
         await _textRecognizer.processImage(inputImage);
+
+    if (!mounted) return null;
 
     // Create a set to store selected text items
     final Set<String> selectedTexts = {};
@@ -601,7 +603,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                   padding: const EdgeInsets.all(8),
                                   decoration: BoxDecoration(
                                     color: selectedTexts.contains(line.text)
-                                        ? Colors.blue.withOpacity(0.1)
+                                        ? Colors.blue.withValues(alpha: 0.1)
                                         : null,
                                     border: Border.all(
                                       color: selectedTexts.contains(line.text)
@@ -620,8 +622,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                     ),
                                   ),
                                 ),
-                              ))
-                          .toList(),
+                              )),
                     ],
                   ),
                 ),
@@ -740,22 +741,24 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
       // Open the PDF using the Open File package
       final result = await OpenFile.open(pdfPath);
       if (result.type == ResultType.error) {
-        print('Error opening PDF: ${result.message}');
+        debugPrint('Error opening PDF: ${result.message}');
       }
     } catch (e) {
-      print('Error viewing PDF: $e');
+      debugPrint('Error viewing PDF: $e');
     }
   }
 
   Future<void> _sharePDF(String pdfPath) async {
     try {
-      XFile xFile = XFile(pdfPath);
-      // Share the XFile
-      await Share.shareXFiles([xFile], text: 'Here is your bill.');
-      // // Share the PDF using the Share Plus package
-      // await Share.shareFiles([pdfPath], text: 'Here is your bill.');
+      final xFile = XFile(pdfPath);
+      await SharePlus.instance.share(
+        ShareParams(
+          files: [xFile],
+          text: 'Here is your bill.',
+        ),
+      );
     } catch (e) {
-      print('Error sharing PDF: $e');
+      debugPrint('Error sharing PDF: $e');
     }
   }
 }
