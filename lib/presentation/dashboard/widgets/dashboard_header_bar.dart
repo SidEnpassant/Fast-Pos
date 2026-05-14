@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_state.dart';
 
@@ -71,13 +70,6 @@ class DashboardHeaderBar extends StatelessWidget {
               },
             ),
           ),
-          const SizedBox(width: 12),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () => context.read<AuthBloc>().signOut(),
-            tooltip: 'Logout',
-          ),
-          
         ],
       ),
     );

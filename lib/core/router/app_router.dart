@@ -25,6 +25,7 @@ import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
 import 'package:inventopos/presentation/auth_login/view/login_screen.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_submission_bloc.dart';
+import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_bloc.dart';
 import 'package:inventopos/presentation/billing/view/bill_generation_page.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_bloc.dart';
 import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
@@ -39,6 +40,7 @@ import 'package:inventopos/presentation/registration_success/view/registration_s
 import 'package:inventopos/presentation/shell/view/shell_page.dart';
 import 'package:inventopos/presentation/transactions/view/complete_transaction/complete_transactions_screen.dart';
 import 'package:inventopos/presentation/transactions/view/incomplete_transaction/incomplete_transactions_screen.dart';
+import 'package:speech_to_text/speech_to_text.dart';
 
 /// Root navigator for full-screen routes that sit above the tab shell.
 final GlobalKey<NavigatorState> appRootNavigatorKey =
@@ -214,12 +216,15 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
               GoRoute(
                 path: '/app/new-bill',
                 builder: (context, state) => BlocProvider(
-                  create: (ctx) => BillSubmissionBloc(
-                    ctx.read<SubmitBillUseCase>(),
-                  ),
+                  create: (_) => BillVoiceAssistBloc(SpeechToText()),
                   child: BlocProvider(
-                    create: (_) => BillDraftBloc(),
-                    child: const BillGenerationPage(),
+                    create: (ctx) => BillSubmissionBloc(
+                      ctx.read<SubmitBillUseCase>(),
+                    ),
+                    child: BlocProvider(
+                      create: (_) => BillDraftBloc(),
+                      child: const BillGenerationPage(),
+                    ),
                   ),
                 ),
               ),
