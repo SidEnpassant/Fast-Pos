@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
-import 'package:inventopos/presentation/auth_login/view/loginScreen.dart';
+import 'package:inventopos/presentation/auth_login/view/login_screen.dart';
 
 /// Splash gate driven by [AuthRepository.sessionStream] (no Supabase in the widget).
 ///

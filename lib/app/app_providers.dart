@@ -3,6 +3,9 @@ import 'package:inventopos/application/auth/request_password_reset_use_case.dart
 import 'package:inventopos/application/auth/sign_in_use_case.dart';
 import 'package:inventopos/application/auth/sign_out_use_case.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
+import 'package:inventopos/application/billing/download_remote_pdf_to_device_use_case.dart';
+import 'package:inventopos/application/billing/extract_text_lines_from_image_path_use_case.dart';
+import 'package:inventopos/application/billing/lookup_product_name_by_barcode_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/billing/replace_signed_bill_use_case.dart';
 import 'package:inventopos/application/billing/submit_bill_use_case.dart';
@@ -12,18 +15,24 @@ import 'package:inventopos/application/profile/observe_profile_for_current_user_
 import 'package:inventopos/application/profile/patch_account_profile_field_use_case.dart';
 import 'package:inventopos/application/profile/replace_account_signature_use_case.dart';
 import 'package:inventopos/application/registration/register_account_use_case.dart';
+import 'package:inventopos/data/billing/barcode_product_lookup_repository_impl.dart';
 import 'package:inventopos/data/billing/bill_pdf_generator.dart';
+import 'package:inventopos/data/files/remote_pdf_download_repository_impl.dart';
 import 'package:inventopos/data/repositories/auth_repository_impl.dart';
 import 'package:inventopos/data/repositories/bills_repository_impl.dart';
 import 'package:inventopos/data/repositories/notifications_repository_impl.dart';
 import 'package:inventopos/data/repositories/profile_repository_impl.dart';
 import 'package:inventopos/data/repositories/registration_repository_impl.dart';
 import 'package:inventopos/data/repositories/transactions_repository_impl.dart';
+import 'package:inventopos/data/vision/text_recognition_repository_impl.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/domain/repositories/barcode_product_lookup_repository.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/domain/repositories/registration_repository.dart';
+import 'package:inventopos/domain/repositories/remote_pdf_download_repository.dart';
+import 'package:inventopos/domain/repositories/text_recognition_repository.dart';
 import 'package:inventopos/domain/repositories/transactions_repository.dart';
 
 /// Single composition root for repositories and application use cases.
@@ -46,6 +55,30 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     ),
     RepositoryProvider<TransactionsRepository>(
       create: (_) => TransactionsRepositoryImpl(),
+    ),
+    RepositoryProvider<BarcodeProductLookupRepository>(
+      create: (_) => BarcodeProductLookupRepositoryImpl(),
+    ),
+    RepositoryProvider<TextRecognitionRepository>(
+      create: (_) => TextRecognitionRepositoryImpl(),
+    ),
+    RepositoryProvider<RemotePdfDownloadRepository>(
+      create: (_) => RemotePdfDownloadRepositoryImpl(),
+    ),
+    RepositoryProvider<LookupProductNameByBarcodeUseCase>(
+      create: (c) => LookupProductNameByBarcodeUseCase(
+        c.read<BarcodeProductLookupRepository>(),
+      ),
+    ),
+    RepositoryProvider<ExtractTextLinesFromImagePathUseCase>(
+      create: (c) => ExtractTextLinesFromImagePathUseCase(
+        c.read<TextRecognitionRepository>(),
+      ),
+    ),
+    RepositoryProvider<DownloadRemotePdfToDeviceUseCase>(
+      create: (c) => DownloadRemotePdfToDeviceUseCase(
+        c.read<RemotePdfDownloadRepository>(),
+      ),
     ),
     RepositoryProvider<ObserveBillsUseCase>(
       create: (c) => ObserveBillsUseCase(c.read<BillsRepository>()),

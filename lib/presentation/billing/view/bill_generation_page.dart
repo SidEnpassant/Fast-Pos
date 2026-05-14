@@ -1,12 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:google_mlkit_text_recognition/google_mlkit_text_recognition.dart';
-import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
+import 'package:inventopos/application/billing/extract_text_lines_from_image_path_use_case.dart';
+import 'package:inventopos/application/billing/lookup_product_name_by_barcode_use_case.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/domain/billing/bill_submission.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
@@ -33,7 +31,6 @@ class BillGenerationPage extends StatefulWidget {
 
 class _BillGenerationPageState extends State<BillGenerationPage> {
   final MobileScannerController _scannerController = MobileScannerController();
-  final TextRecognizer _textRecognizer = TextRecognizer();
   final ImagePicker _imagePicker = ImagePicker();
 
   final _formKey = GlobalKey<FormState>();
@@ -56,7 +53,6 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   @override
   void dispose() {
     _scannerController.dispose();
-    _textRecognizer.close();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
 
@@ -360,6 +356,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   }
 
   Future<String?> _showBarcodeScanner() async {
+    final lookup = context.read<LookupProductNameByBarcodeUseCase>();
     final status = await Permission.camera.request();
     if (status.isDenied) {
       return null;
@@ -367,22 +364,20 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
     if (!mounted) {
       return null;
     }
-    String? productName;
 
-    await showModalBottomSheet(
+    return showModalBottomSheet<String?>(
       context: context,
       isScrollControlled: true,
-      builder: (context) => SizedBox(
-        height: MediaQuery.of(context).size.height * 0.7,
+      builder: (sheetContext) => SizedBox(
+        height: MediaQuery.of(sheetContext).size.height * 0.7,
         child: Column(
           children: [
             AppBar(
               title: const Text('Scan Barcode'),
               leading: IconButton(
                 icon: const Icon(Icons.close),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(sheetContext),
               ),
-              // leadingWidth: IconButton(onPressed: (){}, icon: Icons.lightbulb),
             ),
             Expanded(
               child: Stack(
@@ -390,79 +385,24 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                 children: [
                   MobileScanner(
                     controller: _scannerController,
-                    // onDetect: (capture) async {
-                    //   final List<Barcode> barcodes = capture.barcodes;
-                    //   if (barcodes.isNotEmpty) {
-                    //     final barcode = barcodes.first.rawValue;
-
-                    //     // Look up product name from barcode
-                    //     try {
-                    //       final response = await http.get(Uri.parse(
-                    //           'https://api.upcitemdb.com/prod/trial/lookup$barcode.json'));
-
-                    //       if (response.statusCode == 200) {
-                    //         final data = json.decode(response.body);
-                    //         if (data['status'] == 1) {
-                    //           productName = data['product']['product_name'];
-                    //           Navigator.pop(context); // Close scanner
-                    //         }
-                    //       }
-                    //     } catch (e) {
-                    //       print('Error looking up product: $e');
-                    //     }
-                    //   }
-                    // },
-
                     onDetect: (capture) async {
-                      final List<Barcode> barcodes = capture.barcodes;
-                      if (barcodes.isNotEmpty) {
-                        final barcode = barcodes.first.rawValue;
-
-                        // Look up product name from barcode
-                        try {
-                          final url =
-                              'https://api.barcodelookup.com/v3/products';
-                          final apiKey =
-                              'YOUR_API_KEY'; // Replace with your Barcode Lookup API key
-                          final queryParameters = {
-                            'barcode':
-                                barcode, // Sending the barcode value to lookup
-                            'key': apiKey,
-                          };
-
-                          // Make the GET request to Barcode Lookup API
-                          final response = await http.get(Uri.parse(
-                              '$url?${Uri(queryParameters: queryParameters)}'));
-
-                          if (response.statusCode == 200) {
-                            final data = json.decode(response.body);
-
-                            // Check if products are found
-                            if (data['products'] != null &&
-                                data['products'].isNotEmpty) {
-                              final product = data['products']
-                                  [0]; // Get the first product from response
-                              final productName = product['product_name'];
-
-                              // Close scanner and update the product name
-                              if (context.mounted) {
-                                Navigator.pop(context, productName);
-                              }
-                            } else {
-                              debugPrint(
-                                  'Product not found or error in response.');
-                            }
-                          } else {
-                            debugPrint(
-                                'Failed to lookup product. Status Code: ${response.statusCode}');
-                          }
-                        } catch (e) {
-                          debugPrint('Error looking up product: $e');
+                      final barcodes = capture.barcodes;
+                      if (barcodes.isEmpty) return;
+                      final barcode = barcodes.first.rawValue;
+                      try {
+                        final name = await lookup(barcode);
+                        if (name != null && sheetContext.mounted) {
+                          Navigator.pop(sheetContext, name);
+                        } else {
+                          debugPrint(
+                            'Product not found or error in response.',
+                          );
                         }
+                      } catch (e) {
+                        debugPrint('Error looking up product: $e');
                       }
                     },
                   ),
-                  // Overlay for scan area
                   Container(
                     decoration: BoxDecoration(
                       color: Colors.black.withValues(alpha: 0.5),
@@ -502,11 +442,10 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
         ),
       ),
     );
-
-    return productName;
   }
 
   Future<String?> _showTextRecognition() async {
+    final extractLines = context.read<ExtractTextLinesFromImagePathUseCase>();
     final status = await Permission.camera.request();
     if (status.isDenied) {
       return null;
@@ -516,19 +455,15 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
         await _imagePicker.pickImage(source: ImageSource.camera);
     if (image == null) return null;
 
-    final inputImage = InputImage.fromFilePath(image.path);
-    final RecognizedText recognizedText =
-        await _textRecognizer.processImage(inputImage);
+    final ocrLines = await extractLines(image.path);
 
     if (!mounted) return null;
 
-    // Create a set to store selected text items
     final Set<String> selectedTexts = {};
 
     return showDialog<String>(
       context: context,
       builder: (context) => StatefulBuilder(
-        // Use StatefulBuilder to manage local state
         builder: (context, setState) => AlertDialog(
           title: const Text('Select Text (Multiple)'),
           content: Column(
@@ -543,7 +478,6 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Selected texts preview
                       if (selectedTexts.isNotEmpty) ...[
                         Container(
                           padding: const EdgeInsets.all(8),
@@ -583,46 +517,43 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                         ),
                         const SizedBox(height: 16),
                       ],
-                      // Recognized text items
-                      ...recognizedText.blocks
-                          .expand((block) => block.lines)
-                          .map((line) => InkWell(
-                                onTap: () {
-                                  setState(() {
-                                    if (selectedTexts.contains(line.text)) {
-                                      selectedTexts.remove(line.text);
-                                    } else {
-                                      selectedTexts.add(line.text);
-                                    }
-                                  });
-                                },
-                                child: Container(
-                                  width: double.infinity,
-                                  margin:
-                                      const EdgeInsets.symmetric(vertical: 4),
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: selectedTexts.contains(line.text)
-                                        ? Colors.blue.withValues(alpha: 0.1)
-                                        : null,
-                                    border: Border.all(
-                                      color: selectedTexts.contains(line.text)
-                                          ? Colors.blue
-                                          : Colors.transparent,
-                                    ),
-                                    borderRadius: BorderRadius.circular(8),
-                                  ),
-                                  child: Text(
-                                    line.text,
-                                    style: TextStyle(
-                                      fontSize: 16,
-                                      color: selectedTexts.contains(line.text)
-                                          ? Colors.blue
-                                          : null,
-                                    ),
-                                  ),
+                      ...ocrLines.map((line) => InkWell(
+                            onTap: () {
+                              setState(() {
+                                if (selectedTexts.contains(line)) {
+                                  selectedTexts.remove(line);
+                                } else {
+                                  selectedTexts.add(line);
+                                }
+                              });
+                            },
+                            child: Container(
+                              width: double.infinity,
+                              margin:
+                                  const EdgeInsets.symmetric(vertical: 4),
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: selectedTexts.contains(line)
+                                    ? Colors.blue.withValues(alpha: 0.1)
+                                    : null,
+                                border: Border.all(
+                                  color: selectedTexts.contains(line)
+                                      ? Colors.blue
+                                      : Colors.transparent,
                                 ),
-                              )),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Text(
+                                line,
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: selectedTexts.contains(line)
+                                      ? Colors.blue
+                                      : null,
+                                ),
+                              ),
+                            ),
+                          )),
                     ],
                   ),
                 ),
@@ -638,7 +569,6 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
               onPressed: selectedTexts.isEmpty
                   ? null
                   : () {
-                      // Combine selected texts with spaces
                       final combinedText = selectedTexts.join(' ');
                       Navigator.pop(context, combinedText);
                     },

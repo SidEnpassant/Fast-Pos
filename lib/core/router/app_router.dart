@@ -16,13 +16,13 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
-import 'package:inventopos/presentation/account/view/myAccount.dart';
+import 'package:inventopos/presentation/account/view/my_account.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
-import 'package:inventopos/presentation/analytics/view/MonthlyRevenueAnalysis.dart';
+import 'package:inventopos/presentation/analytics/view/monthly_revenue_analysis.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
-import 'package:inventopos/presentation/auth_login/view/loginScreen.dart';
+import 'package:inventopos/presentation/auth_login/view/login_screen.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_submission_bloc.dart';
 import 'package:inventopos/presentation/billing/view/bill_generation_page.dart';
@@ -31,14 +31,14 @@ import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
 import 'package:inventopos/presentation/forgot_password/view/forgot_password_page.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_bloc.dart';
-import 'package:inventopos/presentation/notifications/view/notificationsScreen.dart';
+import 'package:inventopos/presentation/notifications/view/notifications_screen.dart';
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/view/register_screen.dart';
 import 'package:inventopos/presentation/registration_success/bloc/registration_success_bloc.dart';
 import 'package:inventopos/presentation/registration_success/view/registration_success_screen.dart';
 import 'package:inventopos/presentation/shell/view/shell_page.dart';
-import 'package:inventopos/presentation/transactions/view/complete_transaction/CompleteTransactionsScreen.dart';
-import 'package:inventopos/presentation/transactions/view/incomplete_transaction/IncompleteTransactionsScreen.dart';
+import 'package:inventopos/presentation/transactions/view/complete_transaction/complete_transactions_screen.dart';
+import 'package:inventopos/presentation/transactions/view/incomplete_transaction/incomplete_transactions_screen.dart';
 
 /// Root navigator for full-screen routes that sit above the tab shell.
 final GlobalKey<NavigatorState> appRootNavigatorKey =
