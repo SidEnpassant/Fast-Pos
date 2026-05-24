@@ -4,7 +4,9 @@
 
 list(APPEND FLUTTER_PLUGIN_LIST
   app_links
+  connectivity_plus
   file_selector_windows
+  local_auth_windows
   permission_handler_windows
   printing
   share_plus

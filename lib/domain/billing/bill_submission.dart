@@ -10,6 +10,9 @@ class BillSubmissionDraft extends Equatable {
     required this.paymentMethod,
     required this.paymentStatus,
     required this.paidAmount,
+    this.customerId,
+    this.discountBreakdown,
+    this.discountTotal = 0,
   });
 
   final String customerName;
@@ -18,9 +21,15 @@ class BillSubmissionDraft extends Equatable {
   final String paymentMethod;
   final String paymentStatus;
   final double paidAmount;
+  final String? customerId;
+  final List<Map<String, dynamic>>? discountBreakdown;
+  final double discountTotal;
 
-  double get totalAmount =>
-      lines.fold<double>(0, (s, e) => s + e.price * e.quantity);
+  double get totalAmount {
+    final subtotal =
+        lines.fold<double>(0, (s, e) => s + e.price * e.quantity);
+    return subtotal - discountTotal;
+  }
 
   double get effectivePaidAmount =>
       paymentStatus == 'complete' ? totalAmount : paidAmount;
@@ -33,6 +42,9 @@ class BillSubmissionDraft extends Equatable {
         paymentMethod,
         paymentStatus,
         paidAmount,
+        customerId,
+        discountBreakdown,
+        discountTotal,
       ];
 }
 

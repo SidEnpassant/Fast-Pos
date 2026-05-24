@@ -6,6 +6,7 @@ import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_chart.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_table.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_pnl_card.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_stats_card.dart';
 
 class AnalyticsRevenueContent extends StatelessWidget {
@@ -93,6 +94,7 @@ class AnalyticsRevenueContent extends StatelessWidget {
                     ),
                   ),
                 ],
+                AnalyticsPnLCard(state: state),
                 if (state.showChart)
                   AnalyticsRevenueChart(
                     months: sortedMonths,

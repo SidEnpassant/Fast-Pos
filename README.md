@@ -409,4 +409,16 @@ For contribution guidelines, open issues, or licensing, refer to the repository 
 
 ---
 
-*Last updated to reflect the current Flutter module layout, Supabase bootstrap, GoRouter shell, Bloc-based presentation, and billing assist architecture.*
+## Engineering highlights (v1.0)
+
+- **Offline-first:** Hive local store + `SyncOutboxEntry` + `SyncCoordinator` with `OfflineFirstBillsRepository` (write-local-first, background Supabase push).
+- **Inventory:** `products` table, barcode index search, low-stock notifications, atomic stock RPC in `supabase/migrations/`.
+- **Bloc-only UI:** `Bloc<Event, State>` everywhere — no Cubit (`scripts/check_no_cubit.sh`).
+- **Checkout:** `CheckoutScanBloc` + local barcode lookup; `DiscountStrategy` pattern via `CheckoutBloc`.
+- **Analytics P&L:** Revenue minus expenses on Analysis tab (`AnalyticsPnLCard`).
+- **Hardware:** ESC/POS Bluetooth printing (`EscPosPrinterRepositoryImpl`).
+- **Security:** SHA-256 bill audit hashing (`BillAuditService`) + `local_auth` gate (`AuthenticateUserUseCase`).
+- **Bulk I/O:** CSV/XLSX import and CSV/JSON export (`ImportExportPage`, `ExportRepositoryImpl`).
+- **Predictive stock:** EMA velocity (`VelocityCalculator`) on product entities.
+
+*Last updated for v1.0 production architecture.*

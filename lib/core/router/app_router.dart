@@ -13,7 +13,6 @@ import 'package:inventopos/application/profile/patch_account_profile_field_use_c
 import 'package:inventopos/application/profile/replace_account_signature_use_case.dart';
 import 'package:inventopos/application/registration/register_account_use_case.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
-import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
 import 'package:inventopos/presentation/account/view/my_account.dart';
@@ -27,12 +26,31 @@ import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_submission_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_bloc.dart';
 import 'package:inventopos/presentation/billing/view/bill_generation_page.dart';
-import 'package:inventopos/presentation/dashboard/bloc/dashboard_bloc.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_bloc.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_scan_bloc.dart';
+import 'package:inventopos/domain/repositories/product_repository.dart';
+import 'package:inventopos/application/billing/lookup_product_name_by_barcode_use_case.dart';
+import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
+import 'package:inventopos/presentation/inventory/view/inventory_screen.dart';
+import 'package:inventopos/presentation/expenses/view/expenses_screen.dart';
+import 'package:inventopos/presentation/customers/view/customer_detail_screen.dart';
+import 'package:inventopos/presentation/customers/view/customers_screen.dart';
+import 'package:inventopos/presentation/printer_setup/view/printer_setup_page.dart';
+import 'package:inventopos/presentation/import_export/view/import_export_page.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
-import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
-import 'package:inventopos/presentation/forgot_password/view/forgot_password_page.dart';
+import 'package:inventopos/domain/repositories/customer_repository.dart';
+import 'package:inventopos/domain/repositories/expense_repository.dart';
+import 'package:inventopos/domain/repositories/notifications_repository.dart';
+import 'package:inventopos/domain/repositories/sync_repository.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_bloc.dart';
 import 'package:inventopos/presentation/notifications/view/notifications_screen.dart';
+import 'package:inventopos/presentation/inventory/view/product_editor_page.dart';
+import 'package:inventopos/application/billing/resolve_product_for_barcode_use_case.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
+import 'package:inventopos/presentation/analytics/view/analytics_suite_screen.dart';
+import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
+import 'package:inventopos/presentation/forgot_password/view/forgot_password_page.dart';
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/view/register_screen.dart';
 import 'package:inventopos/presentation/registration_success/bloc/registration_success_bloc.dart';
@@ -41,6 +59,7 @@ import 'package:inventopos/presentation/shell/view/shell_page.dart';
 import 'package:inventopos/presentation/transactions/view/complete_transaction/complete_transactions_screen.dart';
 import 'package:inventopos/presentation/transactions/view/incomplete_transaction/incomplete_transactions_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Root navigator for full-screen routes that sit above the tab shell.
 final GlobalKey<NavigatorState> appRootNavigatorKey =
@@ -116,6 +135,8 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
           return '/app/profile';
         case '/notification':
           return '/app/notifications';
+        case '/app/inventory':
+          return null;
       }
       if (path == '/' ||
           path == '/login' ||
@@ -180,6 +201,55 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) => const IncompleteTransactionsScreen(),
       ),
+      GoRoute(
+        path: '/expenses',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => const ExpensesScreen(),
+      ),
+      GoRoute(
+        path: '/customers',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => const CustomersScreen(),
+      ),
+      GoRoute(
+        path: '/customers/:id',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => CustomerDetailScreen(
+          customerId: state.pathParameters['id']!,
+        ),
+      ),
+      GoRoute(
+        path: '/inventory/editor',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra;
+          return ProductEditorPage(productId: extra as String?);
+        },
+      ),
+      GoRoute(
+        path: '/printer-setup',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => const PrinterSetupPage(),
+      ),
+      GoRoute(
+        path: '/import-export',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => const ImportExportPage(),
+      ),
+      GoRoute(
+        path: '/app/notifications',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (ctx, state) {
+          final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+          return BlocProvider(
+            create: (_) => NotificationsBloc(
+              ctx.read<NotificationsRepository>(),
+              uid,
+            ),
+            child: const NotificationsScreen(),
+          );
+        },
+      ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
           return ShellPage(navigationShell: navigationShell);
@@ -190,9 +260,14 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
               GoRoute(
                 path: '/app/dashboard',
                 builder: (context, state) => BlocProvider(
-                  create: (ctx) => DashboardBloc(
+                  create: (ctx) => DashboardHubBloc(
                     ctx.read<ObserveBillsUseCase>(),
                     ctx.read<ProfileRepository>(),
+                    ctx.read<ProductRepository>(),
+                    ctx.read<ExpenseRepository>(),
+                    ctx.read<CustomerRepository>(),
+                    ctx.read<SyncRepository>(),
+                    ctx.read<NotificationsRepository>(),
                   ),
                   child: const DashboardScreen(),
                 ),
@@ -202,11 +277,10 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/app/analysis',
+                path: '/app/inventory',
                 builder: (context, state) => BlocProvider(
-                  create: (ctx) =>
-                      AnalyticsBloc(ctx.read<ObserveBillsUseCase>()),
-                  child: const MonthlyRevenueAnalysis(),
+                  create: (ctx) => InventoryBloc(ctx.read<ProductRepository>()),
+                  child: const InventoryScreen(),
                 ),
               ),
             ],
@@ -223,7 +297,15 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                     ),
                     child: BlocProvider(
                       create: (_) => BillDraftBloc(),
-                      child: const BillGenerationPage(),
+                      child: BlocProvider(
+                        create: (_) => CheckoutBloc(),
+                        child: BlocProvider(
+                          create: (ctx) => CheckoutScanBloc(
+                            ctx.read<ResolveProductForBarcodeUseCase>(),
+                          ),
+                          child: const BillGenerationPage(),
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -233,24 +315,23 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: '/app/notifications',
-                builder: (context, state) {
-                  final uid =
-                      context.read<AuthRepository>().currentSession?.userId ??
-                          '';
-                  if (uid.isEmpty) {
-                    return const Scaffold(
-                      body: Center(child: Text('Please log in')),
-                    );
-                  }
-                  return BlocProvider(
-                    create: (ctx) => NotificationsBloc(
-                      ctx.read<NotificationsRepository>(),
-                      uid,
+                path: '/app/analysis',
+                builder: (context, state) => MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (ctx) =>
+                          AnalyticsBloc(ctx.read<ObserveBillsUseCase>()),
                     ),
-                    child: const NotificationsScreen(),
-                  );
-                },
+                    BlocProvider(
+                      create: (ctx) => AnalyticsHubBloc(
+                        ctx.read<ObserveBillsUseCase>(),
+                        ctx.read<ExpenseRepository>(),
+                        ctx.read<ProductRepository>(),
+                      ),
+                    ),
+                  ],
+                  child: const AnalyticsSuiteScreen(),
+                ),
               ),
             ],
           ),

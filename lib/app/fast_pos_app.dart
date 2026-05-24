@@ -6,18 +6,26 @@ import 'package:inventopos/application/auth/sign_out_use_case.dart';
 import 'package:inventopos/core/router/app_router.dart';
 import 'package:inventopos/core/theme/app_theme.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/domain/repositories/sync_repository.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
+import 'package:inventopos/presentation/core/bloc/connectivity_bloc.dart';
+import 'package:inventopos/presentation/core/bloc/connectivity_event.dart';
+import 'package:inventopos/presentation/core/widgets/notification_bridge_listener.dart';
 
 /// Repositories + global [AuthBloc] — pass to [runApp].
 Widget fastPosRoot() {
   return MultiRepositoryProvider(
     providers: appRepositoryProviders(),
     child: BlocProvider(
-      create: (c) => AuthBloc(
-        c.read<AuthRepository>(),
-        c.read<SignOutUseCase>(),
+      create: (c) => ConnectivityBloc(c.read<SyncRepository>())
+        ..add(const ConnectivityStarted()),
+      child: BlocProvider(
+        create: (c) => AuthBloc(
+          c.read<AuthRepository>(),
+          c.read<SignOutUseCase>(),
+        ),
+        child: const FastPosApp(),
       ),
-      child: const FastPosApp(),
     ),
   );
 }
@@ -46,11 +54,13 @@ class _FastPosAppState extends State<FastPosApp> {
     _authRefresh ??= AuthRouterRefresh(auth);
     _router ??= createAppRouter(auth, _authRefresh!);
 
-    return MaterialApp.router(
-      debugShowCheckedModeBanner: false,
-      title: 'Fast Pos',
-      theme: AppTheme.light(),
-      routerConfig: _router!,
+    return NotificationBridgeListener(
+      child: MaterialApp.router(
+        debugShowCheckedModeBanner: false,
+        title: 'Fast Pos',
+        theme: AppTheme.light(),
+        routerConfig: _router!,
+      ),
     );
   }
 }

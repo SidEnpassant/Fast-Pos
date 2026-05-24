@@ -9,9 +9,9 @@ abstract final class ShellNavigationConfig {
       label: 'Dashboard',
     ),
     NavigationDestination(
-      icon: Icon(Icons.analytics_outlined),
-      selectedIcon: Icon(Icons.analytics),
-      label: 'Analysis',
+      icon: Icon(Icons.inventory_2_outlined),
+      selectedIcon: Icon(Icons.inventory_2),
+      label: 'Inventory',
     ),
     NavigationDestination(
       icon: Icon(Icons.receipt_outlined),
@@ -19,9 +19,9 @@ abstract final class ShellNavigationConfig {
       label: 'New Bill',
     ),
     NavigationDestination(
-      icon: Icon(Icons.notifications_none_outlined),
-      selectedIcon: Icon(Icons.notifications),
-      label: 'Notifications',
+      icon: Icon(Icons.analytics_outlined),
+      selectedIcon: Icon(Icons.analytics),
+      label: 'Analysis',
     ),
     NavigationDestination(
       icon: Icon(Icons.person_2_outlined),
@@ -37,9 +37,9 @@ abstract final class ShellNavigationConfig {
       label: Text('Dashboard'),
     ),
     NavigationRailDestination(
-      icon: Icon(Icons.analytics_outlined),
-      selectedIcon: Icon(Icons.analytics),
-      label: Text('Analysis'),
+      icon: Icon(Icons.inventory_2_outlined),
+      selectedIcon: Icon(Icons.inventory_2),
+      label: Text('Inventory'),
     ),
     NavigationRailDestination(
       icon: Icon(Icons.receipt_outlined),
@@ -47,9 +47,9 @@ abstract final class ShellNavigationConfig {
       label: Text('New Bill'),
     ),
     NavigationRailDestination(
-      icon: Icon(Icons.notifications_none_outlined),
-      selectedIcon: Icon(Icons.notifications),
-      label: Text('Notifications'),
+      icon: Icon(Icons.analytics_outlined),
+      selectedIcon: Icon(Icons.analytics),
+      label: Text('Analysis'),
     ),
     NavigationRailDestination(
       icon: Icon(Icons.person_2_outlined),

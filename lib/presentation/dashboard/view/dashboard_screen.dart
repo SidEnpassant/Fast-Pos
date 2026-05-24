@@ -1,427 +1,328 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
-import 'package:inventopos/core/widgets/app_section_header.dart';
+import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
+import 'package:inventopos/core/widgets/m3/app_quick_action_tile.dart';
+import 'package:inventopos/core/widgets/m3/app_section_card.dart';
+import 'package:inventopos/core/widgets/m3/app_sync_status_chip.dart';
 import 'package:inventopos/domain/entities/bill.dart';
-import 'package:inventopos/presentation/dashboard/bloc/dashboard_bloc.dart';
-import 'package:inventopos/presentation/dashboard/bloc/dashboard_state.dart';
-import 'package:inventopos/presentation/dashboard/widgets/dashboard_header_bar.dart';
+import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/presentation/core/bloc/connectivity_bloc.dart';
+import 'package:inventopos/presentation/core/bloc/connectivity_state.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_event.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
+import 'package:intl/intl.dart';
+import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Material(
-      color: theme.colorScheme.surfaceContainerLowest,
-      child: SafeArea(
-        child: Column(
-          children: [
-            const DashboardHeaderBar(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'Dashboard',
-                            style: theme.textTheme.headlineSmall?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                ) ??
-                                GoogleFonts.poppins(
-                                  textStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 25,
-                                  ),
-                                ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-                    BlocBuilder<DashboardBloc, DashboardState>(
-                      builder: (context, state) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _StatisticsCards(state: state),
-                            const SizedBox(height: 24),
-                            _QuickActions(context),
-                            const SizedBox(height: 24),
-                            _RecentTransactions(state: state),
-                          ],
-                        );
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
-class _StatisticsCards extends StatelessWidget {
-  const _StatisticsCards({required this.state});
-
-  final DashboardState state;
-
+class _DashboardScreenState extends State<DashboardScreen> {
   @override
-  Widget build(BuildContext context) {
-    final bills = state.bills;
-    if (bills == null) {
-      return const Center(child: CircularProgressIndicator());
+  void initState() {
+    super.initState();
+    final uid = context.read<AuthRepository>().currentSession?.userId;
+    if (uid != null) {
+      context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
     }
-
-    double totalRevenue = 0;
-    int completedTransactions = 0;
-    int pendingTransactions = 0;
-
-    for (final bill in bills) {
-      if (bill.paymentStatus == 'complete') {
-        totalRevenue += bill.totalAmount;
-        completedTransactions++;
-      } else if (bill.paymentStatus == 'partial') {
-        totalRevenue += bill.paidAmount;
-        pendingTransactions++;
-      } else {
-        pendingTransactions++;
-      }
-    }
-
-    final crossCount = AppBreakpoints.gridCrossAxisCount(context);
-
-    return GridView.count(
-      crossAxisCount: crossCount,
-      crossAxisSpacing: 16,
-      mainAxisSpacing: 16,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      childAspectRatio: 1.1,
-      children: [
-        _StatCard(
-          'Total Revenue',
-          '₹${totalRevenue.toStringAsFixed(2)}',
-          Icons.currency_rupee,
-          Colors.green,
-        ),
-        _StatCard(
-          'Total Transactions',
-          '${bills.length}',
-          Icons.receipt_long,
-          Colors.blue,
-        ),
-        _StatCard(
-          'Completed',
-          '$completedTransactions',
-          Icons.check_circle_outline,
-          Colors.purple,
-        ),
-        _StatCard(
-          'Pending',
-          '$pendingTransactions',
-          Icons.pending_actions,
-          Colors.orange,
-        ),
-      ],
-    );
   }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard(this.title, this.value, this.icon, this.color);
-
-  final String title;
-  final String value;
-  final IconData icon;
-  final Color color;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surface,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.shadow.withValues(alpha: 0.06),
-            spreadRadius: 1,
-            blurRadius: 5,
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, color: color),
-          const Spacer(),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            style: TextStyle(
-              color: theme.colorScheme.onSurfaceVariant,
-              fontSize: 13,
-            ),
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _QuickActions extends StatelessWidget {
-  const _QuickActions(this.contextParent);
-
-  final BuildContext contextParent;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const AppSectionHeader('Quick Actions'),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: _ActionButton(
-                'Complete\nTransactions',
-                Icons.check_circle_outline,
-                Colors.green,
-                () => context.push('/complete-transactions'),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: _ActionButton(
-                'Incomplete\nTransactions',
-                Icons.pending_actions,
-                Colors.orange,
-                () => context.push('/incomplete-transactions'),
-              ),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton(this.title, this.icon, this.color, this.onTap);
-
-  final String title;
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 32),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: color,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _RecentTransactions extends StatelessWidget {
-  const _RecentTransactions({required this.state});
-
-  final DashboardState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final bills = state.bills;
-    if (bills == null) {
-      return const Center(
-        child: Text(
-          'Please log in to view recent bills',
-          style: TextStyle(fontSize: 16),
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          'Recent Bills',
-          style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ) ??
-              GoogleFonts.poppins(
-                textStyle: const TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 16,
-                ),
-              ),
-        ),
-        Builder(
-          builder: (context) {
-            if (bills.isEmpty) {
-              return const Center(
-                child: Text(
-                  'No bills found',
-                  style: TextStyle(fontSize: 16),
-                ),
-              );
+    return Scaffold(
+      backgroundColor: theme.colorScheme.surfaceContainerLowest,
+      body: SafeArea(
+        child: BlocBuilder<DashboardHubBloc, DashboardHubState>(
+          builder: (context, state) {
+            if (state.loading && state.bills == null) {
+              return const Center(child: CircularProgressIndicator());
             }
-
-            final sorted = List<Bill>.from(bills)
-              ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-            final recent = sorted.take(5).toList();
-
-            return ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: recent.length,
-              itemBuilder: (context, index) {
-                final bill = recent[index];
-                if (!_isValidBill(bill)) {
-                  return const SizedBox.shrink();
+            return RefreshIndicator(
+              onRefresh: () async {
+                final uid =
+                    context.read<AuthRepository>().currentSession?.userId;
+                if (uid != null) {
+                  context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
                 }
-                return _TransactionRow(bill: bill);
               },
+              child: CustomScrollView(
+                slivers: [
+                  SliverToBoxAdapter(child: _Header(state: state)),
+                  SliverPadding(
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    sliver: SliverList(
+                      delegate: SliverChildListDelegate([
+                        _KpiGrid(state: state),
+                        const SizedBox(height: AppSpacing.lg),
+                        const QuickActionsGrid(),
+                        if (state.lowStockProducts.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          _LowStockAlerts(state: state),
+                        ],
+                        if (state.topCreditCustomers.isNotEmpty) ...[
+                          const SizedBox(height: AppSpacing.lg),
+                          _CreditDueStrip(state: state),
+                        ],
+                        const SizedBox(height: AppSpacing.lg),
+                        _RecentBills(state: state),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
             );
           },
         ),
-      ],
+      ),
     );
-  }
-
-  bool _isValidBill(Bill bill) {
-    return bill.customerName.isNotEmpty;
   }
 }
 
-class _TransactionRow extends StatelessWidget {
-  const _TransactionRow({required this.bill});
+class _Header extends StatelessWidget {
+  const _Header({required this.state});
 
-  final Bill bill;
+  final DashboardHubState state;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final customerName =
-        bill.customerName.isEmpty ? 'Unknown Customer' : bill.customerName;
-    final totalAmount = bill.totalAmount.toString();
-    final paidAmount = bill.paidAmount.toString();
-    final paymentStatus = bill.paymentStatus;
+    final business =
+        state.profiles?.isNotEmpty == true
+            ? state.profiles!.first.businessName ?? 'Your Business'
+            : 'Your Business';
 
-    Color statusColor = theme.colorScheme.outline;
-    final pl = paymentStatus.toLowerCase();
-    if (pl == 'paid' || pl == 'complete') {
-      statusColor = Colors.green;
-    } else if (pl == 'partial') {
-      statusColor = Colors.orange;
-    } else if (pl == 'unpaid') {
-      statusColor = Colors.red;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 15),
-      margin: const EdgeInsets.symmetric(vertical: 5),
-      decoration: BoxDecoration(
-        border: Border(
-          bottom: BorderSide(
-            color: theme.colorScheme.outlineVariant,
-            width: 1,
-          ),
-        ),
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  customerName,
-                  style: const TextStyle(
-                    fontSize: 16,
+                  'Good day',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+                Text(
+                  business,
+                  style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Text(
-                      'Total: ₹$totalAmount',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                    const SizedBox(width: 10),
-                    Text(
-                      'Paid: ₹$paidAmount',
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ],
+                Text(
+                  DateFormat('EEEE, d MMMM').format(DateTime.now()),
+                  style: theme.textTheme.labelLarge?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
               ],
             ),
           ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-            decoration: BoxDecoration(
-              color: statusColor.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(12),
+          BlocBuilder<ConnectivityBloc, ConnectivityState>(
+            builder: (context, conn) {
+              return AppSyncStatusChip(
+                isOnline: conn.isOnline,
+                pendingCount: conn.pendingSyncCount,
+              );
+            },
+          ),
+          IconButton(
+            icon: Badge(
+              label: state.notificationCount > 0
+                  ? Text('${state.notificationCount}')
+                  : null,
+              child: const Icon(Icons.notifications_outlined),
             ),
-            child: Text(
-              paymentStatus,
+            onPressed: () => context.push('/app/notifications'),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _KpiGrid extends StatelessWidget {
+  const _KpiGrid({required this.state});
+
+  final DashboardHubState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final cross = AppBreakpoints.gridCrossAxisCount(context);
+    final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
+    return GridView.count(
+      crossAxisCount: cross,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 12,
+      mainAxisSpacing: 12,
+      childAspectRatio: 1.15,
+      children: [
+        AppMetricCard(
+          title: 'Revenue today',
+          value: fmt.format(state.revenueToday),
+          icon: Icons.today,
+          color: Colors.green,
+        ),
+        AppMetricCard(
+          title: 'This month',
+          value: fmt.format(state.revenueThisMonth),
+          icon: Icons.calendar_month,
+          color: Colors.blue,
+          subtitle: '${state.billsToday} bills today',
+        ),
+        AppMetricCard(
+          title: 'Low stock',
+          value: '${state.lowStockCount}',
+          icon: Icons.warning_amber,
+          color: Colors.orange,
+          onTap: () => context.go('/app/inventory'),
+        ),
+        AppMetricCard(
+          title: 'Net profit (month)',
+          value: fmt.format(state.netProfitThisMonth),
+          icon: Icons.trending_up,
+          color: Colors.purple,
+          subtitle: 'Expenses ${fmt.format(state.monthExpenses)}',
+        ),
+      ],
+    );
+  }
+}
+
+
+class _LowStockAlerts extends StatelessWidget {
+  const _LowStockAlerts({required this.state});
+
+  final DashboardHubState state;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppSectionCard(
+      title: 'Low stock alerts',
+      actionLabel: 'View all',
+      onAction: () => context.go('/app/inventory'),
+      child: SizedBox(
+        height: 40,
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: state.lowStockProducts.length,
+          separatorBuilder: (_, __) => const SizedBox(width: 8),
+          itemBuilder: (context, i) {
+            final p = state.lowStockProducts[i];
+            return ActionChip(
+              avatar: const Icon(Icons.warning_amber, size: 18),
+              label: Text('${p.name} (${p.stockQuantity})'),
+              onPressed: () => context.go('/app/inventory'),
+            );
+          },
+        ),
+      ),
+    );
+  }
+}
+
+class _CreditDueStrip extends StatelessWidget {
+  const _CreditDueStrip({required this.state});
+
+  final DashboardHubState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    return AppSectionCard(
+      title: 'Credit due',
+      actionLabel: 'Customers',
+      onAction: () => context.push('/customers'),
+      child: Column(
+        children: state.topCreditCustomers.map((c) {
+          return ListTile(
+            contentPadding: EdgeInsets.zero,
+            leading: CircleAvatar(child: Text(c.name.isNotEmpty ? c.name[0] : '?')),
+            title: Text(c.name),
+            subtitle: Text(c.phone ?? ''),
+            trailing: Text(
+              fmt.format(c.creditBalance),
               style: TextStyle(
-                color: statusColor,
-                fontSize: 12,
+                color: Theme.of(context).colorScheme.error,
                 fontWeight: FontWeight.bold,
               ),
             ),
-          ),
-        ],
+            onTap: () => context.push('/customers/${c.id}'),
+          );
+        }).toList(),
+      ),
+    );
+  }
+}
+
+class _RecentBills extends StatelessWidget {
+  const _RecentBills({required this.state});
+
+  final DashboardHubState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final bills = state.bills;
+    if (bills == null || bills.isEmpty) {
+      return AppSectionCard(
+        title: 'Recent bills',
+        child: Text(
+          'No bills yet',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      );
+    }
+
+    final sorted = List<Bill>.from(bills)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    final recent = sorted.take(5).toList();
+
+    return AppSectionCard(
+      title: 'Recent bills',
+      actionLabel: 'All',
+      onAction: () => context.push('/complete-transactions'),
+      child: Column(
+        children: recent.map((b) => _BillRow(bill: b)).toList(),
+      ),
+    );
+  }
+}
+
+class _BillRow extends StatelessWidget {
+  const _BillRow({required this.bill});
+
+  final Bill bill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    Color statusColor = theme.colorScheme.outline;
+    final pl = bill.paymentStatus.toLowerCase();
+    if (pl == 'complete' || pl == 'paid') statusColor = Colors.green;
+    if (pl == 'partial') statusColor = Colors.orange;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: ListTile(
+        title: Text(bill.customerName),
+        subtitle: Text('₹${bill.totalAmount.toStringAsFixed(2)}'),
+        trailing: Chip(
+          label: Text(bill.paymentStatus),
+          backgroundColor: statusColor.withValues(alpha: 0.12),
+          labelStyle: TextStyle(color: statusColor, fontSize: 12),
+        ),
       ),
     );
   }

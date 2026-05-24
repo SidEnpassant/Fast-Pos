@@ -1,12 +1,25 @@
 import 'package:flutter/widgets.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inventopos/app/local_notifications_holder.dart';
+import 'package:inventopos/core/router/app_router.dart';
+import 'package:inventopos/data/local/hive/local_store.dart';
 import 'package:inventopos/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Composition-root bootstrap (no UI): binding + remote SDK init.
+/// Composition-root bootstrap (no UI): binding + remote SDK + local store.
 Future<void> initializeApp() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await LocalStore.init();
   await Supabase.initialize(
     url: SupabaseConfig.url,
     anonKey: SupabaseConfig.anonKey,
+  );
+  await appLocalNotifications.initialize(
+    onNotificationTap: (_) {
+      final ctx = appRootNavigatorKey.currentContext;
+      if (ctx != null) {
+        GoRouter.of(ctx).push('/app/notifications');
+      }
+    },
   );
 }

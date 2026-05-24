@@ -142,62 +142,17 @@ class BillGenerationProductsSection extends StatelessWidget {
               ),
             )
           else
-            ListView.builder(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: lines.length,
-              itemBuilder: (context, index) {
-                final product = lines[index];
-                return Slidable(
-                  endActionPane: ActionPane(
-                    motion: const ScrollMotion(),
-                    children: [
-                      SlidableAction(
-                        onPressed: (_) {
-                          context.read<BillDraftBloc>().add(
-                                BillDraftLineRemoved(index),
-                              );
-                        },
-                        backgroundColor: Colors.red,
-                        foregroundColor: Colors.white,
-                        icon: Icons.delete,
-                        label: 'Delete',
-                      ),
-                    ],
-                  ),
-                  child: Card(
-                    elevation: 0,
-                    child: ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: Colors.blue[50],
-                        child: Text(
-                          product.name[0].toUpperCase(),
-                          style: TextStyle(
-                            color: Colors.blue[700],
-                          ),
-                        ),
-                      ),
-                      title: Text(
-                        product.name,
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      subtitle: Text(
-                        '₹${product.price.toStringAsFixed(2)} × ${product.quantity}',
-                        style: GoogleFonts.poppins(),
-                      ),
-                      trailing: Text(
-                        '₹${(product.price * product.quantity).toStringAsFixed(2)}',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          color: Colors.blue[700],
-                        ),
-                      ),
+            Column(
+              children: [
+                for (var index = 0; index < lines.length; index++)
+                  _BillDraftLineTile(
+                    key: ValueKey(
+                      'bill-line-${lines[index].name}-$index-${lines.length}',
                     ),
+                    line: lines[index],
+                    index: index,
                   ),
-                ).animate().fadeIn().slideX();
-              },
+              ],
             ),
           if (lines.isNotEmpty) ...[
             const Divider(height: 32),
@@ -309,5 +264,71 @@ class BillGenerationPaymentSection extends StatelessWidget {
         ],
       ),
     ).animate().fadeIn().slideX(delay: const Duration(milliseconds: 400));
+  }
+}
+
+class _BillDraftLineTile extends StatelessWidget {
+  const _BillDraftLineTile({
+    super.key,
+    required this.line,
+    required this.index,
+  });
+
+  final BillDraftLine line;
+  final int index;
+
+  @override
+  Widget build(BuildContext context) {
+    final initial =
+        line.name.isNotEmpty ? line.name[0].toUpperCase() : '?';
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Slidable(
+        key: ValueKey('slidable-$index'),
+        endActionPane: ActionPane(
+          motion: const ScrollMotion(),
+          children: [
+            SlidableAction(
+              onPressed: (_) {
+                context.read<BillDraftBloc>().add(
+                      BillDraftLineRemoved(index),
+                    );
+              },
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+              icon: Icons.delete,
+              label: 'Delete',
+            ),
+          ],
+        ),
+        child: Card(
+          elevation: 0,
+          child: ListTile(
+            leading: CircleAvatar(
+              backgroundColor: Colors.blue[50],
+              child: Text(
+                initial,
+                style: TextStyle(color: Colors.blue[700]),
+              ),
+            ),
+            title: Text(
+              line.name,
+              style: GoogleFonts.poppins(fontWeight: FontWeight.w500),
+            ),
+            subtitle: Text(
+              '₹${line.price.toStringAsFixed(2)} × ${line.quantity}',
+              style: GoogleFonts.poppins(),
+            ),
+            trailing: Text(
+              '₹${(line.price * line.quantity).toStringAsFixed(2)}',
+              style: GoogleFonts.poppins(
+                fontWeight: FontWeight.w600,
+                color: Colors.blue[700],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

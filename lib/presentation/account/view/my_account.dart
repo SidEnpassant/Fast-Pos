@@ -11,6 +11,7 @@ import 'package:inventopos/presentation/account/widgets/account_editable_field_t
 import 'package:inventopos/presentation/account/widgets/account_field_edit_dialog.dart';
 import 'package:inventopos/presentation/account/widgets/account_mutation_overlay.dart';
 import 'package:inventopos/presentation/account/widgets/account_profile_header_section.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 
 class MyAccountPage extends StatefulWidget {
@@ -280,6 +281,16 @@ class _MyAccountPageState extends State<MyAccountPage>
                                                 'billRules',
                                               ),
                                             ),
+                                          ),
+                                        ),
+                                        _animatedTile(
+                                          child: ListTile(
+                                            leading: const Icon(Icons.print),
+                                            title: const Text('Printer setup'),
+                                            subtitle: const Text(
+                                              'Business tools are on the Dashboard',
+                                            ),
+                                            onTap: () => context.push('/printer-setup'),
                                           ),
                                         ),
                                         const SizedBox(height: 40),

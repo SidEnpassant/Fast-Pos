@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
-import 'package:inventopos/application/billing/extract_text_lines_from_image_path_use_case.dart';
-import 'package:inventopos/application/billing/lookup_product_name_by_barcode_use_case.dart';
+import 'package:inventopos/presentation/billing/widgets/bill_add_product_chooser.dart';
 import 'package:inventopos/domain/billing/bill_submission.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
@@ -15,13 +13,11 @@ import 'package:inventopos/presentation/billing/bloc/bill_submission_state.dart'
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_event.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_state.dart';
-import 'package:inventopos/presentation/billing/widgets/bill_add_product_dialog.dart';
-import 'package:inventopos/presentation/billing/widgets/bill_barcode_scan_bottom_sheet.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_generation_sections.dart';
-import 'package:inventopos/presentation/billing/widgets/bill_invoice_download_demo.dart';
-import 'package:inventopos/presentation/billing/widgets/bill_ocr_line_picker_dialog.dart';
+import 'package:inventopos/application/billing/print_receipt_use_case.dart';
+import 'package:inventopos/domain/entities/receipt_payload.dart';
+import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
-import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -33,9 +29,6 @@ class BillGenerationPage extends StatefulWidget {
 }
 
 class _BillGenerationPageState extends State<BillGenerationPage> {
-  final MobileScannerController _scannerController = MobileScannerController();
-  final ImagePicker _imagePicker = ImagePicker();
-
   final _formKey = GlobalKey<FormState>();
   final _customerNameController = TextEditingController();
   final _customerPhoneController = TextEditingController();
@@ -45,34 +38,12 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
 
   @override
   void dispose() {
-    _scannerController.dispose();
     _customerNameController.dispose();
     _customerPhoneController.dispose();
-
     super.dispose();
   }
 
-  void _showAddProductDialog([String? initialProductName]) {
-    final lookup = context.read<LookupProductNameByBarcodeUseCase>();
-    final extractLines = context.read<ExtractTextLinesFromImagePathUseCase>();
-    final draftBloc = context.read<BillDraftBloc>();
-
-    showAddBillProductDialog(
-      context,
-      draftBloc: draftBloc,
-      pickBarcodeProductName: () => showBarcodeProductNameBottomSheet(
-        context,
-        scannerController: _scannerController,
-        lookup: lookup,
-      ),
-      pickOcrCombinedText: () => showOcrLinePickerDialog(
-        context,
-        imagePicker: _imagePicker,
-        extractLines: extractLines,
-      ),
-      initialProductName: initialProductName,
-    );
-  }
+  void _showAddProductChooser() => showBillAddProductChooser(context);
 
   @override
   Widget build(BuildContext context) {
@@ -149,7 +120,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                   BillGenerationProductsSection(
                                     lines: draft.lines,
                                     totalAmount: totalAmount,
-                                    onAddProduct: _showAddProductDialog,
+                                    onAddProduct: _showAddProductChooser,
                                   ),
                                   const SizedBox(height: 16),
                                   BillGenerationPaymentSection(
@@ -183,7 +154,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                     label: Text(
                                       'Generate Bill',
                                       style: GoogleFonts.poppins(
-                                        fontSize: 16,
+                                        fontSize: 20,
                                         fontWeight: FontWeight.w500,
                                       ),
                                     ),
@@ -248,6 +219,13 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
           content: const Text('What would you like to do with the PDF?'),
           actions: <Widget>[
             TextButton(
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _printReceipt();
+              },
+              child: const Text('Print receipt'),
+            ),
+            TextButton(
               onPressed: () {
                 _viewPDF(pdfPath);
                 Navigator.of(context).pop();
@@ -259,7 +237,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                 _sharePDF(pdfPath);
                 Navigator.of(context).pop();
               },
-              child: const Text('Share via WhatsApp'),
+              child: const Text('Share'),
             ),
           ],
         );
@@ -267,10 +245,36 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
     );
   }
 
-  /// Sample remote PDF download (same behavior as before), delegated to
-  /// [BillInvoiceDownloadDemo].
-  void downloadInvoice(BuildContext context) {
-    BillInvoiceDownloadDemo.runSampleDownload(context);
+  Future<void> _printReceipt() async {
+    final draft = context.read<BillDraftBloc>().state;
+    final profile = await context.read<ProfileRepository>().fetchCurrentUserProfileSnapshot();
+    final business = profile?.businessName ?? 'Business';
+    try {
+      await context.read<PrintReceiptUseCase>().call(
+            ReceiptPayload(
+              businessName: business,
+              customerName: _customerNameController.text.trim(),
+              lines: draft.lines
+                  .map(
+                    (l) => ReceiptLine(
+                      name: l.name,
+                      quantity: l.quantity,
+                      total: l.price * l.quantity,
+                    ),
+                  )
+                  .toList(),
+              totalAmount: draft.subtotal,
+              paidAmount: _paidAmount,
+              paymentMethod: _paymentMethod,
+            ),
+          );
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Print failed: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _viewPDF(String pdfPath) async {

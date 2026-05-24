@@ -15,6 +15,10 @@ abstract class BillsRepository {
     required double paidAmount,
     required String paymentMethod,
     required String paymentStatus,
+    String? clientId,
+    String? customerId,
+    List<Map<String, dynamic>>? discountBreakdown,
+    String? contentHash,
   });
 
   /// Server-side sequential display number (RPC).

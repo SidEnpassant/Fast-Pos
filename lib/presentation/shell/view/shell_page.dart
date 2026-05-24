@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
+import 'package:inventopos/presentation/core/widgets/offline_banner.dart';
 import 'package:inventopos/presentation/shell/widgets/shell_navigation_config.dart';
 
 /// Signed-in root: adaptive [NavigationBar] / [NavigationRail] around
@@ -39,14 +40,14 @@ class _ShellScaffold extends StatelessWidget {
               destinations: ShellNavigationConfig.railDestinations,
             ),
             const VerticalDivider(width: 1, thickness: 1),
-            Expanded(child: navigationShell),
+            Expanded(child: OfflineBanner(child: navigationShell)),
           ],
         ),
       );
     }
 
     return Scaffold(
-      body: navigationShell,
+      body: OfflineBanner(child: navigationShell),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
         onDestinationSelected: onSelect,

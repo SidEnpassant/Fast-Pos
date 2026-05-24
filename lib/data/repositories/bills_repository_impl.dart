@@ -35,26 +35,33 @@ class BillsRepositoryImpl implements BillsRepository {
     required double paidAmount,
     required String paymentMethod,
     required String paymentStatus,
+    String? clientId,
+    String? customerId,
+    List<Map<String, dynamic>>? discountBreakdown,
+    String? contentHash,
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) {
       throw StateError('User not authenticated');
     }
-    final inserted = await _client
-        .from('bills')
-        .insert({
-          'user_id': user.id,
-          'business_name': businessName,
-          'customer_name': customerName,
-          'customer_phone': customerPhone,
-          'products': productsJson,
-          'total_amount': totalAmount,
-          'paid_amount': paidAmount,
-          'payment_method': paymentMethod,
-          'payment_status': paymentStatus,
-        })
-        .select('id')
-        .single();
+    final row = <String, dynamic>{
+      'user_id': user.id,
+      'business_name': businessName,
+      'customer_name': customerName,
+      'customer_phone': customerPhone,
+      'products': productsJson,
+      'total_amount': totalAmount,
+      'paid_amount': paidAmount,
+      'payment_method': paymentMethod,
+      'payment_status': paymentStatus,
+      if (clientId != null) 'client_id': clientId,
+      if (customerId != null) 'customer_id': customerId,
+      if (discountBreakdown != null) 'discount_breakdown': discountBreakdown,
+      if (contentHash != null) 'content_hash': contentHash,
+      'sync_status': 'synced',
+    };
+    final inserted =
+        await _client.from('bills').insert(row).select('id').single();
     return inserted['id'] as String;
   }
 
