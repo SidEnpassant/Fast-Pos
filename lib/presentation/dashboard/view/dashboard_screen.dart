@@ -67,10 +67,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           const SizedBox(height: AppSpacing.lg),
                           _LowStockAlerts(state: state),
                         ],
-                        if (state.topCreditCustomers.isNotEmpty) ...[
-                          const SizedBox(height: AppSpacing.lg),
-                          _CreditDueStrip(state: state),
-                        ],
                         const SizedBox(height: AppSpacing.lg),
                         _RecentBills(state: state),
                       ]),
@@ -135,6 +131,11 @@ class _Header extends StatelessWidget {
                 pendingCount: conn.pendingSyncCount,
               );
             },
+          ),
+          IconButton(
+            icon: const Icon(Icons.person_2_outlined),
+            tooltip: 'Profile',
+            onPressed: () => context.push('/app/profile'),
           ),
           IconButton(
             icon: Badge(
@@ -228,40 +229,6 @@ class _LowStockAlerts extends StatelessWidget {
             );
           },
         ),
-      ),
-    );
-  }
-}
-
-class _CreditDueStrip extends StatelessWidget {
-  const _CreditDueStrip({required this.state});
-
-  final DashboardHubState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-    return AppSectionCard(
-      title: 'Credit due',
-      actionLabel: 'Customers',
-      onAction: () => context.push('/customers'),
-      child: Column(
-        children: state.topCreditCustomers.map((c) {
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: CircleAvatar(child: Text(c.name.isNotEmpty ? c.name[0] : '?')),
-            title: Text(c.name),
-            subtitle: Text(c.phone ?? ''),
-            trailing: Text(
-              fmt.format(c.creditBalance),
-              style: TextStyle(
-                color: Theme.of(context).colorScheme.error,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            onTap: () => context.push('/customers/${c.id}'),
-          );
-        }).toList(),
       ),
     );
   }

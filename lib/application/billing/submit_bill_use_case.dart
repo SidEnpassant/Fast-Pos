@@ -1,4 +1,7 @@
+import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
+import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
+import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/core/performance/main_isolate.dart';
 import 'package:inventopos/data/billing/bill_pdf_generator.dart';
 import 'package:inventopos/data/security/bill_audit_service.dart';
@@ -8,7 +11,7 @@ import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/domain/repositories/transactions_repository.dart';
 
-/// Persists bill + transaction, then generates the PDF on disk.
+/// Persists bill, decrements stock, generates PDF, uploads to cloud.
 class SubmitBillUseCase {
   SubmitBillUseCase(
     this._bills,
@@ -17,6 +20,9 @@ class SubmitBillUseCase {
     this._pdf,
     this._auth,
     this._upsertCustomer,
+    this._validateDraft,
+    this._decrementStock,
+    this._uploadPdf,
   );
 
   final BillsRepository _bills;
@@ -25,8 +31,16 @@ class SubmitBillUseCase {
   final BillPdfGenerator _pdf;
   final AuthRepository _auth;
   final UpsertCustomerFromBillUseCase _upsertCustomer;
+  final ValidateBillDraftUseCase _validateDraft;
+  final DecrementStockOnBillUseCase _decrementStock;
+  final UploadBillPdfUseCase _uploadPdf;
 
   Future<BillSubmissionResult> call(BillSubmissionDraft draft) async {
+    final validationError = await _validateDraft(draft.lines);
+    if (validationError != null) {
+      throw StateError(validationError);
+    }
+
     final merchant = await _profile.fetchCurrentUserProfileSnapshot();
     final businessName = merchant?.businessName;
     if (businessName == null || businessName.isEmpty) {
@@ -60,6 +74,14 @@ class SubmitBillUseCase {
     );
 
     final uid = _auth.currentSession?.userId;
+    if (uid != null) {
+      await _decrementStock(
+        billId: billId,
+        lines: draft.lines,
+        userId: uid,
+      );
+    }
+
     if (uid != null &&
         (draft.customerName.trim().isNotEmpty ||
             draft.customerPhone.trim().isNotEmpty)) {
@@ -85,6 +107,9 @@ class SubmitBillUseCase {
     );
 
     final sequentialBillNumber = await _bills.nextBillSequenceNumber();
+    await _bills.patchLocalBillMetadata(billId, {
+      'display_bill_number': sequentialBillNumber,
+    });
 
     await deferToNextEventLoop(() async {});
 
@@ -101,6 +126,24 @@ class SubmitBillUseCase {
       paidAmount: draft.paidAmount,
       totalAmount: total,
     );
+
+    try {
+      await _uploadPdf(
+        billId: billId,
+        localPdfPath: pdfPath,
+      );
+    } catch (_) {
+      for (final delayMs in [600, 1200, 2000]) {
+        await Future<void>.delayed(Duration(milliseconds: delayMs));
+        try {
+          await _uploadPdf(
+            billId: billId,
+            localPdfPath: pdfPath,
+          );
+          break;
+        } catch (_) {}
+      }
+    }
 
     return BillSubmissionResult(billId: billId, pdfPath: pdfPath);
   }

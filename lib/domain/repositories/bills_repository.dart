@@ -42,4 +42,30 @@ abstract class BillsRepository {
     required double newPaidAmount,
     required double totalAmount,
   });
+
+  /// Persists cloud PDF URL on the bill row.
+  Future<void> updatePdfUrl({
+    required String billId,
+    required String pdfUrl,
+    required DateTime pdfUpdatedAt,
+  });
+
+  /// Patches local-only bill metadata (e.g. display bill number).
+  Future<void> patchLocalBillMetadata(
+    String billId,
+    Map<String, dynamic> fields,
+  );
+
+  /// Fetches a single bill by id (remote + local merge).
+  Future<Bill?> fetchBillById(String billId);
+
+  /// Reads the bill from local Hive only (no network).
+  Future<Bill?> fetchLocalBillById(String billId);
+
+  /// Bills linked to a customer id or phone.
+  Stream<List<Bill>> watchBillsForCustomer({
+    required String userId,
+    String? customerId,
+    String? customerPhone,
+  });
 }

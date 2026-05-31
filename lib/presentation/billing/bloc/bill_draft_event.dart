@@ -17,6 +17,16 @@ class BillDraftLineAdded extends BillDraftEvent {
   List<Object?> get props => [line];
 }
 
+class BillDraftLineUpdated extends BillDraftEvent {
+  const BillDraftLineUpdated(this.index, this.line);
+
+  final int index;
+  final BillDraftLine line;
+
+  @override
+  List<Object?> get props => [index, line];
+}
+
 class BillDraftLineRemoved extends BillDraftEvent {
   const BillDraftLineRemoved(this.index);
 

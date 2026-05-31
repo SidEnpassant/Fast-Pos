@@ -12,6 +12,7 @@ import 'package:inventopos/application/profile/observe_profile_for_current_user_
 import 'package:inventopos/application/profile/patch_account_profile_field_use_case.dart';
 import 'package:inventopos/application/profile/replace_account_signature_use_case.dart';
 import 'package:inventopos/application/registration/register_account_use_case.dart';
+import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
@@ -26,19 +27,24 @@ import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_submission_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_bloc.dart';
 import 'package:inventopos/presentation/billing/view/bill_generation_page.dart';
+import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_bloc.dart';
+import 'package:inventopos/presentation/billing/view/bill_inventory_picker_page.dart';
 import 'package:inventopos/presentation/checkout/bloc/checkout_bloc.dart';
 import 'package:inventopos/presentation/checkout/bloc/checkout_scan_bloc.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/application/billing/lookup_product_name_by_barcode_use_case.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
 import 'package:inventopos/presentation/inventory/view/inventory_screen.dart';
+import 'package:inventopos/presentation/expenses/bloc/expenses_bloc.dart';
 import 'package:inventopos/presentation/expenses/view/expenses_screen.dart';
+import 'package:inventopos/presentation/customers/bloc/customer_detail_bloc.dart';
 import 'package:inventopos/presentation/customers/view/customer_detail_screen.dart';
 import 'package:inventopos/presentation/customers/view/customers_screen.dart';
 import 'package:inventopos/presentation/printer_setup/view/printer_setup_page.dart';
 import 'package:inventopos/presentation/import_export/view/import_export_page.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
+import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
@@ -204,7 +210,10 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
       GoRoute(
         path: '/expenses',
         parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) => const ExpensesScreen(),
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => ExpensesBloc(ctx.read<ExpenseRepository>()),
+          child: const ExpensesScreen(),
+        ),
       ),
       GoRoute(
         path: '/customers',
@@ -214,8 +223,14 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
       GoRoute(
         path: '/customers/:id',
         parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) => CustomerDetailScreen(
-          customerId: state.pathParameters['id']!,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => CustomerDetailBloc(
+            ctx.read<CustomerRepository>(),
+            ctx.read<BillsRepository>(),
+          ),
+          child: CustomerDetailScreen(
+            customerId: state.pathParameters['id']!,
+          ),
         ),
       ),
       GoRoute(
@@ -237,6 +252,23 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         builder: (context, state) => const ImportExportPage(),
       ),
       GoRoute(
+        path: '/app/bill/inventory-picker',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra;
+          final draftLines = extra is List<BillDraftLine>
+              ? extra
+              : extra is List
+                  ? List<BillDraftLine>.from(extra.cast<BillDraftLine>())
+                  : const <BillDraftLine>[];
+          return BlocProvider(
+            create: (ctx) =>
+                BillInventoryPickerBloc(ctx.read<ProductRepository>()),
+            child: BillInventoryPickerPage(existingDraftLines: draftLines),
+          );
+        },
+      ),
+      GoRoute(
         path: '/app/notifications',
         parentNavigatorKey: appRootNavigatorKey,
         builder: (ctx, state) {
@@ -249,6 +281,20 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
             child: const NotificationsScreen(),
           );
         },
+      ),
+      GoRoute(
+        path: '/app/profile',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (ctx, state) => BlocProvider(
+          create: (ctx) => AccountBloc(
+            ctx.read<ObserveProfileForCurrentUserUseCase>(),
+            ctx.read<PatchAccountProfileFieldUseCase>(),
+            ctx.read<ReplaceAccountSignatureUseCase>(),
+            ctx.read<ProfileRepository>(),
+            ctx.read<AuthRepository>(),
+          ),
+          child: const MyAccountPage(),
+        ),
       ),
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -331,23 +377,6 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                     ),
                   ],
                   child: const AnalyticsSuiteScreen(),
-                ),
-              ),
-            ],
-          ),
-          StatefulShellBranch(
-            routes: [
-              GoRoute(
-                path: '/app/profile',
-                builder: (context, state) => BlocProvider(
-                  create: (ctx) => AccountBloc(
-                    ctx.read<ObserveProfileForCurrentUserUseCase>(),
-                    ctx.read<PatchAccountProfileFieldUseCase>(),
-                    ctx.read<ReplaceAccountSignatureUseCase>(),
-                    ctx.read<ProfileRepository>(),
-                    ctx.read<AuthRepository>(),
-                  ),
-                  child: const MyAccountPage(),
                 ),
               ),
             ],

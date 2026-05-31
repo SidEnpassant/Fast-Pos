@@ -5,4 +5,5 @@ import 'package:inventopos/app/fast_pos_app.dart';
 Future<void> main() async {
   await initializeApp();
   runApp(fastPosRoot());
+  
 }

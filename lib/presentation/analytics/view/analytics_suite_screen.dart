@@ -121,7 +121,7 @@ class _OverviewTab extends StatelessWidget {
             const SizedBox(height: 16),
             AppSectionCard(
               title: 'Bills this month',
-              child: Text('${hub.bills.length} total bills'),
+              child: Text('${hub.billsThisMonth} total bills'),
             ),
           ],
         );

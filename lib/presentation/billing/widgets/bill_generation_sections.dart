@@ -7,6 +7,7 @@ import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_form_components.dart';
+import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 
 class BillGenerationCustomerSection extends StatelessWidget {
   const BillGenerationCustomerSection({
@@ -326,6 +327,23 @@ class _BillDraftLineTile extends StatelessWidget {
                 color: Colors.blue[700],
               ),
             ),
+            onTap: () async {
+              final draftLines = context.read<BillDraftBloc>().state.lines;
+              final updated = await showBillLineQuantitySheet(
+                context,
+                name: line.name,
+                price: line.price,
+                productId: line.productId,
+                initialQuantity: line.quantity,
+                editingIndex: index,
+                existingLines: draftLines,
+              );
+              if (updated != null && context.mounted) {
+                context.read<BillDraftBloc>().add(
+                      BillDraftLineUpdated(index, updated),
+                    );
+              }
+            },
           ),
         ),
       ),

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:inventopos/data/local/hive/hive_bill_dao.dart';
+import 'package:inventopos/data/mappers/merge_bills.dart';
 import 'package:inventopos/data/repositories/bills_repository_impl.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
@@ -48,7 +49,12 @@ class OfflineFirstBillsRepository implements BillsRepository {
           byId[b.id] = b;
         }
         for (final b in localBills) {
-          if (!byId.containsKey(b.id)) byId[b.id] = b;
+          final existing = byId[b.id];
+          if (existing == null) {
+            byId[b.id] = b;
+          } else {
+            byId[b.id] = mergeBillSnapshots(existing, b);
+          }
         }
         final merged = byId.values.toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -62,7 +68,7 @@ class OfflineFirstBillsRepository implements BillsRepository {
       remoteSub = remoteStream.listen((bills) {
         remoteBills = bills;
         for (final b in bills) {
-          unawaited(_local.putFromBill(b));
+          unawaited(_local.mergeFromRemote(b, mergeBillSnapshots));
         }
         emitMerged();
       }, onError: (_) {});
@@ -144,7 +150,7 @@ class OfflineFirstBillsRepository implements BillsRepository {
     );
 
     if (await (_sync?.isOnline() ?? false)) {
-      unawaited(_sync?.processOutbox(uid));
+      await _sync?.processOutbox(uid);
     }
 
     return localId;
@@ -177,10 +183,91 @@ class OfflineFirstBillsRepository implements BillsRepository {
     required String billId,
     required double newPaidAmount,
     required double totalAmount,
+  }) async {
+    final status = newPaidAmount >= totalAmount ? 'complete' : 'partial';
+    final now = DateTime.now();
+    await _local.patch(billId, {
+      'paid_amount': newPaidAmount,
+      'payment_status': status,
+      'last_updated': now.toUtc().toIso8601String(),
+    });
+    await _remote.updateBillPayment(
+      billId: billId,
+      newPaidAmount: newPaidAmount,
+      totalAmount: totalAmount,
+    );
+  }
+
+  @override
+  Future<void> updatePdfUrl({
+    required String billId,
+    required String pdfUrl,
+    required DateTime pdfUpdatedAt,
+  }) async {
+    await _local.patch(billId, {
+      'pdf_url': pdfUrl,
+      'pdf_updated_at': pdfUpdatedAt.toUtc().toIso8601String(),
+    });
+
+    for (var attempt = 0; attempt < 5; attempt++) {
+      try {
+        await _remote.updatePdfUrl(
+          billId: billId,
+          pdfUrl: pdfUrl,
+          pdfUpdatedAt: pdfUpdatedAt,
+        );
+        return;
+      } catch (_) {
+        await Future<void>.delayed(Duration(milliseconds: 350 * (attempt + 1)));
+      }
+    }
+    // Local Hive already has pdf_url; storage upload succeeded upstream.
+  }
+
+  @override
+  Future<void> patchLocalBillMetadata(
+    String billId,
+    Map<String, dynamic> fields,
+  ) =>
+      _local.patch(billId, fields);
+
+  @override
+  Future<Bill?> fetchLocalBillById(String billId) async {
+    final uid = _userId;
+    if (uid == null) return null;
+    return _local.findById(uid, billId);
+  }
+
+  @override
+  Future<Bill?> fetchBillById(String billId) async {
+    final local = await fetchLocalBillById(billId);
+
+    Bill? remote;
+    try {
+      remote = await _remote.fetchBillById(billId);
+    } catch (_) {}
+
+    if (remote != null && local != null) {
+      final merged = mergeBillSnapshots(remote, local);
+      await _local.putFromBill(merged);
+      return merged;
+    }
+    if (remote != null) {
+      await _local.putFromBill(remote);
+      return remote;
+    }
+    return local;
+  }
+
+  @override
+  Stream<List<Bill>> watchBillsForCustomer({
+    required String userId,
+    String? customerId,
+    String? customerPhone,
   }) =>
-      _remote.updateBillPayment(
-        billId: billId,
-        newPaidAmount: newPaidAmount,
-        totalAmount: totalAmount,
+      _remote.watchBillsForCustomer(
+        userId: userId,
+        customerId: customerId,
+        customerPhone: customerPhone,
       );
 }

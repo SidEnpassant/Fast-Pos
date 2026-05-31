@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
@@ -13,10 +13,9 @@ import 'package:inventopos/core/utils/date_picker_utils.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_bloc.dart';
-import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_event.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_bloc.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_state.dart';
-import 'package:inventopos/presentation/transactions/widgets/signed_bill_preview_dialog.dart';
+import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
 import 'package:inventopos/presentation/transactions/widgets/transaction_amount_row.dart';
 import 'package:inventopos/presentation/transactions/widgets/transaction_bill_actions_feedback_listener.dart';
 
@@ -212,7 +211,7 @@ class _IncompleteTransactionsScreenState
                                 ),
                               ),
                               ...bills.map((bill) {
-                                return _buildBillCard(context, bill);
+                                return _buildBillCard(bodyContext, bill);
                               }),
                             ],
                           );
@@ -227,27 +226,6 @@ class _IncompleteTransactionsScreenState
         },
       ),
     );
-  }
-
-  Future<void> _updateSignedBill(String billId) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.camera);
-
-    if (image == null || !mounted) return;
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    if (!mounted) return;
-    context.read<TransactionBillActionsBloc>().add(
-          TransactionBillReplaceSignedRequested(
-            billId: billId,
-            localFilePath: image.path,
-          ),
-        );
   }
 
   Widget _buildSearchField(BuildContext blocContext) {
@@ -266,103 +244,28 @@ class _IncompleteTransactionsScreenState
   }
 
   Future<void> _showUpdatePaymentDialog(
-    BuildContext dialogHost,
+    BuildContext scaffoldContext,
     String billId,
     double remainingAmount,
     Bill bill,
   ) async {
-    final amountController = TextEditingController();
-    var updateSignedBill = false;
-
     await showDialog<void>(
-      context: dialogHost,
-      builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setState) => AlertDialog(
-          title: Text(
-            remainingAmount <= 0 ? 'Update Final Payment' : 'Update Payment',
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Remaining Amount: ₹${remainingAmount.toStringAsFixed(2)}'),
-              const SizedBox(height: 16),
-              TextField(
-                controller: amountController,
-                keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'Amount Paid',
-                  border: OutlineInputBorder(),
-                  prefixText: '₹',
-                ),
-                onChanged: (_) => setState(() {}),
-              ),
-              if (double.tryParse(amountController.text) == remainingAmount)
-                CheckboxListTile(
-                  title: const Text('Update signed bill'),
-                  value: updateSignedBill,
-                  onChanged: (bool? value) {
-                    setState(() {
-                      updateSignedBill = value ?? false;
-                    });
-                  },
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: const Text('Cancel'),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                final amount = double.tryParse(amountController.text);
-                if (amount == null || amount <= 0 || amount > remainingAmount) {
-                  ScaffoldMessenger.of(dialogContext).showSnackBar(
-                    const SnackBar(
-                      content: Text('Please enter a valid amount'),
-                    ),
-                  );
-                  return;
-                }
-
-                final newPaid = bill.paidAmount + amount;
-                try {
-                  await dialogContext.read<UpdateBillPaymentUseCase>().call(
-                        billId: billId,
-                        newPaidAmount: newPaid,
-                        totalAmount: bill.totalAmount,
-                      );
-                } catch (e) {
-                  if (dialogContext.mounted) {
-                    ScaffoldMessenger.of(dialogContext).showSnackBar(
-                      SnackBar(content: Text('Error: $e')),
-                    );
-                  }
-                  return;
-                }
-
-                if (!dialogContext.mounted) return;
-                Navigator.pop(dialogContext);
-
-                if (amount == remainingAmount && updateSignedBill) {
-                  if (!mounted) return;
-                  await _updateSignedBill(billId);
-                }
-              },
-              child: const Text('Update'),
-            ),
-          ],
-        ),
+      context: scaffoldContext,
+      barrierDismissible: false,
+      builder: (dialogContext) => _UpdatePaymentDialog(
+        billId: billId,
+        bill: bill,
+        remainingAmount: remainingAmount,
+        scaffoldContext: scaffoldContext,
       ),
     );
   }
 
-  Widget _buildBillCard(BuildContext context, Bill bill) {
+  Widget _buildBillCard(BuildContext scaffoldContext, Bill bill) {
     final billId = bill.id;
     final totalAmount = bill.totalAmount;
     final paidAmount = bill.paidAmount;
     final remainingAmount = totalAmount - paidAmount;
-    final signedBillUrl = bill.signedBillUrl;
 
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -395,45 +298,259 @@ class _IncompleteTransactionsScreenState
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.upload_file),
-                  label: const Text('Update Signed Bill'),
-                  onPressed: () => _updateSignedBill(billId),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    foregroundColor: Colors.white,
+                if (remainingAmount > 0)
+                  FilledButton.icon(
+                    icon: const Icon(Icons.payments),
+                    label: const Text('Update payment'),
+                    onPressed: () => _showUpdatePaymentDialog(
+                      scaffoldContext,
+                      billId,
+                      remainingAmount,
+                      bill,
+                    ),
                   ),
-                ),
-                ElevatedButton.icon(
-                  icon: const Icon(Icons.receipt_long),
+                FilledButton.icon(
+                  icon: const Icon(Icons.picture_as_pdf),
                   label: const Text('Show Bill'),
-                  onPressed: signedBillUrl == null
-                      ? null
-                      : () => showSignedBillPreviewDialog(
-                            context,
-                            billUrl: signedBillUrl,
-                          ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.edit),
-                  onPressed: remainingAmount > 0
-                      ? () => _showUpdatePaymentDialog(
-                            context,
-                            billId,
-                            remainingAmount,
-                            bill,
-                          )
-                      : null,
+                  onPressed: () => openBillPdfForBill(scaffoldContext, bill),
                 ),
               ],
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _UpdatePaymentDialog extends StatefulWidget {
+  const _UpdatePaymentDialog({
+    required this.billId,
+    required this.bill,
+    required this.remainingAmount,
+    required this.scaffoldContext,
+  });
+
+  final String billId;
+  final Bill bill;
+  final double remainingAmount;
+  final BuildContext scaffoldContext;
+
+  @override
+  State<_UpdatePaymentDialog> createState() => _UpdatePaymentDialogState();
+}
+
+class _UpdatePaymentDialogState extends State<_UpdatePaymentDialog> {
+  final _amountController = TextEditingController();
+  bool _isUpdating = false;
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    final amount = double.tryParse(_amountController.text);
+    if (amount == null || amount <= 0 || amount > widget.remainingAmount) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Enter a valid amount')),
+      );
+      return;
+    }
+
+    setState(() => _isUpdating = true);
+
+    final newPaid = widget.bill.paidAmount + amount;
+    UpdateBillPaymentResult result;
+    try {
+      result = await context.read<UpdateBillPaymentUseCase>().call(
+            billId: widget.billId,
+            newPaidAmount: newPaid,
+            totalAmount: widget.bill.totalAmount,
+          );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isUpdating = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
+      return;
+    }
+
+    if (!mounted) return;
+
+    _showResultSnackBar(result);
+    if (mounted) Navigator.pop(context);
+  }
+
+  void _showResultSnackBar(UpdateBillPaymentResult result) {
+    final host = widget.scaffoldContext;
+    if (!host.mounted) return;
+
+    final messenger = ScaffoldMessenger.maybeOf(host);
+    if (messenger == null) return;
+
+    if (result.pdfSyncFailed) {
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Payment updated. Invoice PDF could not sync to cloud — '
+            'tap Show Bill to retry.',
+          ),
+          duration: Duration(seconds: 5),
+        ),
+      );
+    } else {
+      messenger.showSnackBar(
+        const SnackBar(content: Text('Payment and invoice updated')),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return PopScope(
+      canPop: !_isUpdating,
+      child: AlertDialog(
+        title: Text(_isUpdating ? 'Processing payment' : 'Update payment'),
+        content: AnimatedSwitcher(
+          duration: const Duration(milliseconds: 320),
+          switchInCurve: Curves.easeOutCubic,
+          switchOutCurve: Curves.easeInCubic,
+          child: _isUpdating
+              ? _UpdatePaymentLoader(theme: theme)
+              : _UpdatePaymentForm(
+                  key: const ValueKey('form'),
+                  remainingAmount: widget.remainingAmount,
+                  amountController: _amountController,
+                ),
+        ),
+        actions: _isUpdating
+            ? null
+            : [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancel'),
+                ),
+                FilledButton(
+                  onPressed: _submit,
+                  child: const Text('Update'),
+                ),
+              ],
+      ),
+    );
+  }
+}
+
+class _UpdatePaymentForm extends StatelessWidget {
+  const _UpdatePaymentForm({
+    super.key,
+    required this.remainingAmount,
+    required this.amountController,
+  });
+
+  final double remainingAmount;
+  final TextEditingController amountController;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('form-column'),
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text('Remaining: ₹${remainingAmount.toStringAsFixed(2)}'),
+        const SizedBox(height: 16),
+        TextField(
+          controller: amountController,
+          keyboardType: TextInputType.number,
+          decoration: const InputDecoration(
+            labelText: 'Amount paid now',
+            border: OutlineInputBorder(),
+            prefixText: '₹',
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _UpdatePaymentLoader extends StatelessWidget {
+  const _UpdatePaymentLoader({required this.theme});
+
+  final ThemeData theme;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      key: const ValueKey('loader'),
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 96,
+          width: 96,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              SizedBox(
+                height: 96,
+                width: 96,
+                child: CircularProgressIndicator(
+                  strokeWidth: 3.5,
+                  color: theme.colorScheme.primary,
+                  backgroundColor:
+                      theme.colorScheme.primary.withValues(alpha: 0.12),
+                ),
+              ),
+              Container(
+                height: 52,
+                width: 52,
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.primaryContainer,
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.payments_rounded,
+                  size: 28,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              )
+                  .animate(onPlay: (c) => c.repeat(reverse: true))
+                  .scale(
+                    begin: const Offset(0.92, 0.92),
+                    end: const Offset(1, 1),
+                    duration: 900.ms,
+                    curve: Curves.easeInOut,
+                  ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 24),
+        Text(
+          'Updating payment…',
+          style: theme.textTheme.titleSmall?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
+        )
+            .animate()
+            .fadeIn(duration: 280.ms)
+            .slideY(begin: 0.15, end: 0, duration: 280.ms),
+        const SizedBox(height: 8),
+        Text(
+          'Syncing your invoice PDF',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+          textAlign: TextAlign.center,
+        )
+            .animate()
+            .fadeIn(delay: 120.ms, duration: 320.ms)
+            .slideY(begin: 0.12, end: 0, delay: 120.ms, duration: 320.ms),
+      ],
     );
   }
 }

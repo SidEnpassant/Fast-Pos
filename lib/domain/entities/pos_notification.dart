@@ -8,6 +8,8 @@ class PosNotification extends Equatable {
     required this.message,
     required this.timestamp,
     required this.isRead,
+    this.dedupKey,
+    this.type,
   });
 
   final String id;
@@ -15,7 +17,10 @@ class PosNotification extends Equatable {
   final String message;
   final DateTime timestamp;
   final bool isRead;
+  final String? dedupKey;
+  final String? type;
 
   @override
-  List<Object?> get props => [id, userId, message, timestamp, isRead];
+  List<Object?> get props =>
+      [id, userId, message, timestamp, isRead, dedupKey, type];
 }

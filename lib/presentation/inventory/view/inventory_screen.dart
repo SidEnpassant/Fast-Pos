@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,7 @@ import 'package:inventopos/core/widgets/m3/app_barcode_scan_sheet.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_filter_chip_bar.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_event.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_state.dart';
@@ -27,6 +30,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
     final uid = context.read<AuthRepository>().currentSession?.userId;
     if (uid != null) {
       context.read<InventoryBloc>().add(InventoryStarted(uid));
+    }
+  }
+
+  @override
+  void activate() {
+    super.activate();
+    final uid = context.read<AuthRepository>().currentSession?.userId;
+    if (uid != null) {
+      unawaited(context.read<ProductRepository>().fetchProductsForUser(uid));
     }
   }
 

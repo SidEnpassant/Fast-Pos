@@ -1,4 +1,5 @@
 import 'package:equatable/equatable.dart';
+import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/entities/expense.dart';
@@ -32,7 +33,9 @@ class DashboardHubState extends Equatable {
     final bills = this.bills;
     if (bills == null) return 0;
     final today = DateTime.now();
-    return bills.where((b) => _isSameDay(b.createdAt, today)).fold(0.0, _billRevenue);
+    return bills
+        .where((b) => BillRevenue.isSameCalendarDay(b, today))
+        .fold(0.0, (sum, b) => sum + BillRevenue.recognizedAmount(b));
   }
 
   double get revenueThisMonth {
@@ -40,15 +43,15 @@ class DashboardHubState extends Equatable {
     if (bills == null) return 0;
     final now = DateTime.now();
     return bills
-        .where((b) => b.createdAt.year == now.year && b.createdAt.month == now.month)
-        .fold(0.0, _billRevenue);
+        .where((b) => BillRevenue.isSameCalendarMonth(b, now))
+        .fold(0.0, (sum, b) => sum + BillRevenue.recognizedAmount(b));
   }
 
   int get billsToday {
     final bills = this.bills;
     if (bills == null) return 0;
     final today = DateTime.now();
-    return bills.where((b) => _isSameDay(b.createdAt, today)).length;
+    return bills.where((b) => BillRevenue.isSameCalendarDay(b, today)).length;
   }
 
   int get lowStockCount => products.where((p) => p.isLowStock && p.isActive).length;
@@ -96,15 +99,6 @@ class DashboardHubState extends Equatable {
       isOnline: isOnline ?? this.isOnline,
       loading: loading ?? this.loading,
     );
-  }
-
-  static bool _isSameDay(DateTime a, DateTime b) =>
-      a.year == b.year && a.month == b.month && a.day == b.day;
-
-  static double _billRevenue(double sum, Bill b) {
-    if (b.paymentStatus == 'complete') return sum + b.totalAmount;
-    if (b.paymentStatus == 'partial') return sum + b.paidAmount;
-    return sum;
   }
 
   @override

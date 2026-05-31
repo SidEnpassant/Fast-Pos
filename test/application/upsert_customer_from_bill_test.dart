@@ -33,6 +33,14 @@ class _FakeCustomerRepo implements CustomerRepository {
   }
 
   @override
+  Future<Customer?> findById(String customerId) async {
+    for (final c in customers) {
+      if (c.id == customerId) return c;
+    }
+    return null;
+  }
+
+  @override
   Stream<List<Customer>> watchCustomersForUser(String userId) async* {
     yield customers;
   }

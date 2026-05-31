@@ -23,11 +23,6 @@ abstract final class ShellNavigationConfig {
       selectedIcon: Icon(Icons.analytics),
       label: 'Analysis',
     ),
-    NavigationDestination(
-      icon: Icon(Icons.person_2_outlined),
-      selectedIcon: Icon(Icons.person_2),
-      label: 'Profile',
-    ),
   ];
 
   static const List<NavigationRailDestination> railDestinations = [
@@ -50,11 +45,6 @@ abstract final class ShellNavigationConfig {
       icon: Icon(Icons.analytics_outlined),
       selectedIcon: Icon(Icons.analytics),
       label: Text('Analysis'),
-    ),
-    NavigationRailDestination(
-      icon: Icon(Icons.person_2_outlined),
-      selectedIcon: Icon(Icons.person_2),
-      label: Text('Profile'),
     ),
   ];
 }

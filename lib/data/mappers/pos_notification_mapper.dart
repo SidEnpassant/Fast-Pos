@@ -10,6 +10,8 @@ abstract final class PosNotificationMapper {
       message: m['message'] as String? ?? '',
       timestamp: m['timestamp'] as DateTime,
       isRead: m['isRead'] as bool? ?? false,
+      dedupKey: m['dedupKey'] as String?,
+      type: m['type'] as String?,
     );
   }
 }

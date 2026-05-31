@@ -5,46 +5,40 @@ class CompleteTransactionBillCard extends StatelessWidget {
   const CompleteTransactionBillCard({
     super.key,
     required this.bill,
-    required this.onUpdateSignedBill,
-    required this.onShowSignedBill,
+    required this.onShowBill,
     required this.onDelete,
   });
 
   final Bill bill;
-  final VoidCallback onUpdateSignedBill;
-  final VoidCallback onShowSignedBill;
+  final VoidCallback onShowBill;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final totalAmount = bill.totalAmount;
-    final customerName = bill.customerName;
-    final customerPhone = bill.customerPhone;
-    final paymentMethod = bill.paymentMethod;
-    final items = bill.lineItems;
-    final signedBillUrl = bill.signedBillUrl;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      elevation: 2,
+      elevation: 0,
+      color: theme.colorScheme.surfaceContainerLow,
       child: ExpansionTile(
         title: Text(
-          customerName,
-          style: const TextStyle(
+          bill.customerName,
+          style: theme.textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.bold,
-            fontSize: 16,
           ),
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 4),
-            Text(customerPhone),
+            Text(bill.customerPhone),
             const SizedBox(height: 4),
             Text(
               'Amount: ₹${totalAmount.toStringAsFixed(2)}',
-              style: const TextStyle(
-                color: Colors.green,
+              style: TextStyle(
+                color: theme.colorScheme.primary,
                 fontWeight: FontWeight.w500,
               ),
             ),
@@ -52,85 +46,42 @@ class CompleteTransactionBillCard extends StatelessWidget {
         ),
         children: [
           Padding(
-            padding: const EdgeInsets.all(16.0),
+            padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  'Payment Method: $paymentMethod',
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Items:',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                ...items.map(
+                Text('Payment: ${bill.paymentMethod}'),
+                const SizedBox(height: 12),
+                ...bill.lineItems.map(
                   (item) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8.0),
+                    padding: const EdgeInsets.only(bottom: 6),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Expanded(
                           child: Text(
-                            '${item.productName} x ${item.quantity}',
-                            style: const TextStyle(fontSize: 14),
+                            '${item.productName} × ${item.quantity}',
                           ),
                         ),
-                        Text(
-                          '₹${item.totalPrice.toStringAsFixed(2)}',
-                          style: const TextStyle(fontSize: 14),
-                        ),
+                        Text('₹${item.totalPrice.toStringAsFixed(2)}'),
                       ],
                     ),
                   ),
                 ),
                 const Divider(),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total Amount:',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '₹${totalAmount.toStringAsFixed(2)}',
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.upload_file),
-                      label: const Text('Update again'),
-                      onPressed: onUpdateSignedBill,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                      ),
-                    ),
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.receipt_long),
+                    FilledButton.icon(
+                      icon: const Icon(Icons.picture_as_pdf),
                       label: const Text('Show Bill'),
-                      onPressed:
-                          signedBillUrl != null ? onShowSignedBill : null,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.green,
-                        foregroundColor: Colors.white,
-                      ),
+                      onPressed: onShowBill,
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete, color: Colors.red),
+                      icon: Icon(
+                        Icons.delete,
+                        color: theme.colorScheme.error,
+                      ),
                       onPressed: onDelete,
                     ),
                   ],

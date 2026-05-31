@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import 'package:inventopos/application/billing/resolve_product_for_barcode_use_case.dart';
-import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/core/widgets/m3/app_barcode_scan_sheet.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
+import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
-import 'package:inventopos/presentation/billing/widgets/bill_manual_add_sheet.dart';
+import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 
 Future<void> showBillAddProductChooser(BuildContext context) async {
   await showModalBottomSheet<void>(
@@ -30,8 +31,8 @@ Future<void> showBillAddProductChooser(BuildContext context) async {
                   Expanded(
                     child: _ChooserTile(
                       icon: Icons.qr_code_scanner,
-                      label: 'Scan from inventory',
-                      subtitle: 'Auto price & name',
+                      label: 'Scan barcode',
+                      subtitle: 'Lookup from inventory',
                       color: Colors.teal,
                       onTap: () {
                         Navigator.pop(sheetContext);
@@ -44,14 +45,28 @@ Future<void> showBillAddProductChooser(BuildContext context) async {
                   const SizedBox(width: 16),
                   Expanded(
                     child: _ChooserTile(
-                      icon: Icons.edit_note,
-                      label: 'Manual item',
-                      subtitle: 'Non-catalog product',
+                      icon: Icons.inventory_2_outlined,
+                      label: 'Select from inventory',
+                      subtitle: 'Browse catalog',
                       color: Colors.indigo,
                       onTap: () {
                         Navigator.pop(sheetContext);
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (context.mounted) showBillManualAddSheet(context);
+                        WidgetsBinding.instance.addPostFrameCallback((_) async {
+                          if (!context.mounted) return;
+                          final draftLines =
+                              context.read<BillDraftBloc>().state.lines;
+                          final line = await context.push<BillDraftLine>(
+                            '/app/bill/inventory-picker',
+                            extra: draftLines,
+                          );
+                          if (line != null && context.mounted) {
+                            context
+                                .read<BillDraftBloc>()
+                                .add(BillDraftLineAdded(line));
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Added ${line.name}')),
+                            );
+                          }
                         });
                       },
                     ),
@@ -122,20 +137,19 @@ Future<void> _runScanFlow(BuildContext context) async {
     return;
   }
 
-  context.read<BillDraftBloc>().add(
-        BillDraftLineAdded(
-          BillDraftLine(
-            name: product.name,
-            price: product.price,
-            quantity: 1,
-            productId: product.id.isEmpty ? null : product.id,
-          ),
-        ),
-      );
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(content: Text('Added ${product.name}')),
+  final draftLines = context.read<BillDraftBloc>().state.lines;
+  final line = await showBillLineQuantitySheetForProduct(
+    context,
+    product,
+    existingLines: draftLines,
   );
+
+  if (line != null && context.mounted) {
+    context.read<BillDraftBloc>().add(BillDraftLineAdded(line));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Added ${product.name}')),
+    );
+  }
 }
 
 class _ChooserTile extends StatelessWidget {

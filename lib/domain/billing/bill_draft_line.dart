@@ -16,6 +16,21 @@ class BillDraftLine extends Equatable {
   final String? comment;
   final String? productId;
 
+  BillDraftLine copyWith({
+    String? name,
+    double? price,
+    int? quantity,
+    String? comment,
+    String? productId,
+  }) =>
+      BillDraftLine(
+        name: name ?? this.name,
+        price: price ?? this.price,
+        quantity: quantity ?? this.quantity,
+        comment: comment ?? this.comment,
+        productId: productId ?? this.productId,
+      );
+
   Map<String, dynamic> toProductsJson() => {
         'name': name,
         'price': price,

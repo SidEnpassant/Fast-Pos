@@ -5,6 +5,8 @@ abstract class CustomerRepository {
 
   Future<Customer?> findByPhone(String userId, String phone);
 
+  Future<Customer?> findById(String customerId);
+
   Future<Customer> createCustomer({
     required String userId,
     required String name,

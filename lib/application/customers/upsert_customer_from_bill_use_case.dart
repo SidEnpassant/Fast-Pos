@@ -1,3 +1,4 @@
+import 'package:inventopos/application/customers/phone_normalizer.dart';
 import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 
@@ -36,7 +37,7 @@ class UpsertCustomerFromBillUseCase {
   Future<UpsertCustomerFromBillResult> call(
     UpsertCustomerFromBillInput input,
   ) async {
-    final phone = _normalizePhone(input.customerPhone);
+    final phone = PhoneNormalizer.normalize(input.customerPhone);
     final name = input.customerName.trim();
     if (name.isEmpty && phone.isEmpty) {
       return const UpsertCustomerFromBillResult();
@@ -72,23 +73,6 @@ class UpsertCustomerFromBillUseCase {
       );
     }
 
-    final status = input.paymentStatus.toLowerCase();
-    if (status == 'credit' || status == 'partial') {
-      final owed = input.totalAmount - input.paidAmount;
-      if (owed > 0) {
-        await _customers.recordLedgerEntry(
-          customerId: customer.id,
-          type: 'debit',
-          amount: owed,
-          billId: input.billId,
-          note: 'Bill credit',
-        );
-      }
-    }
-
     return UpsertCustomerFromBillResult(customerId: customer.id);
   }
-
-  String _normalizePhone(String raw) =>
-      raw.replaceAll(RegExp(r'\s+'), '').trim();
 }

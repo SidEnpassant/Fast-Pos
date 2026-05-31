@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
@@ -14,8 +13,8 @@ import 'package:inventopos/presentation/transactions/bloc/bill_actions/transacti
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_event.dart';
 import 'package:inventopos/presentation/transactions/bloc/complete_transac_bloc/complete_transactions_bloc.dart';
 import 'package:inventopos/presentation/transactions/bloc/complete_transac_bloc/complete_transactions_state.dart';
+import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
 import 'package:inventopos/presentation/transactions/widgets/complete_transaction_bill_card.dart';
-import 'package:inventopos/presentation/transactions/widgets/signed_bill_preview_dialog.dart';
 import 'package:inventopos/presentation/transactions/widgets/transaction_bill_actions_feedback_listener.dart';
 
 class CompleteTransactionsScreen extends StatefulWidget {
@@ -34,37 +33,6 @@ class _CompleteTransactionsScreenState
   void dispose() {
     _searchController.dispose();
     super.dispose();
-  }
-
-  Future<void> _updateSignedBill(String billId) async {
-    final picker = ImagePicker();
-    final image = await picker.pickImage(source: ImageSource.camera);
-
-    if (image == null || !mounted) return;
-
-    showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
-    );
-
-    if (!mounted) return;
-    context.read<TransactionBillActionsBloc>().add(
-          TransactionBillReplaceSignedRequested(
-            billId: billId,
-            localFilePath: image.path,
-          ),
-        );
-  }
-
-  Future<void> _openSignedBill(String? billUrl) async {
-    if (billUrl == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No signed bill available')),
-      );
-      return;
-    }
-    await showSignedBillPreviewDialog(context, billUrl: billUrl);
   }
 
   Future<void> _showDateRangePicker(BuildContext blocContext) async {
@@ -291,10 +259,8 @@ class _CompleteTransactionsScreenState
                                     ...transactions.map((bill) {
                                       return CompleteTransactionBillCard(
                                         bill: bill,
-                                        onUpdateSignedBill: () =>
-                                            _updateSignedBill(bill.id),
-                                        onShowSignedBill: () =>
-                                            _openSignedBill(bill.signedBillUrl),
+                                        onShowBill: () =>
+                                            openBillPdfForBill(context, bill),
                                         onDelete: () =>
                                             _deleteTransaction(bill.id),
                                       );

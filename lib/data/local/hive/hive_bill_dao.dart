@@ -46,13 +46,49 @@ class HiveBillDao {
       'signed_bill_url': bill.signedBillUrl,
       'last_signed_bill_update':
           bill.lastSignedBillUpdate?.toUtc().toIso8601String(),
+      'pdf_url': bill.pdfUrl,
+      'pdf_updated_at': bill.pdfUpdatedAt?.toUtc().toIso8601String(),
+      if (bill.displayBillNumber != null)
+        'display_bill_number': bill.displayBillNumber,
+      'customer_id': bill.customerId,
       if (clientId != null) 'client_id': clientId,
       'sync_status': syncStatus,
     };
     await _box.put(bill.id, m);
   }
 
+  Bill? findById(String userId, String billId) {
+    final raw = _box.get(billId);
+    if (raw == null) return null;
+    final bill = BillMapper.fromSupabaseRow(Map<String, dynamic>.from(raw));
+    if (bill.userId != userId) return null;
+    return bill;
+  }
+
   Future<void> putRaw(Map<String, dynamic> row) async {
     await _box.put(row['id'], row);
+  }
+
+  Future<void> patch(String billId, Map<String, dynamic> fields) async {
+    final existing = _box.get(billId);
+    if (existing == null) return;
+    final m = Map<String, dynamic>.from(existing);
+    m.addAll(fields);
+    await _box.put(billId, m);
+  }
+
+  Future<void> mergeFromRemote(
+    Bill remote,
+    Bill Function(Bill remote, Bill local) merge,
+  ) async {
+    final existing = _box.get(remote.id);
+    if (existing == null) {
+      await putFromBill(remote);
+      return;
+    }
+    final local = BillMapper.fromSupabaseRow(
+      Map<String, dynamic>.from(existing),
+    );
+    await putFromBill(merge(remote, local));
   }
 }

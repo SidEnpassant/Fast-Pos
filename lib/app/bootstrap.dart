@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inventopos/core/notifications/notification_background_poll.dart';
 import 'package:inventopos/app/local_notifications_holder.dart';
 import 'package:inventopos/core/router/app_router.dart';
 import 'package:inventopos/data/local/hive/local_store.dart';
@@ -22,4 +23,7 @@ Future<void> initializeApp() async {
       }
     },
   );
+  try {
+    await registerNotificationBackgroundPoll();
+  } catch (_) {}
 }

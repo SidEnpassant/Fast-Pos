@@ -27,6 +27,7 @@ class BillPdfGenerator {
     required String paymentStatus,
     required double paidAmount,
     required double totalAmount,
+    DateTime? updatedAt,
   }) async {
     final businessName = merchant.businessName ?? '';
     final gstNumber = merchant.gstNumber ?? '';
@@ -250,6 +251,13 @@ class BillPdfGenerator {
                     pw.Text(
                       'Payment Status: ${paymentStatus == 'complete' ? 'Fully Paid' : 'Partially Paid'}',
                     ),
+                    if (updatedAt != null) ...[
+                      pw.SizedBox(height: 4),
+                      pw.Text(
+                        'Last updated: ${DateFormat('dd MMM yyyy, hh:mm a').format(updatedAt)}',
+                        style: const pw.TextStyle(fontSize: 9),
+                      ),
+                    ],
                   ],
                 ),
               ),

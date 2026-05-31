@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/entities/product.dart';
@@ -26,13 +27,13 @@ class AnalyticsHubState extends Equatable {
   double get revenueThisMonth {
     final now = DateTime.now();
     return bills
-        .where((b) =>
-            b.createdAt.year == now.year && b.createdAt.month == now.month)
-        .fold(0.0, (s, b) {
-      if (b.paymentStatus == 'complete') return s + b.totalAmount;
-      if (b.paymentStatus == 'partial') return s + b.paidAmount;
-      return s;
-    });
+        .where((b) => BillRevenue.isSameCalendarMonth(b, now))
+        .fold(0.0, (s, b) => s + BillRevenue.recognizedAmount(b));
+  }
+
+  int get billsThisMonth {
+    final now = DateTime.now();
+    return bills.where((b) => BillRevenue.isSameCalendarMonth(b, now)).length;
   }
 
   double get expensesThisMonth {

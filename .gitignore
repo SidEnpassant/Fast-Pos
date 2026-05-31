@@ -51,3 +51,4 @@ android/key.properties
 lib/supabase_config.dart
 lib/supabase_mappers.dart
 supabase/migrations/20250504000000_initial_schema.sql
+supabase/

@@ -58,6 +58,34 @@ class _StubBillsRepo implements BillsRepository {
     required double totalAmount,
   }) =>
       throw UnimplementedError();
+
+  @override
+  Future<void> updatePdfUrl({
+    required String billId,
+    required String pdfUrl,
+    required DateTime pdfUpdatedAt,
+  }) =>
+      throw UnimplementedError();
+
+  @override
+  Future<void> patchLocalBillMetadata(
+    String billId,
+    Map<String, dynamic> fields,
+  ) async {}
+
+  @override
+  Future<Bill?> fetchLocalBillById(String billId) async => null;
+
+  @override
+  Future<Bill?> fetchBillById(String billId) => throw UnimplementedError();
+
+  @override
+  Stream<List<Bill>> watchBillsForCustomer({
+    required String userId,
+    String? customerId,
+    String? customerPhone,
+  }) =>
+      throw UnimplementedError();
 }
 
 void main() {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
 
@@ -41,5 +42,26 @@ void main() {
 
     expect(state.revenueToday, 150);
     expect(state.billsToday, 2);
+  });
+
+  test('BillRevenue uses local calendar day for UTC timestamps', () {
+    final localMorning = DateTime(2026, 6, 1, 9);
+    final utcBillTime = localMorning.toUtc();
+    final bill = _bill(
+      status: 'complete',
+      total: 500,
+      createdAt: utcBillTime,
+    );
+
+    expect(
+      BillRevenue.isSameCalendarDay(bill, localMorning),
+      isTrue,
+    );
+    expect(BillRevenue.recognizedAmount(bill), 500);
+  });
+
+  test('BillRevenue recognizes uppercase payment status', () {
+    final bill = _bill(status: 'Complete', total: 250);
+    expect(BillRevenue.recognizedAmount(bill), 250);
   });
 }

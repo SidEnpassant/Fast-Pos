@@ -52,6 +52,13 @@ class CustomerRepositoryImpl implements CustomerRepository {
   }
 
   @override
+  Future<Customer?> findById(String customerId) async {
+    final raw = _box.get(customerId);
+    if (raw == null) return null;
+    return _fromMap(Map<String, dynamic>.from(raw));
+  }
+
+  @override
   Future<Customer> createCustomer({
     required String userId,
     required String name,

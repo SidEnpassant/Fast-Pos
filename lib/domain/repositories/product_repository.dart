@@ -28,4 +28,10 @@ abstract class ProductRepository {
   Future<List<Product>> searchProducts(String userId, String query);
 
   Future<void> bulkUpsertLocal(String userId, List<Map<String, dynamic>> rows);
+
+  /// Decrements local Hive stock (offline path).
+  Future<void> decrementStockLocal({
+    required String productId,
+    required int quantity,
+  });
 }

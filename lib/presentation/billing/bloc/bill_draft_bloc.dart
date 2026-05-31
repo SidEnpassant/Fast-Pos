@@ -5,12 +5,23 @@ import 'package:inventopos/presentation/billing/bloc/bill_draft_state.dart';
 class BillDraftBloc extends Bloc<BillDraftEvent, BillDraftState> {
   BillDraftBloc() : super(const BillDraftState()) {
     on<BillDraftLineAdded>(_onLineAdded);
+    on<BillDraftLineUpdated>(_onLineUpdated);
     on<BillDraftLineRemoved>(_onLineRemoved);
     on<BillDraftCleared>(_onCleared);
   }
 
   void _onLineAdded(BillDraftLineAdded event, Emitter<BillDraftState> emit) {
     emit(state.copyWith(lines: [...state.lines, event.line]));
+  }
+
+  void _onLineUpdated(
+    BillDraftLineUpdated event,
+    Emitter<BillDraftState> emit,
+  ) {
+    final next = List.of(state.lines);
+    if (event.index < 0 || event.index >= next.length) return;
+    next[event.index] = event.line;
+    emit(state.copyWith(lines: next));
   }
 
   void _onLineRemoved(

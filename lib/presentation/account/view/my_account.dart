@@ -110,7 +110,7 @@ class _MyAccountPageState extends State<MyAccountPage>
         final busy = accountState.loading || accountState.mutationBusy;
 
         return Material(
-          color: const Color(0xFFF8F9FB),
+          color: Theme.of(context).colorScheme.surfaceContainerLowest,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [

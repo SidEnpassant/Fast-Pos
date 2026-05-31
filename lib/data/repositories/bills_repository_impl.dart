@@ -45,6 +45,7 @@ class BillsRepositoryImpl implements BillsRepository {
       throw StateError('User not authenticated');
     }
     final row = <String, dynamic>{
+      if (clientId != null) 'id': clientId,
       'user_id': user.id,
       'business_name': businessName,
       'customer_name': customerName,
@@ -131,5 +132,52 @@ class BillsRepositoryImpl implements BillsRepository {
           newPaidAmount >= totalAmount ? 'complete' : 'partial',
       'last_updated': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', billId);
+  }
+
+  @override
+  Future<void> updatePdfUrl({
+    required String billId,
+    required String pdfUrl,
+    required DateTime pdfUpdatedAt,
+  }) async {
+    await _client.from('bills').update({
+      'pdf_url': pdfUrl,
+      'pdf_updated_at': pdfUpdatedAt.toUtc().toIso8601String(),
+    }).eq('id', billId);
+  }
+
+  @override
+  Future<void> patchLocalBillMetadata(
+    String billId,
+    Map<String, dynamic> fields,
+  ) async {}
+
+  @override
+  Future<Bill?> fetchLocalBillById(String billId) async => null;
+
+  @override
+  Future<Bill?> fetchBillById(String billId) async {
+    final row = await _client.from('bills').select().eq('id', billId).maybeSingle();
+    if (row == null) return null;
+    return BillMapper.fromSupabaseRow(Map<String, dynamic>.from(row));
+  }
+
+  @override
+  Stream<List<Bill>> watchBillsForCustomer({
+    required String userId,
+    String? customerId,
+    String? customerPhone,
+  }) {
+    return watchBillsForCurrentUser().map((bills) {
+      return bills.where((b) {
+        if (customerId != null && b.customerId == customerId) return true;
+        if (customerPhone != null &&
+            customerPhone.isNotEmpty &&
+            b.customerPhone == customerPhone) {
+          return true;
+        }
+        return false;
+      }).toList();
+    });
   }
 }

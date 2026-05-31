@@ -67,6 +67,13 @@ class SyncRepositoryImpl implements SyncRepository {
               paymentMethod: payload['payment_method'] as String,
               paymentStatus: payload['payment_status'] as String,
               clientId: payload['client_id'] as String?,
+              customerId: payload['customer_id'] as String?,
+              discountBreakdown: payload['discount_breakdown'] != null
+                  ? List<Map<String, dynamic>>.from(
+                      payload['discount_breakdown'] as List,
+                    )
+                  : null,
+              contentHash: payload['content_hash'] as String?,
             );
             break;
           case 'bulk_upsert_products':
@@ -74,6 +81,15 @@ class SyncRepositoryImpl implements SyncRepository {
               'p_user_id': userId,
               'p_json': payload['products'],
             });
+            break;
+          case 'decrement_stock':
+            await _client.rpc(
+              'decrement_stock_for_bill',
+              params: {
+                'p_bill_id': payload['bill_id'],
+                'p_lines': payload['lines'],
+              },
+            );
             break;
           default:
             break;

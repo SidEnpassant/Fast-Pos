@@ -25,11 +25,16 @@ abstract final class BillMapper {
       totalAmount: (m['totalAmount'] as num?)?.toDouble() ?? 0,
       paidAmount: (m['paidAmount'] as num?)?.toDouble() ?? 0,
       paymentMethod: (m['paymentMethod'] as String?) ?? 'cash',
-      paymentStatus: (m['paymentStatus'] as String?) ?? '',
+      paymentStatus: ((m['paymentStatus'] as String?) ?? '').toLowerCase(),
       createdAt: m['createdAt'] as DateTime,
       lastUpdated: m['lastUpdated'] as DateTime?,
       signedBillUrl: m['signedBillUrl'] as String?,
       lastSignedBillUpdate: m['lastSignedBillUpdate'] as DateTime?,
+      pdfUrl: m['pdfUrl'] as String?,
+      pdfUpdatedAt: m['pdfUpdatedAt'] as DateTime?,
+      displayBillNumber: (m['displayBillNumber'] as String?) ??
+          (r['display_bill_number'] as String?),
+      customerId: m['customerId'] as String?,
       lineItems: lineItems,
     );
   }

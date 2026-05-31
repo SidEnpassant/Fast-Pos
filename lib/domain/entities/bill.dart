@@ -32,6 +32,10 @@ class Bill extends Equatable {
     this.lastUpdated,
     this.signedBillUrl,
     this.lastSignedBillUpdate,
+    this.pdfUrl,
+    this.pdfUpdatedAt,
+    this.displayBillNumber,
+    this.customerId,
     required this.lineItems,
   });
 
@@ -48,6 +52,10 @@ class Bill extends Equatable {
   final DateTime? lastUpdated;
   final String? signedBillUrl;
   final DateTime? lastSignedBillUpdate;
+  final String? pdfUrl;
+  final DateTime? pdfUpdatedAt;
+  final String? displayBillNumber;
+  final String? customerId;
   final List<BillLineItem> lineItems;
 
   @override
@@ -65,6 +73,10 @@ class Bill extends Equatable {
         lastUpdated,
         signedBillUrl,
         lastSignedBillUpdate,
+        pdfUrl,
+        pdfUpdatedAt,
+        displayBillNumber,
+        customerId,
         lineItems,
       ];
 }

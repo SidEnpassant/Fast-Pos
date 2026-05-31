@@ -6,6 +6,7 @@ import 'package:inventopos/application/auth/request_password_reset_use_case.dart
 import 'package:inventopos/application/auth/sign_in_use_case.dart';
 import 'package:inventopos/application/auth/sign_out_use_case.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
+import 'package:inventopos/application/billing/download_bill_pdf_use_case.dart';
 import 'package:inventopos/application/billing/download_remote_pdf_to_device_use_case.dart';
 import 'package:inventopos/application/billing/extract_text_lines_from_image_path_use_case.dart';
 import 'package:inventopos/application/billing/lookup_product_name_by_barcode_use_case.dart';
@@ -13,6 +14,10 @@ import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/billing/replace_signed_bill_use_case.dart';
 import 'package:inventopos/application/billing/print_receipt_use_case.dart';
 import 'package:inventopos/application/billing/resolve_product_for_barcode_use_case.dart';
+import 'package:inventopos/application/billing/regenerate_and_upload_bill_pdf_use_case.dart';
+import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
+import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
+import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/billing/submit_bill_use_case.dart';
 import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
 import 'package:inventopos/application/billing/sync_overdue_partial_bill_notifications_use_case.dart';
@@ -91,9 +96,7 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
       value: appLocalNotifications,
     ),
     RepositoryProvider<NotificationsRepository>(
-      create: (c) => NotificationsRepositoryImpl(
-        localNotifications: c.read<LocalNotificationService>(),
-      ),
+      create: (_) => NotificationsRepositoryImpl(),
     ),
     RepositoryProvider<NotificationSyncCoordinator>(
       create: (c) => NotificationSyncCoordinator(
@@ -129,6 +132,9 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
         c.read<RemotePdfDownloadRepository>(),
       ),
     ),
+    RepositoryProvider<DownloadBillPdfUseCase>(
+      create: (_) => DownloadBillPdfUseCase(),
+    ),
     RepositoryProvider<ObserveBillsUseCase>(
       create: (c) => ObserveBillsUseCase(c.read<BillsRepository>()),
     ),
@@ -155,6 +161,26 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     RepositoryProvider<PrintReceiptUseCase>(
       create: (c) => PrintReceiptUseCase(c.read<PrinterRepository>()),
     ),
+    RepositoryProvider<ValidateBillDraftUseCase>(
+      create: (c) => ValidateBillDraftUseCase(c.read<ProductRepository>()),
+    ),
+    RepositoryProvider<DecrementStockOnBillUseCase>(
+      create: (c) => DecrementStockOnBillUseCase(
+        c.read<ProductRepository>(),
+        c.read<SyncRepository>(),
+      ),
+    ),
+    RepositoryProvider<UploadBillPdfUseCase>(
+      create: (c) => UploadBillPdfUseCase(c.read<BillsRepository>()),
+    ),
+    RepositoryProvider<RegenerateAndUploadBillPdfUseCase>(
+      create: (c) => RegenerateAndUploadBillPdfUseCase(
+        c.read<BillsRepository>(),
+        c.read<ProfileRepository>(),
+        c.read<BillPdfGenerator>(),
+        c.read<UploadBillPdfUseCase>(),
+      ),
+    ),
     RepositoryProvider<SubmitBillUseCase>(
       create: (c) => SubmitBillUseCase(
         c.read<BillsRepository>(),
@@ -163,6 +189,9 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
         c.read<BillPdfGenerator>(),
         c.read<AuthRepository>(),
         c.read<UpsertCustomerFromBillUseCase>(),
+        c.read<ValidateBillDraftUseCase>(),
+        c.read<DecrementStockOnBillUseCase>(),
+        c.read<UploadBillPdfUseCase>(),
       ),
     ),
     RepositoryProvider<SignInUseCase>(
@@ -184,12 +213,14 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
       create: (c) => DeleteBillUseCase(c.read<BillsRepository>()),
     ),
     RepositoryProvider<UpdateBillPaymentUseCase>(
-      create: (c) => UpdateBillPaymentUseCase(c.read<BillsRepository>()),
+      create: (c) => UpdateBillPaymentUseCase(
+        c.read<BillsRepository>(),
+        c.read<RegenerateAndUploadBillPdfUseCase>(),
+      ),
     ),
     RepositoryProvider<SyncOverduePartialBillNotificationsUseCase>(
       create: (c) => SyncOverduePartialBillNotificationsUseCase(
         c.read<BillsRepository>(),
-        c.read<NotificationsRepository>(),
       ),
     ),
     RepositoryProvider<PatchAccountProfileFieldUseCase>(
