@@ -5,13 +5,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:inventopos/domain/registration/registration_payload.dart';
+import 'package:inventopos/presentation/auth/widgets/auth_glass_card.dart';
+import 'package:inventopos/presentation/auth/widgets/auth_scaffold.dart';
+import 'package:inventopos/presentation/auth/widgets/auth_step_progress_bar.dart';
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/bloc/register_event.dart';
 import 'package:inventopos/presentation/register/bloc/register_state.dart';
-import 'package:inventopos/presentation/register/widgets/register_signature_section.dart';
-import 'package:inventopos/presentation/register/widgets/register_text_fields.dart';
+import 'package:inventopos/presentation/register/widgets/register_step_fields.dart';
 
-/// Registration screen — form + [RegisterBloc].
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
 
@@ -20,7 +21,10 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
+  static const _stepLabels = ['Personal', 'Business', 'Billing'];
+
   final _formKey = GlobalKey<FormState>();
+  final _pageController = PageController();
   final _nameController = TextEditingController();
   final _businessNameController = TextEditingController();
   final _businessAddressController = TextEditingController();
@@ -31,8 +35,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _billRulesController = TextEditingController();
   final _picker = ImagePicker();
 
+  int _step = 0;
+
   @override
   void dispose() {
+    _pageController.dispose();
     _nameController.dispose();
     _businessNameController.dispose();
     _businessAddressController.dispose();
@@ -50,6 +57,80 @@ class _RegisterScreenState extends State<RegisterScreen> {
     context.read<RegisterBloc>().add(
           RegisterSignaturePathChanged(image.path),
         );
+  }
+
+  void _showStepError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  bool _validateCurrentStep() {
+    switch (_step) {
+      case 0:
+        if (_nameController.text.trim().isEmpty) {
+          _showStepError('Enter your full name');
+          return false;
+        }
+        if (_phoneController.text.trim().isEmpty) {
+          _showStepError('Enter your phone number');
+          return false;
+        }
+        final email = _emailController.text.trim();
+        if (email.isEmpty || !email.contains('@')) {
+          _showStepError('Enter a valid email');
+          return false;
+        }
+        if (_passwordController.text.length < 6) {
+          _showStepError('Password must be at least 6 characters');
+          return false;
+        }
+        return true;
+      case 1:
+        if (_businessNameController.text.trim().isEmpty) {
+          _showStepError('Enter your business name');
+          return false;
+        }
+        if (_businessAddressController.text.trim().isEmpty) {
+          _showStepError('Enter your business address');
+          return false;
+        }
+        return true;
+      case 2:
+        if (_billRulesController.text.trim().isEmpty) {
+          _showStepError('Enter bill rules or notes');
+          return false;
+        }
+        if (context.read<RegisterBloc>().state.signatureLocalPath == null) {
+          _showStepError('Please add your bill signature image');
+          return false;
+        }
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  void _nextStep() {
+    if (!_validateCurrentStep()) return;
+    if (_step >= _stepLabels.length - 1) return;
+    setState(() => _step++);
+    _pageController.nextPage(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  void _prevStep() {
+    if (_step == 0) {
+      context.pop();
+      return;
+    }
+    setState(() => _step--);
+    _pageController.previousPage(
+      duration: const Duration(milliseconds: 280),
+      curve: Curves.easeOutCubic,
+    );
   }
 
   void _submit(File? signatureFile) {
@@ -106,83 +187,103 @@ class _RegisterScreenState extends State<RegisterScreen> {
         final signatureFile = state.signatureLocalPath != null
             ? File(state.signatureLocalPath!)
             : null;
+        final isLastStep = _step == _stepLabels.length - 1;
 
-        return Scaffold(
-          backgroundColor: Colors.white,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.black),
-              onPressed: () => Navigator.pop(context),
-            ),
+        return AuthScaffold(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
+            onPressed: submitting ? null : _prevStep,
           ),
-          body: SafeArea(
-            child: AbsorbPointer(
-              absorbing: submitting,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24),
+          title: 'Create account',
+          subtitle: 'Set up your store in a few quick steps',
+          body: AbsorbPointer(
+            absorbing: submitting,
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
+              child: AuthGlassCard(
                 child: Form(
                   key: _formKey,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Text(
-                        'Create Account',
-                        style: TextStyle(
-                          fontSize: 32,
-                          fontWeight: FontWeight.bold,
+                      AuthStepProgressBar(
+                        stepCount: _stepLabels.length,
+                        currentStep: _step,
+                        labels: _stepLabels,
+                      ),
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 340,
+                        child: PageView(
+                          controller: _pageController,
+                          physics: const NeverScrollableScrollPhysics(),
+                          children: [
+                            RegisterStepPersonalFields(
+                              nameController: _nameController,
+                              phoneController: _phoneController,
+                              emailController: _emailController,
+                              passwordController: _passwordController,
+                              obscurePassword: state.obscurePassword,
+                              onTogglePassword: () => context
+                                  .read<RegisterBloc>()
+                                  .add(
+                                    const RegisterPasswordVisibilityToggled(),
+                                  ),
+                            ),
+                            RegisterStepBusinessFields(
+                              businessNameController: _businessNameController,
+                              businessAddressController:
+                                  _businessAddressController,
+                              gstController: _gstController,
+                            ),
+                            RegisterStepBillingFields(
+                              billRulesController: _billRulesController,
+                              signatureFile: signatureFile,
+                              onPickSignature: _pickSignature,
+                            ),
+                          ],
                         ),
                       ),
                       const SizedBox(height: 8),
-                      Text(
-                        'Start managing your business with FastPOS',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey[600],
-                        ),
-                      ),
-                      const SizedBox(height: 32),
-                      RegisterTextFields(
-                        nameController: _nameController,
-                        businessNameController: _businessNameController,
-                        businessAddressController: _businessAddressController,
-                        phoneController: _phoneController,
-                        emailController: _emailController,
-                        passwordController: _passwordController,
-                        gstController: _gstController,
-                        billRulesController: _billRulesController,
-                        obscurePassword: state.obscurePassword,
-                        onTogglePasswordVisibility: () => context
-                            .read<RegisterBloc>()
-                            .add(const RegisterPasswordVisibilityToggled()),
-                      ),
-                      const SizedBox(height: 16),
-                      RegisterSignatureSection(
-                        signatureFile: signatureFile,
-                        onTapPick: _pickSignature,
-                      ),
-                      const SizedBox(height: 32),
-                      SizedBox(
-                        width: double.infinity,
-                        height: 50,
-                        child: ElevatedButton(
-                          onPressed:
-                              submitting ? null : () => _submit(signatureFile),
-                          style: ElevatedButton.styleFrom(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
+                      Row(
+                        children: [
+                          if (_step > 0)
+                            Expanded(
+                              child: OutlinedButton(
+                                onPressed: _prevStep,
+                                child: const Text('Back'),
+                              ),
+                            ),
+                          if (_step > 0) const SizedBox(width: 12),
+                          Expanded(
+                            flex: _step > 0 ? 1 : 1,
+                            child: FilledButton(
+                              onPressed: submitting
+                                  ? null
+                                  : () {
+                                      if (isLastStep) {
+                                        _submit(signatureFile);
+                                      } else {
+                                        _nextStep();
+                                      }
+                                    },
+                              child: submitting
+                                  ? const SizedBox(
+                                      height: 22,
+                                      width: 22,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    )
+                                  : Text(isLastStep ? 'Create account' : 'Continue'),
                             ),
                           ),
-                          child: submitting
-                              ? const CircularProgressIndicator(
-                                  color: Colors.white,
-                                )
-                              : const Text(
-                                  'Register',
-                                  style: TextStyle(fontSize: 16),
-                                ),
-                        ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      TextButton(
+                        onPressed: submitting ? null : () => context.pop(),
+                        child: const Text('Already have an account? Sign in'),
                       ),
                     ],
                   ),

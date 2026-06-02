@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
 
 class AccountEditableFieldTile extends StatelessWidget {
   const AccountEditableFieldTile({
@@ -8,6 +9,7 @@ class AccountEditableFieldTile extends StatelessWidget {
     required this.icon,
     required this.valueText,
     required this.onTap,
+    this.showDivider = true,
   });
 
   final String label;
@@ -15,91 +17,77 @@ class AccountEditableFieldTile extends StatelessWidget {
   final IconData icon;
   final String valueText;
   final VoidCallback onTap;
+  final bool showDivider;
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final hasValue = valueText.isNotEmpty;
-    return Container(
+
+    return Column(
       key: ValueKey<String>(fieldKey),
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+      children: [
+        InkWell(
           onTap: onTap,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
               children: [
                 Container(
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: const Color(0xFF3B82F6).withValues(alpha: 0.1),
+                    color: scheme.primaryContainer.withValues(alpha: 0.45),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     icon,
-                    color: const Color(0xFF3B82F6),
-                    size: 20,
+                    color: scheme.primary,
+                    size: 22,
                   ),
                 ),
-                const SizedBox(width: 16),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         label,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: Color(0xFF6B7280),
-                          fontWeight: FontWeight.w500,
+                        style: theme.textTheme.labelMedium?.copyWith(
+                          color: scheme.onSurfaceVariant,
                         ),
                       ),
-                      const SizedBox(height: 4),
+                      const SizedBox(height: 2),
                       Text(
-                        hasValue ? valueText : 'Not set',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: hasValue
-                              ? const Color(0xFF1A1D29)
-                              : const Color(0xFF9CA3AF),
+                        hasValue ? valueText : 'Tap to add',
+                        style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
+                          color: hasValue
+                              ? scheme.onSurface
+                              : scheme.outline,
                         ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ],
                   ),
                 ),
-                Container(
-                  width: 32,
-                  height: 32,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF3F4F6),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Icon(
-                    Icons.chevron_right,
-                    color: Color(0xFF9CA3AF),
-                    size: 16,
-                  ),
+                Icon(
+                  Icons.chevron_right,
+                  color: scheme.onSurfaceVariant,
                 ),
               ],
             ),
           ),
         ),
-      ),
+        if (showDivider)
+          Divider(
+            height: 1,
+            color: scheme.outlineVariant.withValues(alpha: 0.6),
+          ),
+      ],
     );
   }
 }

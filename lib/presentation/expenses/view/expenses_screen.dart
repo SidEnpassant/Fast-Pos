@@ -90,7 +90,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 120,
+                        height: AppMetricCard.heightCompact,
                         child: AppMetricCard(
                           title: 'Period total',
                           value: '₹${state.periodTotal.toStringAsFixed(0)}',
@@ -101,7 +101,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
-                        height: 120,
+                        height: AppMetricCard.heightCompact,
                         child: AppMetricCard(
                           title: 'Count',
                           value: '${state.periodCount}',

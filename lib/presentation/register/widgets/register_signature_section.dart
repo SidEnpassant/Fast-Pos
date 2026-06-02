@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:inventopos/core/design/app_radii.dart';
 
 class RegisterSignatureSection extends StatelessWidget {
   const RegisterSignatureSection({
@@ -14,25 +15,53 @@ class RegisterSignatureSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTapPick,
-      child: Container(
-        height: 150,
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.grey),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: signatureFile == null
-            ? const Center(
-                child: Text(
-                  'Tap to add signature\n(which will be auto printed on bill)',
-                  textAlign: TextAlign.center,
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+
+    return Material(
+      color: scheme.surfaceContainerHighest.withValues(alpha: 0.5),
+      borderRadius: BorderRadius.circular(AppRadii.md),
+      child: InkWell(
+        onTap: onTapPick,
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: Container(
+          height: 140,
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadii.md),
+            border: Border.all(color: scheme.outlineVariant),
+          ),
+          child: signatureFile == null
+              ? Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.draw_outlined,
+                      size: 32,
+                      color: scheme.primary,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Tap to add signature image',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      'Shown on printed bills',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: scheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                )
+              : ClipRRect(
+                  borderRadius: BorderRadius.circular(AppRadii.sm),
+                  child: Image.file(signatureFile!, fit: BoxFit.contain),
                 ),
-              )
-            : Image.file(
-                signatureFile!,
-                fit: BoxFit.cover,
-              ),
+        ),
       ),
     );
   }

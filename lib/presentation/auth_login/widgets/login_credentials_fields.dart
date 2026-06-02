@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventopos/core/design/app_radii.dart';
 
 class LoginCredentialsFields extends StatelessWidget {
   const LoginCredentialsFields({
@@ -7,6 +8,7 @@ class LoginCredentialsFields extends StatelessWidget {
     required this.passwordController,
     required this.obscurePassword,
     required this.onToggleObscure,
+    this.onSubmit,
     this.emailError,
     this.passwordError,
   });
@@ -15,11 +17,16 @@ class LoginCredentialsFields extends StatelessWidget {
   final TextEditingController passwordController;
   final bool obscurePassword;
   final VoidCallback onToggleObscure;
+  final VoidCallback? onSubmit;
   final String? emailError;
   final String? passwordError;
 
   @override
   Widget build(BuildContext context) {
+    final border = OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadii.md),
+    );
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -29,14 +36,18 @@ class LoginCredentialsFields extends StatelessWidget {
             labelText: 'Email',
             errorText: emailError,
             prefixIcon: const Icon(Icons.email_outlined),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: border,
           ),
           keyboardType: TextInputType.emailAddress,
           textInputAction: TextInputAction.next,
+          validator: (v) {
+            if (emailError != null) return emailError;
+            if (v == null || v.trim().isEmpty) return 'Enter your email';
+            if (!v.contains('@')) return 'Enter a valid email';
+            return null;
+          },
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 12),
         TextFormField(
           controller: passwordController,
           obscureText: obscurePassword,
@@ -50,11 +61,15 @@ class LoginCredentialsFields extends StatelessWidget {
               ),
               onPressed: onToggleObscure,
             ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
+            border: border,
           ),
           textInputAction: TextInputAction.done,
+          onFieldSubmitted: (_) => onSubmit?.call(),
+          validator: (v) {
+            if (passwordError != null) return passwordError;
+            if (v == null || v.isEmpty) return 'Enter your password';
+            return null;
+          },
         ),
       ],
     );

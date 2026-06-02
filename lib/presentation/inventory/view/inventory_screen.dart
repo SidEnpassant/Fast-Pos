@@ -131,7 +131,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     children: [
                       Expanded(
                         child: SizedBox(
-                          height: 118,
+                          height: AppMetricCard.heightCompact,
                           child: AppMetricCard(
                             title: 'Products',
                             value: '${state.allProducts.length}',
@@ -143,7 +143,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: SizedBox(
-                          height: 118,
+                          height: AppMetricCard.heightCompact,
                           child: AppMetricCard(
                             title: 'Stock value',
                             value: fmt.format(stockValue),
@@ -163,7 +163,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     children: [
                       Expanded(
                         child: SizedBox(
-                          height: 118,
+                          height: AppMetricCard.heightCompact,
                           child: AppMetricCard(
                             title: 'Low stock',
                             value: '$lowCount',
@@ -175,7 +175,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: SizedBox(
-                          height: 118,
+                          height: AppMetricCard.heightCompact,
                           child: AppMetricCard(
                             title: 'Out of stock',
                             value: '$outCount',

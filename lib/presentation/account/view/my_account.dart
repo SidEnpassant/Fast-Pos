@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
+import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
 import 'package:inventopos/presentation/account/bloc/account_event.dart';
 import 'package:inventopos/presentation/account/bloc/account_state.dart';
@@ -11,7 +13,6 @@ import 'package:inventopos/presentation/account/widgets/account_editable_field_t
 import 'package:inventopos/presentation/account/widgets/account_field_edit_dialog.dart';
 import 'package:inventopos/presentation/account/widgets/account_mutation_overlay.dart';
 import 'package:inventopos/presentation/account/widgets/account_profile_header_section.dart';
-import 'package:go_router/go_router.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 
 class MyAccountPage extends StatefulWidget {
@@ -21,28 +22,7 @@ class MyAccountPage extends StatefulWidget {
   State<MyAccountPage> createState() => _MyAccountPageState();
 }
 
-class _MyAccountPageState extends State<MyAccountPage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      duration: const Duration(milliseconds: 800),
-      vsync: this,
-    );
-    _animation = CurvedAnimation(parent: _controller, curve: Curves.easeInOut);
-    _controller.forward();
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
+class _MyAccountPageState extends State<MyAccountPage> {
   Future<void> _pickAndReplaceSignature() async {
     final picker = ImagePicker();
     final image = await picker.pickImage(
@@ -58,18 +38,18 @@ class _MyAccountPageState extends State<MyAccountPage>
   }
 
   String _str(Map<String, dynamic> fields, String key) =>
-      fields[key]?.toString() ?? '';
+      fields[key]?.toString().trim() ?? '';
 
-  Widget _animatedTile({
-    required Widget child,
-  }) {
-    return AnimationConfiguration.synchronized(
-      duration: const Duration(milliseconds: 500),
-      child: SlideAnimation(
-        verticalOffset: 30,
-        child: FadeInAnimation(child: child),
-      ),
-    );
+  int _filledFieldCount(Map<String, dynamic> fields) {
+    const keys = [
+      'name',
+      'phoneNumber',
+      'businessName',
+      'businessAddress',
+      'gstNumber',
+      'billRules',
+    ];
+    return keys.where((k) => _str(fields, k).isNotEmpty).length;
   }
 
   @override
@@ -83,24 +63,11 @@ class _MyAccountPageState extends State<MyAccountPage>
         final error = state.feedbackIsError;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Row(
-              children: [
-                Icon(
-                  error ? Icons.close : Icons.check,
-                  color: Colors.white,
-                  size: 18,
-                ),
-                const SizedBox(width: 12),
-                Expanded(child: Text(msg)),
-              ],
-            ),
-            backgroundColor:
-                error ? const Color(0xFFFF5252) : const Color(0xFF00C896),
+            content: Text(msg),
+            backgroundColor: error
+                ? Theme.of(context).colorScheme.error
+                : Theme.of(context).colorScheme.primary,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            margin: const EdgeInsets.all(16),
           ),
         );
         context.read<AccountBloc>().add(const AccountUiFeedbackConsumed());
@@ -108,228 +75,241 @@ class _MyAccountPageState extends State<MyAccountPage>
       builder: (context, accountState) {
         final fields = accountState.fields;
         final busy = accountState.loading || accountState.mutationBusy;
+        final filled = _filledFieldCount(fields);
+        const totalFields = 6;
+        final businessReady = _str(fields, 'businessName').isNotEmpty;
 
-        return Material(
-          color: Theme.of(context).colorScheme.surfaceContainerLowest,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+        return AppScreenScaffold(
+          title: 'My Account',
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.pop(),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.logout),
+              tooltip: 'Logout',
+              onPressed: () => context.read<AuthBloc>().signOut(),
+            ),
+          ],
+          body: Stack(
             children: [
-              AppBar(
-                title: Align(
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    'My Account',
-                    style: GoogleFonts.poppins(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 20,
-                    ),
-                  ),
-                ),
-                actions: [
-                  IconButton(
-                    icon: const Icon(Icons.logout),
-                    onPressed: () => context.read<AuthBloc>().signOut(),
-                    tooltip: 'Logout',
-                  ),
-                ],
-                backgroundColor: Colors.white,
-                elevation: 0,
-                systemOverlayStyle: SystemUiOverlayStyle.dark,
-              ),
-              Expanded(
-                child: Stack(
+              RefreshIndicator(
+                onRefresh: () async {
+                  await Future<void>.delayed(
+                    const Duration(milliseconds: 200),
+                  );
+                },
+                child: ListView(
+                  padding: const EdgeInsets.all(AppSpacing.md),
                   children: [
-                    SafeArea(
-                      child: FadeTransition(
-                        opacity: _animation,
-                        child: RefreshIndicator(
-                          onRefresh: () async {
-                            await Future<void>.delayed(
-                              const Duration(milliseconds: 200),
-                            );
-                          },
-                          color: const Color(0xFF3B82F6),
-                          backgroundColor: Colors.white,
-                          child: SingleChildScrollView(
-                            physics: const BouncingScrollPhysics(),
-                            child: AnimationLimiter(
-                              child: Column(
-                                children: [
-                                  AccountProfileHeaderSection(
-                                    fields: fields,
-                                    onChangeSignature: _pickAndReplaceSignature,
-                                  ),
-                                  Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 20,
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        const _SectionTitle(
-                                          'Personal Information',
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _animatedTile(
-                                          child: AccountEditableFieldTile(
-                                            label: 'Name',
-                                            fieldKey: 'name',
-                                            icon: Icons.person_outline,
-                                            valueText: _str(fields, 'name'),
-                                            onTap: () => showAccountFieldEditDialog(
-                                              context,
-                                              label: 'Name',
-                                              fieldKey: 'name',
-                                              initialValue: _str(fields, 'name'),
-                                            ),
-                                          ),
-                                        ),
-                                        _animatedTile(
-                                          child: AccountEditableFieldTile(
-                                            label: 'Phone Number',
-                                            fieldKey: 'phoneNumber',
-                                            icon: Icons.phone_outlined,
-                                            valueText:
-                                                _str(fields, 'phoneNumber'),
-                                            onTap: () =>
-                                                showAccountFieldEditDialog(
-                                              context,
-                                              label: 'Phone Number',
-                                              fieldKey: 'phoneNumber',
-                                              initialValue: _str(
-                                                fields,
-                                                'phoneNumber',
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 24),
-                                        const _SectionTitle(
-                                          'Business Information',
-                                        ),
-                                        const SizedBox(height: 16),
-                                        _animatedTile(
-                                          child: AccountEditableFieldTile(
-                                            label: 'Business Name',
-                                            fieldKey: 'businessName',
-                                            icon: Icons.business_outlined,
-                                            valueText:
-                                                _str(fields, 'businessName'),
-                                            onTap: () =>
-                                                showAccountFieldEditDialog(
-                                              context,
-                                              label: 'Business Name',
-                                              fieldKey: 'businessName',
-                                              initialValue: _str(
-                                                fields,
-                                                'businessName',
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _animatedTile(
-                                          child: AccountEditableFieldTile(
-                                            label: 'Business Address',
-                                            fieldKey: 'businessAddress',
-                                            icon: Icons.location_on_outlined,
-                                            valueText:
-                                                _str(fields, 'businessAddress'),
-                                            onTap: () =>
-                                                showAccountFieldEditDialog(
-                                              context,
-                                              label: 'Business Address',
-                                              fieldKey: 'businessAddress',
-                                              initialValue: _str(
-                                                fields,
-                                                'businessAddress',
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _animatedTile(
-                                          child: AccountEditableFieldTile(
-                                            label: 'GST Number',
-                                            fieldKey: 'gstNumber',
-                                            icon: Icons.receipt_long_outlined,
-                                            valueText: _str(fields, 'gstNumber'),
-                                            onTap: () =>
-                                                showAccountFieldEditDialog(
-                                              context,
-                                              label: 'GST Number',
-                                              fieldKey: 'gstNumber',
-                                              initialValue: _str(
-                                                fields,
-                                                'gstNumber',
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _animatedTile(
-                                          child: AccountEditableFieldTile(
-                                            label: 'Bill Rules',
-                                            fieldKey: 'billRules',
-                                            icon: Icons.rule_outlined,
-                                            valueText: _str(fields, 'billRules'),
-                                            onTap: () =>
-                                                showAccountFieldEditDialog(
-                                              context,
-                                              label: 'Bill Rules',
-                                              fieldKey: 'billRules',
-                                              initialValue: _str(
-                                                fields,
-                                                'billRules',
-                                              ),
-                                            ),
-                                          ),
-                                        ),
-                                        _animatedTile(
-                                          child: ListTile(
-                                            leading: const Icon(Icons.print),
-                                            title: const Text('Printer setup'),
-                                            subtitle: const Text(
-                                              'Business tools are on the Dashboard',
-                                            ),
-                                            onTap: () => context.push('/printer-setup'),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 40),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
+                    AccountProfileHeaderSection(
+                      fields: fields,
+                      onChangeSignature: _pickAndReplaceSignature,
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                            height: AppMetricCard.heightWithSubtitle,
+                            child: AppMetricCard(
+                              title: 'Profile complete',
+                              value: '$filled/$totalFields',
+                              subtitle: filled == totalFields
+                                  ? 'All set'
+                                  : 'Fill missing fields',
+                              icon: Icons.verified_user_outlined,
+                              color: filled == totalFields
+                                  ? Colors.green
+                                  : Colors.indigo,
                             ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: SizedBox(
+                            height: AppMetricCard.heightWithSubtitle,
+                            child: AppMetricCard(
+                              title: 'Business',
+                              value: businessReady ? 'Ready' : 'Setup',
+                              subtitle: businessReady
+                                  ? _str(fields, 'businessName')
+                                  : 'Add business name',
+                              icon: Icons.storefront_outlined,
+                              color: businessReady
+                                  ? Colors.teal
+                                  : Colors.orange,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    AppSectionCard(
+                      title: 'Personal information',
+                      child: Column(
+                        children: [
+                          AccountEditableFieldTile(
+                            label: 'Name',
+                            fieldKey: 'name',
+                            icon: Icons.person_outline,
+                            valueText: _str(fields, 'name'),
+                            onTap: () => showAccountFieldEditDialog(
+                              context,
+                              label: 'Name',
+                              fieldKey: 'name',
+                              initialValue: _str(fields, 'name'),
+                            ),
+                          ),
+                          AccountEditableFieldTile(
+                            label: 'Phone number',
+                            fieldKey: 'phoneNumber',
+                            icon: Icons.phone_outlined,
+                            valueText: _str(fields, 'phoneNumber'),
+                            showDivider: false,
+                            onTap: () => showAccountFieldEditDialog(
+                              context,
+                              label: 'Phone Number',
+                              fieldKey: 'phoneNumber',
+                              initialValue: _str(fields, 'phoneNumber'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppSectionCard(
+                      title: 'Business information',
+                      child: Column(
+                        children: [
+                          AccountEditableFieldTile(
+                            label: 'Business name',
+                            fieldKey: 'businessName',
+                            icon: Icons.business_outlined,
+                            valueText: _str(fields, 'businessName'),
+                            onTap: () => showAccountFieldEditDialog(
+                              context,
+                              label: 'Business Name',
+                              fieldKey: 'businessName',
+                              initialValue: _str(fields, 'businessName'),
+                            ),
+                          ),
+                          AccountEditableFieldTile(
+                            label: 'Business address',
+                            fieldKey: 'businessAddress',
+                            icon: Icons.location_on_outlined,
+                            valueText: _str(fields, 'businessAddress'),
+                            onTap: () => showAccountFieldEditDialog(
+                              context,
+                              label: 'Business Address',
+                              fieldKey: 'businessAddress',
+                              initialValue: _str(fields, 'businessAddress'),
+                            ),
+                          ),
+                          AccountEditableFieldTile(
+                            label: 'GST number',
+                            fieldKey: 'gstNumber',
+                            icon: Icons.receipt_long_outlined,
+                            valueText: _str(fields, 'gstNumber'),
+                            onTap: () => showAccountFieldEditDialog(
+                              context,
+                              label: 'GST Number',
+                              fieldKey: 'gstNumber',
+                              initialValue: _str(fields, 'gstNumber'),
+                            ),
+                          ),
+                          AccountEditableFieldTile(
+                            label: 'Bill rules',
+                            fieldKey: 'billRules',
+                            icon: Icons.rule_outlined,
+                            valueText: _str(fields, 'billRules'),
+                            showDivider: false,
+                            onTap: () => showAccountFieldEditDialog(
+                              context,
+                              label: 'Bill Rules',
+                              fieldKey: 'billRules',
+                              initialValue: _str(fields, 'billRules'),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppSectionCard(
+                      title: 'Tools',
+                      child: InkWell(
+                        onTap: () => context.push('/printer-setup'),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 44,
+                                height: 44,
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .secondaryContainer
+                                      .withValues(alpha: 0.6),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.print_outlined,
+                                  color: Theme.of(context).colorScheme.secondary,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Printer setup',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .titleSmall
+                                          ?.copyWith(
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      'Business tools are on the Dashboard',
+                                      style: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.copyWith(
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurfaceVariant,
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.chevron_right,
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onSurfaceVariant,
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                    AccountMutationOverlay(visible: busy),
+                    const SizedBox(height: 24),
+                    
                   ],
                 ),
               ),
+              AccountMutationOverlay(visible: busy),
             ],
           ),
         );
       },
-    );
-  }
-}
-
-class _SectionTitle extends StatelessWidget {
-  const _SectionTitle(this.text);
-
-  final String text;
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 18,
-        fontWeight: FontWeight.w600,
-        color: Color(0xFF1A1D29),
-      ),
     );
   }
 }

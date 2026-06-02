@@ -47,7 +47,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   children: [
                     Expanded(
                       child: SizedBox(
-                        height: 118,
+                        height: AppMetricCard.heightCompact,
                         child: AppMetricCard(
                           title: 'Total customers',
                           value: '${all.length}',
@@ -59,7 +59,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                     const SizedBox(width: 12),
                     Expanded(
                       child: SizedBox(
-                        height: 118,
+                        height: AppMetricCard.heightCompact,
                         child: AppMetricCard(
                           title: 'With phone',
                           value: '$withPhone',

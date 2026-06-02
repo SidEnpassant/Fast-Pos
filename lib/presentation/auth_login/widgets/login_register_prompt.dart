@@ -9,10 +9,13 @@ class LoginRegisterPrompt extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        const Text("Don't have an account?"),
+        Text(
+          "Don't have an account?",
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
         TextButton(
           onPressed: () => context.push('/signup'),
-          child: const Text('Register'),
+          child: const Text('Create account'),
         ),
       ],
     );

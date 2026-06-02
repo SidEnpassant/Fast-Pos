@@ -113,7 +113,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 children: [
                   Expanded(
                     child: SizedBox(
-                      height: 128,
+                      height: AppMetricCard.heightCompact,
                       child: AppMetricCard(
                         title: 'Total spent',
                         value: fmt.format(state.totalSpent),
@@ -125,7 +125,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                   const SizedBox(width: 12),
                   Expanded(
                     child: SizedBox(
-                      height: 128,
+                      height: AppMetricCard.heightCompact,
                       child: AppMetricCard(
                         title: 'Bills',
                         value: '${state.bills.length}',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 
+/// Shared KPI card used across dashboard, analytics, account, etc.
 class AppMetricCard extends StatelessWidget {
   const AppMetricCard({
     super.key,
@@ -19,6 +20,17 @@ class AppMetricCard extends StatelessWidget {
   final Color? color;
   final String? subtitle;
   final VoidCallback? onTap;
+
+  /// Use in a [SizedBox] when the card has no subtitle.
+  static const double heightCompact = 120;
+
+  /// Use in a [SizedBox] when the card shows a subtitle line.
+  static const double heightWithSubtitle = 136;
+
+  static double heightFor({String? subtitle}) =>
+      subtitle != null && subtitle.isNotEmpty
+          ? heightWithSubtitle
+          : heightCompact;
 
   @override
   Widget build(BuildContext context) {
@@ -52,38 +64,53 @@ class AppMetricCard extends StatelessWidget {
                     Icon(
                       Icons.chevron_right,
                       color: theme.colorScheme.onSurfaceVariant,
+                      size: 20,
                     ),
                 ],
               ),
-              const Spacer(),
-              FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  value,
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: accent,
+              Expanded(
+                child: Align(
+                  alignment: Alignment.bottomLeft,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          value,
+                          style: theme.textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: accent,
+                          ),
+                          maxLines: 1,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        title,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.colorScheme.onSurfaceVariant,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      if (subtitle != null && subtitle!.isNotEmpty) ...[
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle!,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            color: theme.colorScheme.outline,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ],
                   ),
-                  maxLines: 1,
                 ),
               ),
-              const SizedBox(height: 4),
-              Text(
-                title,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-              ),
-              if (subtitle != null) ...[
-                const SizedBox(height: 2),
-                Text(
-                  subtitle!,
-                  style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.outline,
-                  ),
-                ),
-              ],
             ],
           ),
         ),
