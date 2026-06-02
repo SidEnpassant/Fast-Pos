@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/core/widgets/m3/app_date_section_header.dart';
+import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/presentation/transactions/widgets/pending_transaction_bill_card.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
@@ -16,7 +19,6 @@ import 'package:inventopos/presentation/transactions/bloc/bill_actions/transacti
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_bloc.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_state.dart';
 import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
-import 'package:inventopos/presentation/transactions/widgets/transaction_amount_row.dart';
 import 'package:inventopos/presentation/transactions/widgets/transaction_bill_actions_feedback_listener.dart';
 
 class IncompleteTransactionsScreen extends StatefulWidget {
@@ -61,36 +63,31 @@ class _IncompleteTransactionsScreenState
             child: BlocBuilder<IncompleteTransactionsBloc,
                 IncompleteTransactionsViewState>(
               builder: (context, txState) {
-                return Scaffold(
-                  appBar: AppBar(
-                    title: txState.isSearching
-                        ? _buildSearchField(blocContext)
-                        : Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Pending Transactions',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
-                          ),
-                    actions: [
-                      IconButton(
-                        icon: Icon(
-                            txState.isSearching ? Icons.close : Icons.search),
-                        onPressed: () {
-                          if (txState.isSearching) {
-                            _searchController.clear();
-                          }
-                          blocContext
-                              .read<IncompleteTransactionsBloc>()
-                              .toggleSearchMode();
-                        },
+                return AppScreenScaffold(
+                  title: txState.isSearching ? null : 'Pending Transactions',
+                  titleWidget:
+                      txState.isSearching ? _buildSearchField(blocContext) : null,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => context.pop(),
+                  ),
+                  actions: [
+                    IconButton(
+                      icon: Icon(
+                        txState.isSearching ? Icons.close : Icons.search,
                       ),
-                      IconButton(
-                        icon: const Icon(Icons.calendar_today),
-                        onPressed: () async {
+                      onPressed: () {
+                        if (txState.isSearching) {
+                          _searchController.clear();
+                        }
+                        blocContext
+                            .read<IncompleteTransactionsBloc>()
+                            .toggleSearchMode();
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.calendar_today_outlined),
+                      onPressed: () async {
                           final lastSelectable = DateTime.now();
                           final firstSelectable = DateTime(2000);
                           final pickedDate = await showDatePicker(
@@ -113,8 +110,7 @@ class _IncompleteTransactionsScreenState
                           }
                         },
                       ),
-                    ],
-                  ),
+                  ],
                   body: Builder(
                     builder: (bodyContext) {
                       final session =
@@ -146,22 +142,11 @@ class _IncompleteTransactionsScreenState
                           .toList();
 
                       if (partialRows.isEmpty) {
-                        return Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(Icons.payment,
-                                  size: 64, color: Colors.grey[400]),
-                              const SizedBox(height: 16),
-                              Text(
-                                'No pending payments',
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          ),
+                        return const AppEmptyState(
+                          icon: Icons.pending_actions_outlined,
+                          title: 'No pending payments',
+                          message:
+                              'Partially paid bills will appear here until fully settled.',
                         );
                       }
 
@@ -199,19 +184,26 @@ class _IncompleteTransactionsScreenState
                           return Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Padding(
-                                padding: const EdgeInsets.all(16.0),
-                                child: Text(
-                                  DateFormat('MMMM dd, yyyy')
-                                      .format(DateTime.parse(date)),
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                              AppDateSectionHeader(
+                                label: DateFormat('MMMM dd, yyyy')
+                                    .format(DateTime.parse(date)),
                               ),
                               ...bills.map((bill) {
-                                return _buildBillCard(bodyContext, bill);
+                                final remaining =
+                                    bill.totalAmount - bill.paidAmount;
+                                return PendingTransactionBillCard(
+                                  bill: bill,
+                                  onUpdatePayment: remaining > 0
+                                      ? () => _showUpdatePaymentDialog(
+                                            bodyContext,
+                                            bill.id,
+                                            remaining,
+                                            bill,
+                                          )
+                                      : () {},
+                                  onShowBill: () =>
+                                      openBillPdfForBill(bodyContext, bill),
+                                );
                               }),
                             ],
                           );
@@ -261,66 +253,6 @@ class _IncompleteTransactionsScreenState
     );
   }
 
-  Widget _buildBillCard(BuildContext scaffoldContext, Bill bill) {
-    final billId = bill.id;
-    final totalAmount = bill.totalAmount;
-    final paidAmount = bill.paidAmount;
-    final remainingAmount = totalAmount - paidAmount;
-
-    return Card(
-      margin: const EdgeInsets.all(8.0),
-      child: Column(
-        children: [
-          ListTile(
-            title: Text(bill.customerName),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                    'Phone: ${bill.customerPhone.isEmpty ? 'N/A' : bill.customerPhone}'),
-                TransactionAmountRow(
-                  label: 'Total Amount:',
-                  amount: totalAmount,
-                ),
-                TransactionAmountRow(
-                  label: 'Amount Paid:',
-                  amount: paidAmount,
-                ),
-                TransactionAmountRow(
-                  label: 'Remaining Amount:',
-                  amount: remainingAmount,
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                if (remainingAmount > 0)
-                  FilledButton.icon(
-                    icon: const Icon(Icons.payments),
-                    label: const Text('Update payment'),
-                    onPressed: () => _showUpdatePaymentDialog(
-                      scaffoldContext,
-                      billId,
-                      remainingAmount,
-                      bill,
-                    ),
-                  ),
-                FilledButton.icon(
-                  icon: const Icon(Icons.picture_as_pdf),
-                  label: const Text('Show Bill'),
-                  onPressed: () => openBillPdfForBill(scaffoldContext, bill),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
 }
 
 class _UpdatePaymentDialog extends StatefulWidget {

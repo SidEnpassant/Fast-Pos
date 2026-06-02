@@ -5,8 +5,12 @@ import 'package:equatable/equatable.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/entities/product.dart';
+import 'package:inventopos/domain/analytics/business_analytics.dart';
+import 'package:inventopos/domain/analytics/customer_analytics.dart';
+import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -16,12 +20,14 @@ class AnalyticsHubState extends Equatable {
     this.bills = const [],
     this.expenses = const [],
     this.products = const [],
+    this.customers = const [],
     this.loading = true,
   });
 
   final List<Bill> bills;
   final List<Expense> expenses;
   final List<Product> products;
+  final List<Customer> customers;
   final bool loading;
 
   double get revenueThisMonth {
@@ -49,22 +55,33 @@ class AnalyticsHubState extends Equatable {
   List<Product> get lowStockProducts =>
       products.where((p) => p.isLowStock).take(10).toList();
 
+  CustomerAnalyticsSnapshot get customerInsights =>
+      CustomerAnalytics.compute(bills: bills, customers: customers);
+
+  BusinessAnalyticsSnapshot get businessInsights => BusinessAnalytics.compute(
+        bills: bills,
+        expenses: expenses,
+        products: products,
+      );
+
   AnalyticsHubState copyWith({
     List<Bill>? bills,
     List<Expense>? expenses,
     List<Product>? products,
+    List<Customer>? customers,
     bool? loading,
   }) {
     return AnalyticsHubState(
       bills: bills ?? this.bills,
       expenses: expenses ?? this.expenses,
       products: products ?? this.products,
+      customers: customers ?? this.customers,
       loading: loading ?? this.loading,
     );
   }
 
   @override
-  List<Object?> get props => [bills, expenses, products, loading];
+  List<Object?> get props => [bills, expenses, products, customers, loading];
 }
 
 sealed class AnalyticsHubEvent extends Equatable {
@@ -98,18 +115,27 @@ class AnalyticsHubProductsReceived extends AnalyticsHubEvent {
   List<Object?> get props => [products];
 }
 
+class AnalyticsHubCustomersReceived extends AnalyticsHubEvent {
+  const AnalyticsHubCustomersReceived(this.customers);
+  final List<Customer> customers;
+  @override
+  List<Object?> get props => [customers];
+}
+
 class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
-  AnalyticsHubBloc(this._bills, this._expenses, this._products)
+  AnalyticsHubBloc(this._bills, this._expenses, this._products, this._customers)
       : super(const AnalyticsHubState()) {
     on<AnalyticsHubStarted>(_onStarted);
     on<AnalyticsHubBillsReceived>(_onBills);
     on<AnalyticsHubExpensesReceived>(_onExpenses);
     on<AnalyticsHubProductsReceived>(_onProducts);
+    on<AnalyticsHubCustomersReceived>(_onCustomers);
   }
 
   final ObserveBillsUseCase _bills;
   final ExpenseRepository _expenses;
   final ProductRepository _products;
+  final CustomerRepository _customers;
 
   final List<StreamSubscription<dynamic>> _subs = [];
 
@@ -134,6 +160,11 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
             (p) => add(AnalyticsHubProductsReceived(p)),
           ),
     );
+    _subs.add(
+      _customers.watchCustomersForUser(uid).listen(
+            (c) => add(AnalyticsHubCustomersReceived(c)),
+          ),
+    );
   }
 
   void _onBills(AnalyticsHubBillsReceived e, Emitter<AnalyticsHubState> emit) {
@@ -152,6 +183,13 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
     Emitter<AnalyticsHubState> emit,
   ) {
     emit(state.copyWith(products: e.products));
+  }
+
+  void _onCustomers(
+    AnalyticsHubCustomersReceived e,
+    Emitter<AnalyticsHubState> emit,
+  ) {
+    emit(state.copyWith(customers: e.customers));
   }
 
   Future<void> _cancel() async {

@@ -4,17 +4,21 @@ import 'package:flutter/material.dart';
 class AppScreenScaffold extends StatelessWidget {
   const AppScreenScaffold({
     super.key,
-    required this.title,
+    this.title,
+    this.titleWidget,
     required this.body,
     this.actions,
     this.floatingActionButton,
+    this.bottomNavigationBar,
     this.leading,
-  });
+  }) : assert(title != null || titleWidget != null);
 
-  final String title;
+  final String? title;
+  final Widget? titleWidget;
   final Widget body;
   final List<Widget>? actions;
   final Widget? floatingActionButton;
+  final Widget? bottomNavigationBar;
   final Widget? leading;
 
   @override
@@ -23,13 +27,14 @@ class AppScreenScaffold extends StatelessWidget {
     return Scaffold(
       backgroundColor: scheme.surfaceContainerLowest,
       appBar: AppBar(
-        title: Text(title),
+        title: titleWidget ?? Text(title!),
         leading: leading,
         actions: actions,
         backgroundColor: scheme.surfaceContainerLowest,
         surfaceTintColor: Colors.transparent,
       ),
       floatingActionButton: floatingActionButton,
+      bottomNavigationBar: bottomNavigationBar,
       body: body,
     );
   }

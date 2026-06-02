@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:bloc/bloc.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/domain/analytics/business_analytics.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_event.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
@@ -38,35 +39,8 @@ class AnalyticsBloc extends Bloc<AnalyticsEvent, AnalyticsState> {
     Emitter<AnalyticsState> emit,
   ) {
     final bills = event.bills;
-    final monthlyRevenues = <String, double>{};
-    final monthlyTransactions = <String, int>{};
-
-    for (final bill in bills) {
-      try {
-        final monthYear = DateFormat('MMM yyyy').format(bill.createdAt);
-
-        double amount = 0;
-        if (bill.paymentStatus == 'complete') {
-          amount = bill.totalAmount;
-        } else if (bill.paymentStatus == 'partial') {
-          amount = bill.paidAmount;
-        }
-
-        monthlyRevenues.update(
-          monthYear,
-          (value) => value + amount,
-          ifAbsent: () => amount,
-        );
-
-        monthlyTransactions.update(
-          monthYear,
-          (value) => value + 1,
-          ifAbsent: () => 1,
-        );
-      } catch (_) {
-        continue;
-      }
-    }
+    final monthlyRevenues = BusinessAnalytics.monthlyRevenueMap(bills);
+    final monthlyTransactions = BusinessAnalytics.monthlyTransactionMap(bills);
 
     if (monthlyRevenues.isEmpty) {
       emit(

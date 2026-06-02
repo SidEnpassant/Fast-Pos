@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_barcode_scan_sheet.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
@@ -27,6 +30,10 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
   bool _isActive = true;
   bool _saving = false;
   Product? _existing;
+
+  static const _fieldDecoration = InputDecoration(
+    border: OutlineInputBorder(),
+  );
 
   @override
   void initState() {
@@ -134,89 +141,136 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.productId == null ? 'Add product' : 'Edit product'),
+    final isEdit = widget.productId != null;
+    return AppScreenScaffold(
+      title: isEdit ? 'Edit product' : 'Add product',
+      leading: IconButton(
+        icon: const Icon(Icons.arrow_back),
+        onPressed: () => context.pop(),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         children: [
-          if (_barcode != null)
-            Chip(
-              avatar: const Icon(Icons.qr_code),
-              label: Text(_barcode!),
-            )
-          else
-            const Chip(label: Text('No barcode scanned')),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            onPressed: _scanBarcode,
-            icon: const Icon(Icons.qr_code_scanner),
-            label: const Text('Scan barcode'),
-          ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _nameController,
-            decoration: const InputDecoration(labelText: 'Name *'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _skuController,
-            decoration: const InputDecoration(labelText: 'SKU'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _categoryController,
-            decoration: const InputDecoration(labelText: 'Category'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _priceController,
-            decoration: const InputDecoration(
-              labelText: 'Selling price *',
-              prefixText: '₹',
+          AppSectionCard(
+            title: 'Barcode',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                if (_barcode != null)
+                  Chip(
+                    avatar: const Icon(Icons.qr_code, size: 18),
+                    label: Text(_barcode!),
+                  )
+                else
+                  Text(
+                    'No barcode scanned',
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: _scanBarcode,
+                  icon: const Icon(Icons.qr_code_scanner),
+                  label: const Text('Scan barcode'),
+                ),
+              ],
             ),
-            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 12),
-          TextField(
-            controller: _costController,
-            decoration: const InputDecoration(
-              labelText: 'Cost price',
-              prefixText: '₹',
+          AppSectionCard(
+            title: 'Product details',
+            child: Column(
+              children: [
+                TextField(
+                  controller: _nameController,
+                  decoration: _fieldDecoration.copyWith(
+                    labelText: 'Name *',
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _skuController,
+                  decoration: _fieldDecoration.copyWith(labelText: 'SKU'),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _categoryController,
+                  decoration: _fieldDecoration.copyWith(labelText: 'Category'),
+                ),
+              ],
             ),
-            keyboardType: TextInputType.number,
           ),
           const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _stockController,
-                  decoration: const InputDecoration(labelText: 'Stock'),
+          AppSectionCard(
+            title: 'Pricing',
+            child: Column(
+              children: [
+                TextField(
+                  controller: _priceController,
+                  decoration: _fieldDecoration.copyWith(
+                    labelText: 'Selling price *',
+                    prefixText: '₹ ',
+                  ),
                   keyboardType: TextInputType.number,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: TextField(
-                  controller: _minStockController,
-                  decoration: const InputDecoration(labelText: 'Min stock'),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _costController,
+                  decoration: _fieldDecoration.copyWith(
+                    labelText: 'Cost price',
+                    prefixText: '₹ ',
+                  ),
                   keyboardType: TextInputType.number,
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
-          SwitchListTile(
-            title: const Text('Active'),
-            value: _isActive,
-            onChanged: (v) => setState(() => _isActive = v),
+          const SizedBox(height: 12),
+          AppSectionCard(
+            title: 'Stock',
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _stockController,
+                        decoration: _fieldDecoration.copyWith(
+                          labelText: 'Stock',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _minStockController,
+                        decoration: _fieldDecoration.copyWith(
+                          labelText: 'Min stock',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: const Text('Active'),
+                  subtitle: const Text('Inactive products are hidden from billing'),
+                  value: _isActive,
+                  onChanged: (v) => setState(() => _isActive = v),
+                ),
+              ],
+            ),
           ),
+          const SizedBox(height: 24),
         ],
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           child: FilledButton(
             onPressed: _saving ? null : _save,
             child: _saving

@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+import 'package:inventopos/core/design/app_radii.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
+import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
+import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/presentation/transactions/widgets/transaction_amount_row.dart';
+
+class PendingTransactionBillCard extends StatelessWidget {
+  const PendingTransactionBillCard({
+    super.key,
+    required this.bill,
+    required this.onUpdatePayment,
+    required this.onShowBill,
+  });
+
+  final Bill bill;
+  final VoidCallback onUpdatePayment;
+  final VoidCallback onShowBill;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final totalAmount = bill.totalAmount;
+    final paidAmount = bill.paidAmount;
+    final remainingAmount = totalAmount - paidAmount;
+    final phone = bill.customerPhone.isEmpty ? 'N/A' : bill.customerPhone;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.md,
+        vertical: AppSpacing.xs,
+      ),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadii.md),
+                    ),
+                    child: Icon(
+                      Icons.pending_actions,
+                      color: Colors.orange.shade800,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bill.customerName,
+                          style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          phone,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: theme.colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  AppStatusChip(
+                    label: 'Partial',
+                    color: Colors.orange.shade800,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              TransactionAmountRow(
+                label: 'Total amount',
+                amount: totalAmount,
+              ),
+              TransactionAmountRow(
+                label: 'Amount paid',
+                amount: paidAmount,
+                valueColor: Colors.green.shade700,
+              ),
+              TransactionAmountRow(
+                label: 'Remaining',
+                amount: remainingAmount,
+                valueColor: theme.colorScheme.error,
+              ),
+              const SizedBox(height: 14),
+              Row(
+                children: [
+                  if (remainingAmount > 0)
+                    Expanded(
+                      child: FilledButton.icon(
+                        icon: const Icon(Icons.payments_outlined),
+                        label: const Text('Update payment'),
+                        onPressed: onUpdatePayment,
+                      ),
+                    ),
+                  if (remainingAmount > 0) const SizedBox(width: 8),
+                  Expanded(
+                    child: FilledButton.tonalIcon(
+                      icon: const Icon(Icons.picture_as_pdf_outlined),
+                      label: const Text('Show Bill'),
+                      onPressed: onShowBill,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

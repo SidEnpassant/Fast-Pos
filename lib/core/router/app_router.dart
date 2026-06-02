@@ -373,6 +373,7 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                         ctx.read<ObserveBillsUseCase>(),
                         ctx.read<ExpenseRepository>(),
                         ctx.read<ProductRepository>(),
+                        ctx.read<CustomerRepository>(),
                       ),
                     ),
                   ],

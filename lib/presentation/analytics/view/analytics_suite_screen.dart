@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
-import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_message_center.dart';
-import 'package:inventopos/presentation/analytics/widgets/analytics_pnl_card.dart';
+import 'package:inventopos/domain/analytics/business_analytics.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_customers_content.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_inventory_content.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_overview_content.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_pnl_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_shimmer_placeholder.dart';
-import 'package:intl/intl.dart';
-
 class AnalyticsSuiteScreen extends StatefulWidget {
   const AnalyticsSuiteScreen({super.key});
 
@@ -77,53 +77,14 @@ class _OverviewTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
       builder: (context, hub) {
-        if (hub.loading) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            GridView.count(
-              crossAxisCount: 2,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-              childAspectRatio: 1.2,
-              children: [
-                AppMetricCard(
-                  title: 'Revenue (month)',
-                  value: fmt.format(hub.revenueThisMonth),
-                  icon: Icons.payments,
-                  color: Colors.green,
-                ),
-                AppMetricCard(
-                  title: 'Net profit',
-                  value: fmt.format(hub.netProfit),
-                  icon: Icons.trending_up,
-                  color: Colors.indigo,
-                ),
-                AppMetricCard(
-                  title: 'Expenses',
-                  value: fmt.format(hub.expensesThisMonth),
-                  icon: Icons.money_off,
-                  color: Colors.orange,
-                ),
-                AppMetricCard(
-                  title: 'Low stock SKUs',
-                  value: '${hub.lowStockProducts.length}',
-                  icon: Icons.warning,
-                  color: Colors.red,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            AppSectionCard(
-              title: 'Bills this month',
-              child: Text('${hub.billsThisMonth} total bills'),
-            ),
-          ],
+        return AnalyticsOverviewContent(
+          snapshot: hub.businessInsights,
+          revenueThisMonth: hub.revenueThisMonth,
+          netProfit: hub.netProfit,
+          expensesThisMonth: hub.expensesThisMonth,
+          lowStockCount: hub.lowStockProducts.length,
+          billsThisMonth: hub.billsThisMonth,
+          loading: hub.loading,
         );
       },
     );
@@ -154,18 +115,62 @@ class _PnLTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AnalyticsBloc, AnalyticsState>(
-      builder: (context, state) {
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            AnalyticsPnLCard(state: state),
-            const SizedBox(height: 16),
-            const AppSectionCard(
-              title: 'Expense breakdown',
-              child: Text('Track expenses from the Expenses screen'),
-            ),
-          ],
+    return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
+      builder: (context, hub) {
+        return BlocBuilder<AnalyticsBloc, AnalyticsState>(
+          builder: (context, state) {
+            if (hub.loading || !state.ready) {
+              return const Center(child: CircularProgressIndicator());
+            }
+            final monthKey = state.selectedMonth;
+            final monthDate =
+                BusinessAnalytics.parseMonthKey(monthKey) ?? DateTime.now();
+            final revenue = monthKey != null
+                ? (state.monthlyRevenues[monthKey] ?? 0)
+                : hub.revenueThisMonth;
+            final expenses = BusinessAnalytics.expensesForMonth(
+              hub.expenses,
+              monthDate,
+            );
+            final breakdown = BusinessAnalytics.expenseBreakdownForMonth(
+              hub.expenses,
+              monthDate,
+            );
+            return Column(
+              children: [
+                if (state.sortedMonths.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                    child: DropdownButtonFormField<String>(
+                      value: monthKey,
+                      decoration: const InputDecoration(
+                        labelText: 'Month',
+                        border: OutlineInputBorder(),
+                        isDense: true,
+                      ),
+                      items: state.sortedMonths
+                          .map(
+                            (m) => DropdownMenuItem(value: m, child: Text(m)),
+                          )
+                          .toList(),
+                      onChanged: (m) {
+                        if (m != null) {
+                          context.read<AnalyticsBloc>().setSelectedMonth(m);
+                        }
+                      },
+                    ),
+                  ),
+                Expanded(
+                  child: AnalyticsPnLContent(
+                    revenue: revenue,
+                    expenses: expenses,
+                    breakdown: breakdown,
+                    monthLabel: monthKey,
+                  ),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -179,20 +184,9 @@ class _InventoryTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
       builder: (context, hub) {
-        if (hub.lowStockProducts.isEmpty) {
-          return const Center(child: Text('No low-stock items'));
-        }
-        return ListView.builder(
-          padding: const EdgeInsets.all(16),
-          itemCount: hub.lowStockProducts.length,
-          itemBuilder: (context, i) {
-            final p = hub.lowStockProducts[i];
-            return ListTile(
-              title: Text(p.name),
-              subtitle: Text('Stock ${p.stockQuantity} / min ${p.minStockThreshold}'),
-              trailing: Text('₹${p.price.toStringAsFixed(0)}'),
-            );
-          },
+        return AnalyticsInventoryContent(
+          inventory: hub.businessInsights.inventory,
+          loading: hub.loading,
         );
       },
     );
@@ -204,11 +198,13 @@ class _CustomersTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppSectionCard(
-      title: 'Customer insights',
-      child: Text(
-        'Customer credit and collection trends appear on the Dashboard.',
-      ),
+    return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
+      builder: (context, hub) {
+        return AnalyticsCustomersContent(
+          snapshot: hub.customerInsights,
+          loading: hub.loading,
+        );
+      },
     );
   }
 }

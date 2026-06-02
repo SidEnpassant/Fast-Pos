@@ -6,13 +6,15 @@ import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/widgets/m3/app_barcode_scan_sheet.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_filter_chip_bar.dart';
+import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
+import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_event.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_state.dart';
-import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/presentation/inventory/widgets/product_list_tile.dart';
+import 'package:intl/intl.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -72,78 +74,152 @@ class _InventoryScreenState extends State<InventoryScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Scaffold(
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            floating: true,
-            title: const Text('Inventory',
-            style: TextStyle(
-                fontSize: 20,
-              ), 
-            ),
-            actions: [
-              BlocBuilder<InventoryBloc, InventoryState>(
-                builder: (context, state) {
-                  return SegmentedButton<InventoryViewMode>(
-                    segments: const [
-                      ButtonSegment(
-                        value: InventoryViewMode.list,
-                        icon: Icon(Icons.view_list),
+      backgroundColor: scheme.surfaceContainerLowest,
+      body: BlocBuilder<InventoryBloc, InventoryState>(
+        builder: (context, state) {
+          final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+          final stockValue = state.allProducts.fold<double>(
+            0,
+            (s, p) => s + p.price * p.stockQuantity,
+          );
+          final lowCount = state.lowStockProducts.length;
+          final outCount = state.allProducts
+              .where((p) => p.stockQuantity <= 0)
+              .length;
+
+          return CustomScrollView(
+            slivers: [
+              SliverAppBar(
+                floating: true,
+                pinned: false,
+                backgroundColor: scheme.surfaceContainerLowest,
+                surfaceTintColor: Colors.transparent,
+                title: Text(
+                  'Inventory',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
-                      ButtonSegment(
-                        value: InventoryViewMode.grid,
-                        icon: Icon(Icons.grid_view),
-                      ),
-                    ],
-                    selected: {state.viewMode},
-                    onSelectionChanged: (s) => context.read<InventoryBloc>().add(
-                          InventoryViewModeChanged(s.first),
-                        ),
-                  );
-                },
-              ),
-              const SizedBox(width: 8),
-            ],
-            bottom: PreferredSize(
-              preferredSize: const Size.fromHeight(120),
-              child: Column(
-                children: [
+                ),
+                actions: [
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    child: SearchBar(
-                      controller: _searchController,
-                      hintText: 'Search products',
-                      onChanged: (q) => context
+                    padding: const EdgeInsets.only(right: 8),
+                    child: SegmentedButton<InventoryViewMode>(
+                      segments: const [
+                        ButtonSegment(
+                          value: InventoryViewMode.list,
+                          icon: Icon(Icons.view_list, size: 20),
+                        ),
+                        ButtonSegment(
+                          value: InventoryViewMode.grid,
+                          icon: Icon(Icons.grid_view, size: 20),
+                        ),
+                      ],
+                      selected: {state.viewMode},
+                      onSelectionChanged: (s) => context
                           .read<InventoryBloc>()
-                          .add(InventorySearchQueryChanged(q)),
+                          .add(InventoryViewModeChanged(s.first)),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  BlocBuilder<InventoryBloc, InventoryState>(
-                    builder: (context, state) {
-                      return AppFilterChipBar(
-                        labels: const ['All', 'Low stock', 'Out of stock'],
-                        selectedIndex: _filterIndex(state.filter),
-                        onSelected: (i) => context.read<InventoryBloc>().add(
-                              InventoryFilterChanged(_filterFromIndex(i)),
-                            ),
-                      );
-                    },
                   ),
                 ],
               ),
-            ),
-          ),
-          BlocBuilder<InventoryBloc, InventoryState>(
-            builder: (context, state) {
-              if (state.loading) {
-                return const SliverFillRemaining(
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 118,
+                          child: AppMetricCard(
+                            title: 'Products',
+                            value: '${state.allProducts.length}',
+                            icon: Icons.category,
+                            color: Colors.indigo,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 118,
+                          child: AppMetricCard(
+                            title: 'Stock value',
+                            value: fmt.format(stockValue),
+                            icon: Icons.store,
+                            color: Colors.teal,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: SizedBox(
+                          height: 118,
+                          child: AppMetricCard(
+                            title: 'Low stock',
+                            value: '$lowCount',
+                            icon: Icons.warning_amber,
+                            color: Colors.orange,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: SizedBox(
+                          height: 118,
+                          child: AppMetricCard(
+                            title: 'Out of stock',
+                            value: '$outCount',
+                            icon: Icons.remove_shopping_cart,
+                            color: Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+                  child: SearchBar(
+                    controller: _searchController,
+                    hintText: 'Search products',
+                    elevation: WidgetStateProperty.all(0),
+                    backgroundColor: WidgetStateProperty.all(
+                      scheme.surfaceContainerLow,
+                    ),
+                    onChanged: (q) => context
+                        .read<InventoryBloc>()
+                        .add(InventorySearchQueryChanged(q)),
+                  ),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: AppFilterChipBar(
+                  labels: const ['All', 'Low stock', 'Out of stock'],
+                  selectedIndex: _filterIndex(state.filter),
+                  onSelected: (i) => context.read<InventoryBloc>().add(
+                        InventoryFilterChanged(_filterFromIndex(i)),
+                      ),
+                ),
+              ),
+              const SliverToBoxAdapter(child: SizedBox(height: 8)),
+              if (state.loading)
+                const SliverFillRemaining(
                   child: Center(child: CircularProgressIndicator()),
-                );
-              }
-              if (state.filteredProducts.isEmpty) {
-                return SliverFillRemaining(
+                )
+              else if (state.filteredProducts.isEmpty)
+                SliverFillRemaining(
                   child: AppEmptyState(
                     icon: Icons.inventory_2_outlined,
                     title: 'No products',
@@ -151,16 +227,15 @@ class _InventoryScreenState extends State<InventoryScreen> {
                     actionLabel: 'Add product',
                     onAction: () => context.push('/inventory/editor'),
                   ),
-                );
-              }
-
-              if (state.viewMode == InventoryViewMode.grid) {
-                return SliverPadding(
+                )
+              else if (state.viewMode == InventoryViewMode.grid)
+                SliverPadding(
                   padding: const EdgeInsets.all(12),
                   sliver: SliverGrid(
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount: 2,
-                      childAspectRatio: 0.85,
+                      childAspectRatio: 0.82,
                       crossAxisSpacing: 12,
                       mainAxisSpacing: 12,
                     ),
@@ -175,24 +250,23 @@ class _InventoryScreenState extends State<InventoryScreen> {
                       childCount: state.filteredProducts.length,
                     ),
                   ),
-                );
-              }
-
-              return SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (context, i) => ProductListTile(
-                    product: state.filteredProducts[i],
-                    onTap: () => context.push(
-                      '/inventory/editor',
-                      extra: state.filteredProducts[i].id,
+                )
+              else
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, i) => ProductListTile(
+                      product: state.filteredProducts[i],
+                      onTap: () => context.push(
+                        '/inventory/editor',
+                        extra: state.filteredProducts[i].id,
+                      ),
                     ),
+                    childCount: state.filteredProducts.length,
                   ),
-                  childCount: state.filteredProducts.length,
                 ),
-              );
-            },
-          ),
-        ],
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showFabMenu(context),
@@ -258,7 +332,16 @@ class _ProductGridCard extends StatelessWidget {
     final theme = Theme.of(context);
     final p = product;
     final low = p.isLowStock;
-    return Card(
+    final out = p.stockQuantity <= 0;
+    final statusColor = out
+        ? theme.colorScheme.error
+        : low
+            ? Colors.orange.shade800
+            : Colors.green.shade700;
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerLow,
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
@@ -267,28 +350,48 @@ class _ProductGridCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                p.name,
-                style: theme.textTheme.titleSmall,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      p.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: statusColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ],
               ),
               const Spacer(),
               Text(
                 '₹${p.price.toStringAsFixed(0)}',
                 style: theme.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.primary,
                 ),
               ),
-              const SizedBox(height: 4),
+              const SizedBox(height: 6),
               LinearProgressIndicator(
                 value: p.minStockThreshold > 0
-                    ? (p.stockQuantity / (p.minStockThreshold * 2)).clamp(0.0, 1.0)
+                    ? (p.stockQuantity / (p.minStockThreshold * 2))
+                        .clamp(0.0, 1.0)
                     : 1,
-                color: low ? Colors.orange : Colors.green,
+                color: statusColor,
+                borderRadius: BorderRadius.circular(4),
               ),
+              const SizedBox(height: 4),
               Text(
-                'Stock: ${p.stockQuantity}',
+                'Stock ${p.stockQuantity}',
                 style: theme.textTheme.labelSmall,
               ),
             ],

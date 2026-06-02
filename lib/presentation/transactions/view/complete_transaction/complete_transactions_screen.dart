@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/core/widgets/m3/app_date_section_header.dart';
+import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
@@ -111,54 +113,46 @@ class _CompleteTransactionsScreenState
             child: BlocBuilder<CompleteTransactionsBloc,
                 CompleteTransactionsViewState>(
               builder: (context, txState) {
-                return Scaffold(
-                  appBar: AppBar(
-                    title: txState.isSearching
-                        ? TextField(
-                            controller: _searchController,
-                            decoration: const InputDecoration(
-                              hintText: 'Search by Customer Name',
-                              border: InputBorder.none,
-                            ),
-                            onChanged: (value) => blocContext
-                                .read<CompleteTransactionsBloc>()
-                                .setSearchQuery(value),
-                          )
-                        : Align(
-                            alignment: Alignment.centerLeft,
-                            child: Text(
-                              'Completed Transactions',
-                              style: GoogleFonts.poppins(
-                                fontWeight: FontWeight.w600,
-                                fontSize: 16,
-                              ),
-                            ),
+                return AppScreenScaffold(
+                  title: txState.isSearching ? null : 'Completed Transactions',
+                  titleWidget: txState.isSearching
+                      ? TextField(
+                          controller: _searchController,
+                          decoration: const InputDecoration(
+                            hintText: 'Search by customer name',
+                            border: InputBorder.none,
                           ),
-                    actions: [
-                      IconButton(
-                        icon: Icon(
-                            txState.isSearching ? Icons.close : Icons.search),
-                        onPressed: () {
-                          if (txState.isSearching) {
-                            _searchController.clear();
-                          }
-                          blocContext
+                          onChanged: (value) => blocContext
                               .read<CompleteTransactionsBloc>()
-                              .toggleSearchMode();
-                        },
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.filter_alt),
-                        onPressed: () => _showDateRangePicker(blocContext),
-                      ),
-                    ],
+                              .setSearchQuery(value),
+                        )
+                      : null,
+                  leading: IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: () => context.pop(),
                   ),
-                  body: Column(
-                    children: [
-                      Expanded(
-                        child: Builder(
-                          builder: (context) {
-                            final session =
+                  actions: [
+                    IconButton(
+                      icon: Icon(
+                        txState.isSearching ? Icons.close : Icons.search,
+                      ),
+                      onPressed: () {
+                        if (txState.isSearching) {
+                          _searchController.clear();
+                        }
+                        blocContext
+                            .read<CompleteTransactionsBloc>()
+                            .toggleSearchMode();
+                      },
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.filter_alt_outlined),
+                      onPressed: () => _showDateRangePicker(blocContext),
+                    ),
+                  ],
+                  body: Builder(
+                    builder: (context) {
+                      final session =
                                 context.read<AuthRepository>().currentSession;
                             if (session == null) {
                               return Center(
@@ -189,22 +183,11 @@ class _CompleteTransactionsScreenState
                                 .toList();
 
                             if (completeRows.isEmpty) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.check_circle,
-                                        size: 64, color: Colors.grey[400]),
-                                    const SizedBox(height: 16),
-                                    Text(
-                                      'No completed transactions',
-                                      style: TextStyle(
-                                        fontSize: 18,
-                                        color: Colors.grey[600],
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              return const AppEmptyState(
+                                icon: Icons.check_circle_outline,
+                                title: 'No completed transactions',
+                                message:
+                                    'Completed bills will appear here after full payment.',
                               );
                             }
 
@@ -245,16 +228,9 @@ class _CompleteTransactionsScreenState
                                 return Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Padding(
-                                      padding: const EdgeInsets.all(16.0),
-                                      child: Text(
-                                        DateFormat('MMMM dd, yyyy')
-                                            .format(DateTime.parse(date)),
-                                        style: const TextStyle(
-                                          fontSize: 18,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
+                                    AppDateSectionHeader(
+                                      label: DateFormat('MMMM dd, yyyy')
+                                          .format(DateTime.parse(date)),
                                     ),
                                     ...transactions.map((bill) {
                                       return CompleteTransactionBillCard(
@@ -268,11 +244,8 @@ class _CompleteTransactionsScreenState
                                   ],
                                 );
                               },
-                            );
-                          },
-                        ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 );
               },
