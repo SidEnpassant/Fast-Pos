@@ -64,4 +64,25 @@ void main() {
     final bill = _bill(status: 'Complete', total: 250);
     expect(BillRevenue.recognizedAmount(bill), 250);
   });
+
+  test('computes pending collections and payment mix', () {
+    final now = DateTime.now();
+    final state = DashboardHubState(
+      bills: [
+        _bill(
+          status: 'partial',
+          total: 1000,
+          paid: 400,
+          createdAt: now,
+        ),
+        _bill(status: 'complete', total: 500, createdAt: now),
+      ],
+      loading: false,
+    );
+
+    expect(state.partialBillsCount, 1);
+    expect(state.pendingCollectionAmount, 600);
+    expect(state.monthPaymentMix.complete, 1);
+    expect(state.monthPaymentMix.partial, 1);
+  });
 }

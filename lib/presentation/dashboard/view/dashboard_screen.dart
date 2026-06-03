@@ -1,12 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:inventopos/core/router/app_shell_navigation.dart';
+import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
-import 'package:inventopos/core/widgets/m3/app_quick_action_tile.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
+import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
 import 'package:inventopos/core/widgets/m3/app_sync_status_chip.dart';
+import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/core/bloc/connectivity_bloc.dart';
@@ -14,8 +17,12 @@ import 'package:inventopos/presentation/core/bloc/connectivity_state.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_event.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
-import 'package:intl/intl.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_needs_attention.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_payment_health.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_pulse_strip.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_top_sellers.dart';
 import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dart';
+import 'package:intl/intl.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -61,14 +68,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     sliver: SliverList(
                       delegate: SliverChildListDelegate([
                         _KpiGrid(state: state),
+                        const SizedBox(height: AppSpacing.md),
+                        DashboardPulseStrip(state: state),
                         const SizedBox(height: AppSpacing.lg),
-                        const QuickActionsGrid(),
-                        if (state.lowStockProducts.isNotEmpty) ...[
+                        DashboardNeedsAttention(state: state),
+                        if (state.attentionItemCount > 0)
                           const SizedBox(height: AppSpacing.lg),
-                          _LowStockAlerts(state: state),
-                        ],
+                        QuickActionsGrid(state: state),
                         const SizedBox(height: AppSpacing.lg),
+                        DashboardPaymentHealth(state: state),
+                        if (state.monthPaymentMix.total > 0)
+                          const SizedBox(height: AppSpacing.lg),
+                        DashboardTopSellers(state: state),
+                        if (state.topProductsThisMonth.isNotEmpty)
+                          const SizedBox(height: AppSpacing.lg),
+                        if (state.lowStockProducts.isNotEmpty) ...[
+                          _LowStockAlerts(state: state),
+                          const SizedBox(height: AppSpacing.lg),
+                        ],
                         _RecentBills(state: state),
+                        const SizedBox(height: AppSpacing.lg),
                       ]),
                     ),
                   ),
@@ -82,6 +101,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 }
 
+String _greetingForHour(int hour) {
+  if (hour < 12) return 'Good morning';
+  if (hour < 17) return 'Good afternoon';
+  return 'Good evening';
+}
+
 class _Header extends StatelessWidget {
   const _Header({required this.state});
 
@@ -90,10 +115,10 @@ class _Header extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final business =
-        state.profiles?.isNotEmpty == true
-            ? state.profiles!.first.businessName ?? 'Your Business'
-            : 'Your Business';
+    final hour = DateTime.now().hour;
+    final business = state.profiles?.isNotEmpty == true
+        ? state.profiles!.first.businessName ?? 'Your business'
+        : 'Your business';
 
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
@@ -104,7 +129,7 @@ class _Header extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Good day',
+                  _greetingForHour(hour),
                   style: theme.textTheme.bodyMedium?.copyWith(
                     color: theme.colorScheme.onSurfaceVariant,
                   ),
@@ -114,6 +139,8 @@ class _Header extends StatelessWidget {
                   style: theme.textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
                 Text(
                   DateFormat('EEEE, d MMMM').format(DateTime.now()),
@@ -161,6 +188,83 @@ class _KpiGrid extends StatelessWidget {
   Widget build(BuildContext context) {
     final cross = AppBreakpoints.gridCrossAxisCount(context);
     final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+    final trend = state.revenueTodayVsYesterdayPercent;
+    final trendSubtitle = trend == null
+        ? null
+        : '${trend >= 0 ? '↑' : '↓'} ${trend.abs().toStringAsFixed(0)}% vs yesterday';
+    final margin = state.profitMarginPercent;
+
+    final revenueTodayCard = AppMetricCard(
+      key: const ValueKey('kpi_revenue_today'),
+      title: 'Revenue today',
+      value: fmt.format(state.revenueToday),
+      icon: Icons.today,
+      color: Colors.green,
+      subtitle: trendSubtitle,
+      onTap: () => pushAppRootRoute(context, '/complete-transactions'),
+    );
+    final monthCard = AppMetricCard(
+      key: const ValueKey('kpi_revenue_month'),
+      title: 'This month',
+      value: fmt.format(state.revenueThisMonth),
+      icon: Icons.calendar_month,
+      color: Colors.blue,
+      subtitle: '${state.billsThisMonth} bills · ${state.billsToday} today',
+      onTap: () => goAppAnalytics(context, tab: AnalyticsSuiteTab.revenue),
+    );
+    final pendingCard = AppMetricCard(
+      key: const ValueKey('kpi_pending_dues'),
+      title: 'Pending dues',
+      value: state.partialBillsCount > 0
+          ? fmt.format(state.pendingCollectionAmount)
+          : 'None',
+      icon: Icons.pending_actions,
+      color: Colors.orange,
+      subtitle: state.partialBillsCount > 0
+          ? '${state.partialBillsCount} partial bills'
+          : 'All caught up',
+      onTap: () => pushAppRootRoute(context, '/incomplete-transactions'),
+    );
+    final profitCard = AppMetricCard(
+      key: const ValueKey('kpi_net_profit'),
+      title: 'Net profit (month)',
+      value: fmt.format(state.netProfitThisMonth),
+      icon: Icons.trending_up,
+      color: Colors.purple,
+      subtitle: margin != null
+          ? '${margin.toStringAsFixed(0)}% margin · Exp ${fmt.format(state.monthExpenses)}'
+          : 'Expenses ${fmt.format(state.monthExpenses)}',
+      onTap: () => goAppAnalytics(context, tab: AnalyticsSuiteTab.pnl),
+    );
+
+    if (cross == 2) {
+      const kpiHeight = AppMetricCard.heightWithSubtitle;
+      return Column(
+        children: [
+          SizedBox(
+            height: kpiHeight,
+            child: Row(
+              children: [
+                Expanded(child: revenueTodayCard),
+                const SizedBox(width: 12),
+                Expanded(child: monthCard),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: kpiHeight,
+            child: Row(
+              children: [
+                Expanded(child: pendingCard),
+                const SizedBox(width: 12),
+                Expanded(child: profitCard),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
     return GridView.count(
       crossAxisCount: cross,
@@ -168,40 +272,16 @@ class _KpiGrid extends StatelessWidget {
       physics: const NeverScrollableScrollPhysics(),
       crossAxisSpacing: 12,
       mainAxisSpacing: 12,
-      childAspectRatio: 1.15,
+      childAspectRatio: 1.12,
       children: [
-        AppMetricCard(
-          title: 'Revenue today',
-          value: fmt.format(state.revenueToday),
-          icon: Icons.today,
-          color: Colors.green,
-        ),
-        AppMetricCard(
-          title: 'This month',
-          value: fmt.format(state.revenueThisMonth),
-          icon: Icons.calendar_month,
-          color: Colors.blue,
-          subtitle: '${state.billsToday} bills today',
-        ),
-        AppMetricCard(
-          title: 'Low stock',
-          value: '${state.lowStockCount}',
-          icon: Icons.warning_amber,
-          color: Colors.orange,
-          onTap: () => context.go('/app/inventory'),
-        ),
-        AppMetricCard(
-          title: 'Net profit (month)',
-          value: fmt.format(state.netProfitThisMonth),
-          icon: Icons.trending_up,
-          color: Colors.purple,
-          subtitle: 'Expenses ${fmt.format(state.monthExpenses)}',
-        ),
+        revenueTodayCard,
+        monthCard,
+        pendingCard,
+        profitCard,
       ],
     );
   }
 }
-
 
 class _LowStockAlerts extends StatelessWidget {
   const _LowStockAlerts({required this.state});
@@ -212,7 +292,7 @@ class _LowStockAlerts extends StatelessWidget {
   Widget build(BuildContext context) {
     return AppSectionCard(
       title: 'Low stock alerts',
-      actionLabel: 'View all',
+      actionLabel: 'Inventory',
       onAction: () => context.go('/app/inventory'),
       child: SizedBox(
         height: 40,
@@ -222,8 +302,13 @@ class _LowStockAlerts extends StatelessWidget {
           separatorBuilder: (_, __) => const SizedBox(width: 8),
           itemBuilder: (context, i) {
             final p = state.lowStockProducts[i];
+            final out = p.stockQuantity <= 0;
             return ActionChip(
-              avatar: const Icon(Icons.warning_amber, size: 18),
+              avatar: Icon(
+                out ? Icons.remove_shopping_cart : Icons.warning_amber,
+                size: 18,
+                color: out ? Colors.red : Colors.orange,
+              ),
               label: Text('${p.name} (${p.stockQuantity})'),
               onPressed: () => context.go('/app/inventory'),
             );
@@ -242,53 +327,110 @@ class _RecentBills extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final bills = state.bills;
+    final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+
     if (bills == null || bills.isEmpty) {
       return AppSectionCard(
         title: 'Recent bills',
-        child: Text(
-          'No bills yet',
-          style: Theme.of(context).textTheme.bodyMedium,
+        actionLabel: 'New bill',
+        onAction: () => context.go('/app/new-bill'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'No bills yet. Create your first sale to see activity here.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            FilledButton.icon(
+              onPressed: () => context.go('/app/new-bill'),
+              icon: const Icon(Icons.add),
+              label: const Text('Create bill'),
+            ),
+          ],
         ),
       );
     }
 
     final sorted = List<Bill>.from(bills)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final recent = sorted.take(5).toList();
+    final recent = sorted.take(6).toList();
 
     return AppSectionCard(
       title: 'Recent bills',
-      actionLabel: 'All',
+      actionLabel: 'View all',
       onAction: () => context.push('/complete-transactions'),
       child: Column(
-        children: recent.map((b) => _BillRow(bill: b)).toList(),
+        children: recent.map((b) => _BillRow(bill: b, fmt: fmt)).toList(),
       ),
     );
   }
 }
 
 class _BillRow extends StatelessWidget {
-  const _BillRow({required this.bill});
+  const _BillRow({required this.bill, required this.fmt});
 
   final Bill bill;
+  final NumberFormat fmt;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    Color statusColor = theme.colorScheme.outline;
-    final pl = bill.paymentStatus.toLowerCase();
-    if (pl == 'complete' || pl == 'paid') statusColor = Colors.green;
-    if (pl == 'partial') statusColor = Colors.orange;
+    final status = bill.paymentStatus.toLowerCase().trim();
+    final statusColor = status == 'complete'
+        ? Colors.green.shade700
+        : status == 'partial'
+            ? Colors.orange.shade800
+            : theme.colorScheme.error;
+    final amount = BillRevenue.recognizedAmount(bill);
+    final label = bill.displayBillNumber?.trim().isNotEmpty == true
+        ? '#${bill.displayBillNumber}'
+        : null;
 
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ListTile(
-        title: Text(bill.customerName),
-        subtitle: Text('₹${bill.totalAmount.toStringAsFixed(2)}'),
-        trailing: Chip(
-          label: Text(bill.paymentStatus),
-          backgroundColor: statusColor.withValues(alpha: 0.12),
-          labelStyle: TextStyle(color: statusColor, fontSize: 12),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.md),
+          ),
+          leading: CircleAvatar(
+            backgroundColor: theme.colorScheme.primaryContainer,
+            child: Icon(
+              Icons.receipt_long,
+              size: 20,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          title: Text(
+            bill.customerName.trim().isEmpty ? 'Walk-in' : bill.customerName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            [
+              if (label != null) label,
+              DateFormat('d MMM, h:mm a')
+                  .format(BillRevenue.localCreatedDate(bill)),
+            ].join(' · '),
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                fmt.format(amount),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              AppStatusChip(label: bill.paymentStatus, color: statusColor),
+            ],
+          ),
+          onTap: () => context.push('/complete-transactions'),
         ),
       ),
     );

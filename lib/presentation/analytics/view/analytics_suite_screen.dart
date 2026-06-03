@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
+import 'package:inventopos/core/router/app_shell_navigation.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
@@ -27,6 +29,18 @@ class _AnalyticsSuiteScreenState extends State<AnalyticsSuiteScreen>
     super.initState();
     _tabs = TabController(length: 5, vsync: this);
     context.read<AnalyticsHubBloc>().add(const AnalyticsHubStarted());
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _applyTabFromRoute();
+  }
+
+  void _applyTabFromRoute() {
+    final index = analyticsTabIndexFromRoute(GoRouterState.of(context));
+    if (index == null || index == _tabs.index) return;
+    _tabs.animateTo(index);
   }
 
   @override
