@@ -5,12 +5,24 @@ import 'package:workmanager/workmanager.dart';
 
 const notificationPollTaskName = 'fastPosNotificationPoll';
 
+const _backgroundPollPendingKey = 'fast_pos_background_poll_pending';
+
 @pragma('vm:entry-point')
 void notificationBackgroundCallback() {
   Workmanager().executeTask((task, _) async {
     if (task != notificationPollTaskName) return false;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_backgroundPollPendingKey, true);
     return true;
   });
+}
+
+/// Returns true if a background poll was scheduled while the app was closed.
+Future<bool> consumeBackgroundPollPending() async {
+  final prefs = await SharedPreferences.getInstance();
+  final pending = prefs.getBool(_backgroundPollPendingKey) ?? false;
+  if (pending) await prefs.remove(_backgroundPollPendingKey);
+  return pending;
 }
 
 /// Registers periodic background notification polling (Android best-effort).

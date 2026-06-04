@@ -30,6 +30,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     on<DashboardHubPendingSyncChanged>(_onPending);
     on<DashboardHubNotificationsReceived>(_onNotifications);
     on<DashboardHubConnectivityChanged>(_onConnectivity);
+    on<DashboardHubAiUnreadChanged>(_onAiUnread);
   }
 
   final ObserveBillsUseCase _observeBills;
@@ -141,6 +142,13 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(isOnline: e.isOnline));
+  }
+
+  void _onAiUnread(
+    DashboardHubAiUnreadChanged e,
+    Emitter<DashboardHubState> emit,
+  ) {
+    emit(state.copyWith(aiUnreadCount: e.count));
   }
 
   Future<void> _cancelSubs() async {

@@ -20,6 +20,8 @@ class LocalStore {
       Hive.openBox<Map>(HiveBoxes.printers),
       Hive.openBox<Map>(HiveBoxes.billAudit),
       Hive.openBox<Map>(HiveBoxes.syncCursors),
+      Hive.openBox<Map>(HiveBoxes.aiPreferences),
+      Hive.openBox<Map>(HiveBoxes.aiRequestQueue),
     ]);
     _initialized = true;
   }

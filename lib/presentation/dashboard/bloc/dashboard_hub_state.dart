@@ -29,6 +29,7 @@ class DashboardHubState extends Equatable {
     this.customers = const [],
     this.pendingSyncCount = 0,
     this.notificationCount = 0,
+    this.aiUnreadCount = 0,
     this.isOnline = true,
     this.loading = true,
   });
@@ -40,6 +41,7 @@ class DashboardHubState extends Equatable {
   final List<Customer> customers;
   final int pendingSyncCount;
   final int notificationCount;
+  final int aiUnreadCount;
   final bool isOnline;
   final bool loading;
 
@@ -220,6 +222,7 @@ class DashboardHubState extends Equatable {
     if (outOfStockCount > 0) n++;
     if (pendingSyncCount > 0) n++;
     if (!isOnline) n++;
+    if (aiUnreadCount > 0) n++;
     return n;
   }
 
@@ -231,6 +234,7 @@ class DashboardHubState extends Equatable {
     List<Customer>? customers,
     int? pendingSyncCount,
     int? notificationCount,
+    int? aiUnreadCount,
     bool? isOnline,
     bool? loading,
   }) {
@@ -242,6 +246,7 @@ class DashboardHubState extends Equatable {
       customers: customers ?? this.customers,
       pendingSyncCount: pendingSyncCount ?? this.pendingSyncCount,
       notificationCount: notificationCount ?? this.notificationCount,
+      aiUnreadCount: aiUnreadCount ?? this.aiUnreadCount,
       isOnline: isOnline ?? this.isOnline,
       loading: loading ?? this.loading,
     );
@@ -256,6 +261,7 @@ class DashboardHubState extends Equatable {
         customers,
         pendingSyncCount,
         notificationCount,
+        aiUnreadCount,
         isOnline,
         loading,
       ];

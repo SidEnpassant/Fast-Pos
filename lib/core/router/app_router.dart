@@ -42,8 +42,24 @@ import 'package:inventopos/presentation/customers/view/customer_detail_screen.da
 import 'package:inventopos/presentation/customers/view/customers_screen.dart';
 import 'package:inventopos/presentation/printer_setup/view/printer_setup_page.dart';
 import 'package:inventopos/presentation/import_export/view/import_export_page.dart';
+import 'package:inventopos/application/ai/get_billing_suggestions_use_case.dart';
+import 'package:inventopos/application/ai/observe_ai_insights_use_case.dart';
+import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
+import 'package:inventopos/application/ai/parse_voice_bill_command_use_case.dart';
+import 'package:inventopos/application/ai/run_daily_business_brief_use_case.dart';
+import 'package:inventopos/application/ai/save_ai_preferences_use_case.dart';
+import 'package:inventopos/application/ai/build_briefing_metrics_use_case.dart';
+import 'package:inventopos/application/inventory/evaluate_reorder_alerts_use_case.dart';
+import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
+import 'package:inventopos/presentation/ai_hub/bloc/ai_hub_bloc.dart';
+import 'package:inventopos/presentation/ai_hub/view/ai_hub_screen.dart';
+import 'package:inventopos/presentation/automation_settings/bloc/automation_settings_bloc.dart';
+import 'package:inventopos/presentation/automation_settings/view/automation_settings_screen.dart';
+import 'package:inventopos/presentation/billing_copilot/bloc/billing_copilot_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
+import 'package:inventopos/presentation/insights/bloc/business_insights_ai_bloc.dart';
+import 'package:inventopos/presentation/inventory_automation/bloc/inventory_automation_bloc.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
@@ -108,7 +124,9 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         return p.startsWith('/app/') ||
             p == '/home' ||
             p == '/complete-transactions' ||
-            p == '/incomplete-transactions';
+            p == '/incomplete-transactions' ||
+            p == '/ai-hub' ||
+            p == '/ai-settings';
       }
 
       if (status == AuthFlowStatus.unknown) {
@@ -216,6 +234,40 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         ),
       ),
       GoRoute(
+        path: '/ai-hub',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => MultiBlocProvider(
+          providers: [
+            BlocProvider(
+              create: (c) => AiHubBloc(
+                c.read<ObserveAiPreferencesUseCase>(),
+                c.read<AiInsightsPort>(),
+              ),
+            ),
+            BlocProvider(
+              create: (c) => BusinessInsightsAiBloc(
+                c.read<RunDailyBusinessBriefUseCase>(),
+                c.read<BuildBriefingMetricsUseCase>(),
+                c.read<ObserveAiInsightsUseCase>(),
+                c.read<AiInsightsPort>(),
+              ),
+            ),
+          ],
+          child: const AiHubScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/ai-settings',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (c) => AutomationSettingsBloc(
+            c.read<ObserveAiPreferencesUseCase>(),
+            c.read<SaveAiPreferencesUseCase>(),
+          ),
+          child: const AutomationSettingsScreen(),
+        ),
+      ),
+      GoRoute(
         path: '/customers',
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) => const CustomersScreen(),
@@ -305,16 +357,33 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
             routes: [
               GoRoute(
                 path: '/app/dashboard',
-                builder: (context, state) => BlocProvider(
-                  create: (ctx) => DashboardHubBloc(
-                    ctx.read<ObserveBillsUseCase>(),
-                    ctx.read<ProfileRepository>(),
-                    ctx.read<ProductRepository>(),
-                    ctx.read<ExpenseRepository>(),
-                    ctx.read<CustomerRepository>(),
-                    ctx.read<SyncRepository>(),
-                    ctx.read<NotificationsRepository>(),
-                  ),
+                builder: (context, state) => MultiBlocProvider(
+                  providers: [
+                    BlocProvider(
+                      create: (ctx) => DashboardHubBloc(
+                        ctx.read<ObserveBillsUseCase>(),
+                        ctx.read<ProfileRepository>(),
+                        ctx.read<ProductRepository>(),
+                        ctx.read<ExpenseRepository>(),
+                        ctx.read<CustomerRepository>(),
+                        ctx.read<SyncRepository>(),
+                        ctx.read<NotificationsRepository>(),
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (ctx) => InventoryAutomationBloc(
+                        ctx.read<EvaluateReorderAlertsUseCase>(),
+                      ),
+                    ),
+                    BlocProvider(
+                      create: (ctx) => BusinessInsightsAiBloc(
+                        ctx.read<RunDailyBusinessBriefUseCase>(),
+                        ctx.read<BuildBriefingMetricsUseCase>(),
+                        ctx.read<ObserveAiInsightsUseCase>(),
+                        ctx.read<AiInsightsPort>(),
+                      ),
+                    ),
+                  ],
                   child: const DashboardScreen(),
                 ),
               ),
@@ -338,18 +407,25 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                 builder: (context, state) => BlocProvider(
                   create: (_) => BillVoiceAssistBloc(SpeechToText()),
                   child: BlocProvider(
-                    create: (ctx) => BillSubmissionBloc(
-                      ctx.read<SubmitBillUseCase>(),
+                    create: (c) => BillingCopilotBloc(
+                      c.read<ParseVoiceBillCommandUseCase>(),
+                      c.read<GetBillingSuggestionsUseCase>(),
+                      SpeechToText(),
                     ),
                     child: BlocProvider(
-                      create: (_) => BillDraftBloc(),
+                      create: (ctx) => BillSubmissionBloc(
+                        ctx.read<SubmitBillUseCase>(),
+                      ),
                       child: BlocProvider(
-                        create: (_) => CheckoutBloc(),
+                        create: (_) => BillDraftBloc(),
                         child: BlocProvider(
-                          create: (ctx) => CheckoutScanBloc(
-                            ctx.read<ResolveProductForBarcodeUseCase>(),
+                          create: (_) => CheckoutBloc(),
+                          child: BlocProvider(
+                            create: (ctx) => CheckoutScanBloc(
+                              ctx.read<ResolveProductForBarcodeUseCase>(),
+                            ),
+                            child: const BillGenerationPage(),
                           ),
-                          child: const BillGenerationPage(),
                         ),
                       ),
                     ),

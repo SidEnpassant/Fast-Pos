@@ -17,6 +17,9 @@ import 'package:inventopos/presentation/billing/widgets/bill_generation_sections
 import 'package:inventopos/application/billing/print_receipt_use_case.dart';
 import 'package:inventopos/domain/entities/receipt_payload.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
+import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/domain/repositories/product_repository.dart';
+import 'package:inventopos/presentation/billing_copilot/widgets/billing_copilot_sheet.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
@@ -86,6 +89,28 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                       elevation: 0,
                       backgroundColor: Colors.white,
                       centerTitle: true,
+                      // actions: [
+                      //   IconButton(
+                      //     tooltip: 'Billing Copilot',
+                      //     icon: const Icon(Icons.smart_toy_outlined),
+                      //     onPressed: () async {
+                      //       final uid = context
+                      //           .read<AuthRepository>()
+                      //           .currentSession
+                      //           ?.userId;
+                      //       if (uid == null) return;
+                      //       final products = await context
+                      //           .read<ProductRepository>()
+                      //           .fetchProductsForUser(uid);
+                      //       if (!context.mounted) return;
+                      //       showBillingCopilotSheet(
+                      //         context,
+                      //         userId: uid,
+                      //         products: products,
+                      //       );
+                      //     },
+                      //   ),
+                      // ],
                     ),
                     Expanded(
                       child: submitting

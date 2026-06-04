@@ -9,4 +9,6 @@ abstract final class HiveBoxes {
   static const printers = 'printers';
   static const billAudit = 'bill_audit';
   static const syncCursors = 'sync_cursors';
+  static const aiPreferences = 'ai_preferences';
+  static const aiRequestQueue = 'ai_request_queue';
 }

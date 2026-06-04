@@ -76,6 +76,12 @@ class QuickActionsGrid extends StatelessWidget {
             label: 'Grow',
             children: [
               AppQuickActionTile(
+                label: 'Smart AI',
+                icon: Icons.smart_toy_outlined,
+                color: Colors.deepPurple,
+                onTap: () => context.push('/ai-hub'),
+              ),
+              AppQuickActionTile(
                 label: 'Analytics',
                 icon: Icons.analytics_outlined,
                 color: Colors.indigo,

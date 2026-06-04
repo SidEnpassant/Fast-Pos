@@ -2,6 +2,7 @@ import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
 import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
+import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
 import 'package:inventopos/core/performance/main_isolate.dart';
 import 'package:inventopos/data/billing/bill_pdf_generator.dart';
 import 'package:inventopos/data/security/bill_audit_service.dart';
@@ -23,6 +24,7 @@ class SubmitBillUseCase {
     this._validateDraft,
     this._decrementStock,
     this._uploadPdf,
+    this._updateVelocity,
   );
 
   final BillsRepository _bills;
@@ -34,6 +36,7 @@ class SubmitBillUseCase {
   final ValidateBillDraftUseCase _validateDraft;
   final DecrementStockOnBillUseCase _decrementStock;
   final UploadBillPdfUseCase _uploadPdf;
+  final UpdateProductVelocityUseCase _updateVelocity;
 
   Future<BillSubmissionResult> call(BillSubmissionDraft draft) async {
     final validationError = await _validateDraft(draft.lines);
@@ -80,6 +83,7 @@ class SubmitBillUseCase {
         lines: draft.lines,
         userId: uid,
       );
+      await _updateVelocity(userId: uid, lines: draft.lines);
     }
 
     if (uid != null &&

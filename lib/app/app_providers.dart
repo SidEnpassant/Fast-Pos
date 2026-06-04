@@ -17,8 +17,29 @@ import 'package:inventopos/application/billing/resolve_product_for_barcode_use_c
 import 'package:inventopos/application/billing/regenerate_and_upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
+import 'package:inventopos/application/ai/build_briefing_metrics_use_case.dart';
+import 'package:inventopos/application/ai/get_billing_suggestions_use_case.dart';
+import 'package:inventopos/application/ai/observe_ai_insights_use_case.dart';
+import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
+import 'package:inventopos/application/ai/parse_voice_bill_command_use_case.dart';
+import 'package:inventopos/application/ai/replay_offline_ai_queue_use_case.dart';
+import 'package:inventopos/application/ai/run_daily_business_brief_use_case.dart';
+import 'package:inventopos/application/ai/save_ai_preferences_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
+import 'package:inventopos/application/inventory/evaluate_reorder_alerts_use_case.dart';
+import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
 import 'package:inventopos/application/billing/submit_bill_use_case.dart';
+import 'package:inventopos/data/ai/ai_insights_repository_impl.dart';
+import 'package:inventopos/data/ai/ai_preferences_repository_impl.dart';
+import 'package:inventopos/data/ai/ai_request_queue.dart';
+import 'package:inventopos/data/ai/ai_telemetry.dart';
+import 'package:inventopos/data/ai/edge_function_client.dart';
+import 'package:inventopos/data/ai/supabase_ai_gateway_impl.dart';
+import 'package:inventopos/data/automation/automation_job_repository_impl.dart';
+import 'package:inventopos/domain/ai/repositories/ai_gateway_port.dart';
+import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
+import 'package:inventopos/domain/ai/repositories/ai_preferences_port.dart';
+import 'package:inventopos/domain/automation/repositories/automation_job_port.dart';
 import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
 import 'package:inventopos/application/billing/sync_overdue_partial_bill_notifications_use_case.dart';
 import 'package:inventopos/application/billing/update_bill_payment_use_case.dart';
@@ -181,19 +202,6 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
         c.read<UploadBillPdfUseCase>(),
       ),
     ),
-    RepositoryProvider<SubmitBillUseCase>(
-      create: (c) => SubmitBillUseCase(
-        c.read<BillsRepository>(),
-        c.read<ProfileRepository>(),
-        c.read<TransactionsRepository>(),
-        c.read<BillPdfGenerator>(),
-        c.read<AuthRepository>(),
-        c.read<UpsertCustomerFromBillUseCase>(),
-        c.read<ValidateBillDraftUseCase>(),
-        c.read<DecrementStockOnBillUseCase>(),
-        c.read<UploadBillPdfUseCase>(),
-      ),
-    ),
     RepositoryProvider<SignInUseCase>(
       create: (c) => SignInUseCase(c.read<AuthRepository>()),
     ),
@@ -233,6 +241,87 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     ),
     RepositoryProvider<SyncCoordinator>(
       create: (c) => SyncCoordinator(c.read<SyncRepository>()),
+    ),
+    RepositoryProvider<EdgeFunctionClient>(
+      create: (_) => EdgeFunctionClient(),
+    ),
+    RepositoryProvider<AiGatewayPort>(
+      create: (c) => SupabaseAiGatewayImpl(c.read<EdgeFunctionClient>()),
+    ),
+    RepositoryProvider<AiPreferencesPort>(
+      create: (_) => AiPreferencesRepositoryImpl(),
+    ),
+    RepositoryProvider<AiInsightsPort>(
+      create: (_) => AiInsightsRepositoryImpl(),
+    ),
+    RepositoryProvider<AutomationJobPort>(
+      create: (_) => AutomationJobRepositoryImpl(),
+    ),
+    RepositoryProvider<AiRequestQueue>(
+      create: (_) => AiRequestQueue(),
+    ),
+    RepositoryProvider<AiTelemetry>(
+      create: (_) => AiTelemetry(),
+    ),
+    RepositoryProvider<ParseVoiceBillCommandUseCase>(
+      create: (c) => ParseVoiceBillCommandUseCase(
+        c.read<AiGatewayPort>(),
+        c.read<AiPreferencesPort>(),
+        c.read<AiRequestQueue>(),
+      ),
+    ),
+    RepositoryProvider<GetBillingSuggestionsUseCase>(
+      create: (c) => GetBillingSuggestionsUseCase(
+        c.read<AiGatewayPort>(),
+        c.read<AiPreferencesPort>(),
+      ),
+    ),
+    RepositoryProvider<RunDailyBusinessBriefUseCase>(
+      create: (c) => RunDailyBusinessBriefUseCase(
+        c.read<AiGatewayPort>(),
+        c.read<AiPreferencesPort>(),
+      ),
+    ),
+    RepositoryProvider<SaveAiPreferencesUseCase>(
+      create: (c) => SaveAiPreferencesUseCase(
+        c.read<AiPreferencesPort>(),
+        c.read<AutomationJobPort>(),
+      ),
+    ),
+    RepositoryProvider<ObserveAiPreferencesUseCase>(
+      create: (c) => ObserveAiPreferencesUseCase(c.read<AiPreferencesPort>()),
+    ),
+    RepositoryProvider<ObserveAiInsightsUseCase>(
+      create: (c) => ObserveAiInsightsUseCase(c.read<AiInsightsPort>()),
+    ),
+    RepositoryProvider<BuildBriefingMetricsUseCase>(
+      create: (_) => BuildBriefingMetricsUseCase(),
+    ),
+    RepositoryProvider<ReplayOfflineAiQueueUseCase>(
+      create: (c) => ReplayOfflineAiQueueUseCase(
+        c.read<AiRequestQueue>(),
+        c.read<EdgeFunctionClient>(),
+      ),
+    ),
+    RepositoryProvider<UpdateProductVelocityUseCase>(
+      create: (c) => UpdateProductVelocityUseCase(c.read<ProductRepository>()),
+    ),
+    RepositoryProvider<EvaluateReorderAlertsUseCase>(
+      create: (c) => EvaluateReorderAlertsUseCase(c.read<ProductRepository>()),
+    ),
+    RepositoryProvider<SubmitBillUseCase>(
+      create: (c) => SubmitBillUseCase(
+        c.read<BillsRepository>(),
+        c.read<ProfileRepository>(),
+        c.read<TransactionsRepository>(),
+        c.read<BillPdfGenerator>(),
+        c.read<AuthRepository>(),
+        c.read<UpsertCustomerFromBillUseCase>(),
+        c.read<ValidateBillDraftUseCase>(),
+        c.read<DecrementStockOnBillUseCase>(),
+        c.read<UploadBillPdfUseCase>(),
+        c.read<UpdateProductVelocityUseCase>(),
+      ),
     ),
   ];
 }

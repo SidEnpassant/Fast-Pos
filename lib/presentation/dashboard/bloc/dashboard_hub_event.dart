@@ -93,3 +93,12 @@ class DashboardHubConnectivityChanged extends DashboardHubEvent {
   @override
   List<Object?> get props => [isOnline];
 }
+
+class DashboardHubAiUnreadChanged extends DashboardHubEvent {
+  const DashboardHubAiUnreadChanged(this.count);
+
+  final int count;
+
+  @override
+  List<Object?> get props => [count];
+}

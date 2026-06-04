@@ -15,6 +15,71 @@ import 'package:inventopos/presentation/account/widgets/account_mutation_overlay
 import 'package:inventopos/presentation/account/widgets/account_profile_header_section.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 
+class _AccountToolTile extends StatelessWidget {
+  const _AccountToolTile({
+    required this.icon,
+    required this.iconColor,
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Row(
+          children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: iconColor.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: iconColor),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class MyAccountPage extends StatefulWidget {
   const MyAccountPage({super.key});
 
@@ -237,9 +302,9 @@ class _MyAccountPageState extends State<MyAccountPage> {
                     ),
                     const SizedBox(height: 12),
                     AppSectionCard(
-                      title: 'Tools',
+                      title: 'AI & automation settings',
                       child: InkWell(
-                        onTap: () => context.push('/printer-setup'),
+                        onTap: () => context.push('/ai-settings'),
                         borderRadius: BorderRadius.circular(8),
                         child: Padding(
                           padding: const EdgeInsets.symmetric(vertical: 8),
@@ -256,7 +321,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                                   borderRadius: BorderRadius.circular(12),
                                 ),
                                 child: Icon(
-                                  Icons.print_outlined,
+                                  Icons.architecture_outlined,
                                   color: Theme.of(context).colorScheme.secondary,
                                 ),
                               ),
@@ -266,7 +331,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Printer setup',
+                                      'Ai settings',
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleSmall
@@ -274,9 +339,9 @@ class _MyAccountPageState extends State<MyAccountPage> {
                                             fontWeight: FontWeight.w600,
                                           ),
                                     ),
-                                    const SizedBox(height: 2),
+                                    const SizedBox(height: 4),
                                     Text(
-                                      'Business tools are on the Dashboard',
+                                      'Enable Smart Assistant for voice billing,daily briefs,and reorder alerts.',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -298,6 +363,29 @@ class _MyAccountPageState extends State<MyAccountPage> {
                             ],
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    AppSectionCard(
+                      title: 'Tools',
+                      child: Column(
+                        children: [
+                          _AccountToolTile(
+                            icon: Icons.smart_toy_outlined,
+                            iconColor: Colors.deepPurple,
+                            title: 'Smart Assistant',
+                            subtitle: 'AI billing, daily brief, reorder alerts',
+                            onTap: () => context.push('/ai-settings'),
+                          ),
+                          const Divider(height: 20),
+                          _AccountToolTile(
+                            icon: Icons.print_outlined,
+                            iconColor: Theme.of(context).colorScheme.secondary,
+                            title: 'Printer setup',
+                            subtitle: 'Connect receipt printer',
+                            onTap: () => context.push('/printer-setup'),
+                          ),
+                        ],
                       ),
                     ),
                     const SizedBox(height: 24),
