@@ -52,3 +52,7 @@ lib/supabase_config.dart
 lib/supabase_mappers.dart
 supabase/migrations/20250504000000_initial_schema.sql
 supabase/
+chat_context_antigravity.md
+cursor_codebase_understanding_1.md
+cursor_codebase_understanding_3.md
+cursor_codebase_understanding.md
