@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/core/design/app_radii.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_add_product_chooser.dart';
 import 'package:inventopos/domain/billing/bill_submission.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
@@ -17,9 +18,7 @@ import 'package:inventopos/presentation/billing/widgets/bill_generation_sections
 import 'package:inventopos/application/billing/print_receipt_use_case.dart';
 import 'package:inventopos/domain/entities/receipt_payload.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
-import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
-import 'package:inventopos/presentation/billing_copilot/widgets/billing_copilot_sheet.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
@@ -50,6 +49,8 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return BillSubmissionFeedbackListener(
       onSuccess: (listenerContext, submissionState) {
         listenerContext.read<BillDraftBloc>().add(const BillDraftCleared());
@@ -73,135 +74,101 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
               }
             },
             builder: (context, voice) {
-              return Material(
-                color: Colors.white,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    AppBar(
-                      title: Text(
-                        'Generate Bill',
-                        style: GoogleFonts.poppins(
-                          fontWeight: FontWeight.w600,
-                          fontSize: 20,
-                        ),
+              return Scaffold(
+                backgroundColor: theme.colorScheme.surfaceContainerLowest,
+                body: SafeArea(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      // ── Header matching dashboard style ──
+                      _BillHeader(
+                        lineCount: draft.lines.length,
+                        totalAmount: totalAmount,
                       ),
-                      elevation: 0,
-                      backgroundColor: Colors.white,
-                      centerTitle: true,
-                      // actions: [
-                      //   IconButton(
-                      //     tooltip: 'Billing Copilot',
-                      //     icon: const Icon(Icons.smart_toy_outlined),
-                      //     onPressed: () async {
-                      //       final uid = context
-                      //           .read<AuthRepository>()
-                      //           .currentSession
-                      //           ?.userId;
-                      //       if (uid == null) return;
-                      //       final products = await context
-                      //           .read<ProductRepository>()
-                      //           .fetchProductsForUser(uid);
-                      //       if (!context.mounted) return;
-                      //       showBillingCopilotSheet(
-                      //         context,
-                      //         userId: uid,
-                      //         products: products,
-                      //       );
-                      //     },
-                      //   ),
-                      // ],
-                    ),
-                    Expanded(
-                      child: submitting
-                          ? Center(
-                              child: Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const CircularProgressIndicator(),
-                                  const SizedBox(height: 16),
-                                  Text(
-                                    'Generating Bill...',
-                                    style: GoogleFonts.poppins(),
-                                  ),
-                                ],
-                              ),
-                            )
-                          : Form(
-                              key: _formKey,
-                              child: ListView(
-                                padding: const EdgeInsets.all(16),
-                                children: [
-                                  BillGenerationCustomerSection(
-                                    nameController: _customerNameController,
-                                    phoneController: _customerPhoneController,
-                                    isListening: voice.isListening,
-                                    onMicPressed: () =>
-                                        context.read<BillVoiceAssistBloc>().add(
-                                              const BillVoiceAssistTogglePressed(),
+                      // ── Content ──
+                      Expanded(
+                        child: submitting
+                            ? _SubmittingIndicator()
+                            : Form(
+                                key: _formKey,
+                                child: CustomScrollView(
+                                  slivers: [
+                                    SliverPadding(
+                                      padding: const EdgeInsets.all(
+                                        AppSpacing.md,
+                                      ),
+                                      sliver: SliverList(
+                                        delegate: SliverChildListDelegate([
+                                          BillGenerationCustomerSection(
+                                            nameController:
+                                                _customerNameController,
+                                            phoneController:
+                                                _customerPhoneController,
+                                            isListening: voice.isListening,
+                                            onMicPressed: () => context
+                                                .read<BillVoiceAssistBloc>()
+                                                .add(
+                                                  const BillVoiceAssistTogglePressed(),
+                                                ),
+                                          ),
+                                          const SizedBox(
+                                            height: AppSpacing.md,
+                                          ),
+                                          BillGenerationProductsSection(
+                                            lines: draft.lines,
+                                            totalAmount: totalAmount,
+                                            onAddProduct:
+                                                _showAddProductChooser,
+                                          ),
+                                          const SizedBox(
+                                            height: AppSpacing.md,
+                                          ),
+                                          BillGenerationPaymentSection(
+                                            paymentMethod: _paymentMethod,
+                                            paymentStatus: _paymentStatus,
+                                            paidAmount: _paidAmount,
+                                            totalAmount: totalAmount,
+                                            onPaymentMethodChanged: (v) {
+                                              if (v == null) return;
+                                              setState(
+                                                () => _paymentMethod = v,
+                                              );
+                                            },
+                                            onPaymentStatusChanged: (v) {
+                                              if (v == null) return;
+                                              setState(() {
+                                                _paymentStatus = v;
+                                                if (v == 'complete') {
+                                                  _paidAmount = totalAmount;
+                                                }
+                                              });
+                                            },
+                                            onPaidAmountChanged: (d) =>
+                                                setState(
+                                              () => _paidAmount = d,
                                             ),
-                                  ),
-                                  const SizedBox(height: 16),
-                                  BillGenerationProductsSection(
-                                    lines: draft.lines,
-                                    totalAmount: totalAmount,
-                                    onAddProduct: _showAddProductChooser,
-                                  ),
-                                  const SizedBox(height: 16),
-                                  BillGenerationPaymentSection(
-                                    paymentMethod: _paymentMethod,
-                                    paymentStatus: _paymentStatus,
-                                    paidAmount: _paidAmount,
-                                    totalAmount: totalAmount,
-                                    onPaymentMethodChanged: (v) {
-                                      if (v == null) return;
-                                      setState(() => _paymentMethod = v);
-                                    },
-                                    onPaymentStatusChanged: (v) {
-                                      if (v == null) return;
-                                      setState(() {
-                                        _paymentStatus = v;
-                                        if (v == 'complete') {
-                                          _paidAmount = totalAmount;
-                                        }
-                                      });
-                                    },
-                                    onPaidAmountChanged: (d) =>
-                                        setState(() => _paidAmount = d),
-                                  ),
-                                  const SizedBox(height: 24),
-                                  ElevatedButton.icon(
-                                    onPressed:
-                                        (draft.lines.isEmpty || submitting)
-                                            ? null
-                                            : _generateBill,
-                                    icon: const Icon(Icons.receipt_long),
-                                    label: Text(
-                                      'Generate Bill',
-                                      style: GoogleFonts.poppins(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w500,
+                                          ),
+                                          const SizedBox(
+                                            height: AppSpacing.lg,
+                                          ),
+                                          // ── Generate bill button ──
+                                          _GenerateBillButton(
+                                            enabled: draft.lines.isNotEmpty &&
+                                                !submitting,
+                                            onPressed: _generateBill,
+                                          ),
+                                          const SizedBox(
+                                            height: AppSpacing.lg,
+                                          ),
+                                        ]),
                                       ),
                                     ),
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.blue,
-                                      foregroundColor: Colors.white,
-                                      padding: const EdgeInsets.all(16),
-                                      elevation: 0,
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                  ).animate().fadeIn().slideY(
-                                        delay: const Duration(
-                                          milliseconds: 600,
-                                        ),
-                                      ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                    ),
-                  ],
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -236,33 +203,52 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   }
 
   Future<void> _showPDFOptionsDialog(String pdfPath) {
+    final theme = Theme.of(context);
     return showDialog<void>(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
-          title: const Text('Bill Generated Successfully'),
-          content: const Text('What would you like to do with the PDF?'),
+          icon: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.green.withValues(alpha: 0.12),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.check_circle_outline,
+              color: Colors.green,
+              size: 40,
+            ),
+          ),
+          title: const Text('Bill Generated!'),
+          content: const Text(
+            'Your bill has been created successfully. What would you like to do?',
+          ),
+          actionsAlignment: MainAxisAlignment.center,
           actions: <Widget>[
-            TextButton(
+            OutlinedButton.icon(
               onPressed: () async {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
                 await _printReceipt();
               },
-              child: const Text('Print receipt'),
+              icon: const Icon(Icons.print, size: 18),
+              label: const Text('Print'),
             ),
-            TextButton(
+            OutlinedButton.icon(
               onPressed: () {
                 _viewPDF(pdfPath);
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
-              child: const Text('View PDF'),
+              icon: const Icon(Icons.picture_as_pdf, size: 18),
+              label: const Text('View'),
             ),
-            TextButton(
+            FilledButton.icon(
               onPressed: () {
                 _sharePDF(pdfPath);
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
-              child: const Text('Share'),
+              icon: const Icon(Icons.share, size: 18),
+              label: const Text('Share'),
             ),
           ],
         );
@@ -272,7 +258,9 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
 
   Future<void> _printReceipt() async {
     final draft = context.read<BillDraftBloc>().state;
-    final profile = await context.read<ProfileRepository>().fetchCurrentUserProfileSnapshot();
+    final profile = await context
+        .read<ProfileRepository>()
+        .fetchCurrentUserProfileSnapshot();
     final business = profile?.businessName ?? 'Business';
     try {
       await context.read<PrintReceiptUseCase>().call(
@@ -325,5 +313,143 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
     } catch (e) {
       debugPrint('Error sharing PDF: $e');
     }
+  }
+}
+
+// ─── Header ─────────────────────────────────────────────────────────────────
+
+class _BillHeader extends StatelessWidget {
+  const _BillHeader({
+    required this.lineCount,
+    required this.totalAmount,
+  });
+
+  final int lineCount;
+  final double totalAmount;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        AppSpacing.sm,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'New Bill',
+                  style: theme.textTheme.headlineSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  lineCount == 0
+                      ? 'Add products to get started'
+                      : '$lineCount item${lineCount == 1 ? '' : 's'} added',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (lineCount > 0)
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              decoration: BoxDecoration(
+                color: theme.colorScheme.primaryContainer,
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              child: Text(
+                '₹${totalAmount.toStringAsFixed(0)}',
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Submitting indicator ───────────────────────────────────────────────────
+
+class _SubmittingIndicator extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer.withValues(alpha: 0.3),
+              shape: BoxShape.circle,
+            ),
+            child: CircularProgressIndicator(
+              color: theme.colorScheme.primary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'Generating Bill…',
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Creating invoice, updating inventory',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Generate bill button ───────────────────────────────────────────────────
+
+class _GenerateBillButton extends StatelessWidget {
+  const _GenerateBillButton({
+    required this.enabled,
+    required this.onPressed,
+  });
+
+  final bool enabled;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return FilledButton.icon(
+      onPressed: enabled ? onPressed : null,
+      icon: const Icon(Icons.receipt_long),
+      label: const Text('Generate Bill'),
+      style: FilledButton.styleFrom(
+        minimumSize: const Size(double.infinity, 56),
+        textStyle: theme.textTheme.titleMedium?.copyWith(
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+    ).animate().fadeIn().slideY(
+          delay: const Duration(milliseconds: 600),
+        );
   }
 }

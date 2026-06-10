@@ -26,11 +26,10 @@ class DashboardAiBriefingCard extends StatelessWidget {
         }
 
         final insights = _displayInsights(state);
-        final generatedLabel = DateFormat('h:mm a').format(DateTime.now());
 
         return AppSectionCard(
           title: 'Today\'s AI brief',
-          actionLabel: 'Refresh',
+          actionLabel: state.loadingBrief ? null : 'Regenerate',
           onAction: state.loadingBrief
               ? null
               : () => context.read<BusinessInsightsAiBloc>().add(
@@ -39,7 +38,7 @@ class DashboardAiBriefingCard extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              _BriefHeader(generatedLabel: generatedLabel),
+              _BriefHeader(lastGeneratedAt: state.lastGeneratedAt),
               if (insights.isNotEmpty) ...[
                 const SizedBox(height: AppSpacing.md),
                 Wrap(
@@ -78,13 +77,23 @@ class DashboardAiBriefingCard extends StatelessWidget {
                     : AiBriefMarkdownView(markdown: state.briefing!.markdown),
               ),
               const SizedBox(height: AppSpacing.sm),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  onPressed: () => context.push('/ai-hub'),
-                  icon: const Icon(Icons.open_in_new, size: 18),
-                  label: const Text('Open Smart Assistant'),
-                ),
+              Row(
+                children: [
+                  // ── Last updated label ──
+                  if (state.lastGeneratedAt != null)
+                    Expanded(
+                      child: _LastUpdatedLabel(
+                        generatedAt: state.lastGeneratedAt!,
+                      ),
+                    )
+                  else
+                    const Spacer(),
+                  TextButton.icon(
+                    onPressed: () => context.push('/ai-hub'),
+                    icon: const Icon(Icons.open_in_new, size: 18),
+                    label: const Text('Open Smart Assistant'),
+                  ),
+                ],
               ),
             ],
           ),
@@ -99,6 +108,8 @@ class DashboardAiBriefingCard extends StatelessWidget {
     return state.insights.where((i) => i.isUnread).take(5).toList();
   }
 }
+
+// ─── Empty state card ───────────────────────────────────────────────────────
 
 class _EmptyBriefCard extends StatelessWidget {
   const _EmptyBriefCard({required this.state});
@@ -153,7 +164,8 @@ class _EmptyBriefCard extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 : const Icon(Icons.bolt),
-            label: Text(state.loadingBrief ? 'Generating…' : 'Generate today\'s brief'),
+            label: Text(
+                state.loadingBrief ? 'Generating…' : 'Generate today\'s brief'),
           ),
           if (state.error != null) ...[
             const SizedBox(height: AppSpacing.sm),
@@ -190,10 +202,12 @@ class _EmptyBriefCard extends StatelessWidget {
   }
 }
 
-class _BriefHeader extends StatelessWidget {
-  const _BriefHeader({required this.generatedLabel});
+// ─── Brief header with gradient icon ────────────────────────────────────────
 
-  final String generatedLabel;
+class _BriefHeader extends StatelessWidget {
+  const _BriefHeader({required this.lastGeneratedAt});
+
+  final DateTime? lastGeneratedAt;
 
   @override
   Widget build(BuildContext context) {
@@ -224,19 +238,82 @@ class _BriefHeader extends StatelessWidget {
                   fontWeight: FontWeight.w600,
                 ),
               ),
-              Text(
-                'Updated $generatedLabel',
-                style: theme.textTheme.labelSmall?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
+              if (lastGeneratedAt != null)
+                Text(
+                  _formatTimestamp(lastGeneratedAt!),
+                  style: theme.textTheme.labelSmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                 ),
-              ),
             ],
           ),
         ),
       ],
     );
   }
+
+  String _formatTimestamp(DateTime dt) {
+    final now = DateTime.now();
+    final diff = now.difference(dt);
+    if (diff.inMinutes < 1) return 'Just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) {
+      return 'Updated ${DateFormat('h:mm a').format(dt)}';
+    }
+    return 'Updated ${DateFormat('d MMM, h:mm a').format(dt)}';
+  }
 }
+
+// ─── Last-updated label at bottom ───────────────────────────────────────────
+
+class _LastUpdatedLabel extends StatelessWidget {
+  const _LastUpdatedLabel({required this.generatedAt});
+
+  final DateTime generatedAt;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final now = DateTime.now();
+    final diff = now.difference(generatedAt);
+
+    String label;
+    if (diff.inMinutes < 1) {
+      label = 'Generated just now';
+    } else if (diff.inMinutes < 60) {
+      label = 'Generated ${diff.inMinutes}m ago';
+    } else if (diff.inHours < 24) {
+      label = 'Generated at ${DateFormat('h:mm a').format(generatedAt)}';
+    } else {
+      label =
+          'Generated ${DateFormat('d MMM, h:mm a').format(generatedAt)}';
+    }
+
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(
+          Icons.schedule,
+          size: 14,
+          color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.6),
+        ),
+        const SizedBox(width: 4),
+        Flexible(
+          child: Text(
+            label,
+            style: theme.textTheme.labelSmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.7),
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ─── Insight chip ───────────────────────────────────────────────────────────
 
 class _InsightChip extends StatelessWidget {
   const _InsightChip({required this.insight});

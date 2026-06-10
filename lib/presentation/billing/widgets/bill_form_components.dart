@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:inventopos/core/design/app_radii.dart';
+import 'package:inventopos/core/design/app_spacing.dart';
 
-/// Shared card shell for bill form sections.
+/// M3-aligned section card for bill form sections.
+/// Matches [AppSectionCard] style from dashboard and other screens.
 class BillSectionCard extends StatelessWidget {
   const BillSectionCard({
     super.key,
@@ -16,33 +18,44 @@ class BillSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Card(
       elevation: 0,
+      color: theme.colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        side: BorderSide(color: theme.colorScheme.outlineVariant),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
-                Icon(
-                  icon,
-                  color: Colors.blue[700],
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: theme.colorScheme.primaryContainer
+                        .withValues(alpha: 0.5),
+                    borderRadius: BorderRadius.circular(AppRadii.sm),
+                  ),
+                  child: Icon(
+                    icon,
+                    color: theme.colorScheme.primary,
+                    size: 20,
+                  ),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
                   title,
-                  style: GoogleFonts.poppins(
-                    fontSize: 18,
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: AppSpacing.md),
             child,
           ],
         ),
@@ -51,24 +64,24 @@ class BillSectionCard extends StatelessWidget {
   }
 }
 
-InputDecoration billGenerationInputDecoration(String label, IconData icon) {
+/// Theme-aware input decoration that follows the app's M3 input theme.
+InputDecoration billGenerationInputDecoration(
+  String label,
+  IconData icon, {
+  BuildContext? context,
+}) {
+  // If a context is provided, use theme colors; otherwise fall back to
+  // the app-level InputDecorationTheme which is already M3-aligned.
   return InputDecoration(
     labelText: label,
     prefixIcon: Icon(icon),
     border: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey[300]!),
+      borderRadius: BorderRadius.circular(AppRadii.md),
     ),
     enabledBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.grey[300]!),
-    ),
-    focusedBorder: OutlineInputBorder(
-      borderRadius: BorderRadius.circular(12),
-      borderSide: BorderSide(color: Colors.blue[700]!),
+      borderRadius: BorderRadius.circular(AppRadii.md),
     ),
     filled: true,
-    fillColor: Colors.grey[50],
   );
 }
 

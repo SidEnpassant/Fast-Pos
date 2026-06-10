@@ -11,4 +11,5 @@ abstract final class HiveBoxes {
   static const syncCursors = 'sync_cursors';
   static const aiPreferences = 'ai_preferences';
   static const aiRequestQueue = 'ai_request_queue';
+  static const aiBriefingCache = 'ai_briefing_cache';
 }

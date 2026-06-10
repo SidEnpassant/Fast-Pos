@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:inventopos/application/ai/build_briefing_metrics_use_case.dart';
 import 'package:inventopos/application/ai/observe_ai_insights_use_case.dart';
 import 'package:inventopos/application/ai/run_daily_business_brief_use_case.dart';
+import 'package:inventopos/data/ai/ai_briefing_cache_service.dart';
 import 'package:inventopos/domain/ai/failures/ai_failure.dart';
 import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
 import 'package:inventopos/domain/entities/bill.dart';
@@ -19,7 +20,8 @@ class BusinessInsightsAiBloc
     this._metrics,
     this._observeInsights,
     this._insightsPort,
-  ) : super(const BusinessInsightsAiState()) {
+  )   : _cache = AiBriefingCacheService(),
+        super(const BusinessInsightsAiState()) {
     on<BusinessInsightsAiStarted>(_onStarted);
     on<BusinessInsightsAiBriefingRequested>(_onBriefRequested);
     on<BusinessInsightsAiBriefingReceived>(_onBriefReceived);
@@ -31,6 +33,7 @@ class BusinessInsightsAiBloc
   final BuildBriefingMetricsUseCase _metrics;
   final ObserveAiInsightsUseCase _observeInsights;
   final AiInsightsPort _insightsPort;
+  final AiBriefingCacheService _cache;
 
   String _userId = '';
   List<Bill> _bills = [];
@@ -46,6 +49,18 @@ class BusinessInsightsAiBloc
     _bills = event.bills;
     _expenses = event.expenses;
     _products = event.products;
+
+    // ── Restore cached briefing on start ──
+    final cached = _cache.loadBriefing(_userId);
+    final cachedAt = _cache.lastGeneratedAt(_userId);
+    if (cached != null) {
+      emit(state.copyWith(
+        briefing: cached,
+        lastGeneratedAt: cachedAt,
+        loadingBrief: false,
+      ));
+    }
+
     await _insightsSub?.cancel();
     _insightsSub = _observeInsights(event.userId).listen(
       (list) => add(BusinessInsightsAiInsightsReceived(list)),
@@ -66,6 +81,8 @@ class BusinessInsightsAiBloc
     final result = await _brief(userId: _userId, metrics: metrics);
     switch (result) {
       case AiSuccess(:final value):
+        // ── Persist to local cache ──
+        _cache.saveBriefing(_userId, value);
         add(BusinessInsightsAiBriefingReceived(value, null));
       case AiError(:final failure):
         add(BusinessInsightsAiBriefingReceived(null, failure.message));
@@ -77,9 +94,11 @@ class BusinessInsightsAiBloc
     Emitter<BusinessInsightsAiState> emit,
   ) {
     emit(state.copyWith(
-      briefing: event.briefing,
+      briefing: event.briefing ?? state.briefing,
       loadingBrief: false,
       error: event.error,
+      lastGeneratedAt:
+          event.briefing != null ? DateTime.now() : state.lastGeneratedAt,
       insights: event.briefing?.insights.isNotEmpty == true
           ? event.briefing!.insights
           : state.insights,

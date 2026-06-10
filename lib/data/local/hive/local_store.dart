@@ -22,6 +22,7 @@ class LocalStore {
       Hive.openBox<Map>(HiveBoxes.syncCursors),
       Hive.openBox<Map>(HiveBoxes.aiPreferences),
       Hive.openBox<Map>(HiveBoxes.aiRequestQueue),
+      Hive.openBox<Map>(HiveBoxes.aiBriefingCache),
     ]);
     _initialized = true;
   }

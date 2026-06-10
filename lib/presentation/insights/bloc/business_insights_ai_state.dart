@@ -9,6 +9,7 @@ class BusinessInsightsAiState extends Equatable {
     this.loadingBrief = false,
     this.loadingInsights = true,
     this.error,
+    this.lastGeneratedAt,
   });
 
   final AiBriefing? briefing;
@@ -16,6 +17,9 @@ class BusinessInsightsAiState extends Equatable {
   final bool loadingBrief;
   final bool loadingInsights;
   final String? error;
+
+  /// When the displayed briefing was last generated/refreshed.
+  final DateTime? lastGeneratedAt;
 
   int get unreadCount => insights.where((i) => i.isUnread).length;
 
@@ -25,6 +29,7 @@ class BusinessInsightsAiState extends Equatable {
     bool? loadingBrief,
     bool? loadingInsights,
     String? error,
+    DateTime? lastGeneratedAt,
   }) =>
       BusinessInsightsAiState(
         briefing: briefing ?? this.briefing,
@@ -32,9 +37,10 @@ class BusinessInsightsAiState extends Equatable {
         loadingBrief: loadingBrief ?? this.loadingBrief,
         loadingInsights: loadingInsights ?? this.loadingInsights,
         error: error,
+        lastGeneratedAt: lastGeneratedAt ?? this.lastGeneratedAt,
       );
 
   @override
   List<Object?> get props =>
-      [briefing, insights, loadingBrief, loadingInsights, error];
+      [briefing, insights, loadingBrief, loadingInsights, error, lastGeneratedAt];
 }
