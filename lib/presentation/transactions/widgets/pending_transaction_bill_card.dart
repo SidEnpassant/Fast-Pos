@@ -3,7 +3,9 @@ import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
 import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/presentation/collections_automation/widgets/bill_whatsapp_action_button.dart';
 import 'package:inventopos/presentation/transactions/widgets/transaction_amount_row.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PendingTransactionBillCard extends StatelessWidget {
   const PendingTransactionBillCard({
@@ -99,6 +101,7 @@ class PendingTransactionBillCard extends StatelessWidget {
                 children: [
                   if (remainingAmount > 0)
                     Expanded(
+                      flex: 2,
                       child: FilledButton.icon(
                         icon: const Icon(Icons.payments_outlined),
                         label: const Text('Update payment'),
@@ -106,7 +109,14 @@ class PendingTransactionBillCard extends StatelessWidget {
                       ),
                     ),
                   if (remainingAmount > 0) const SizedBox(width: 8),
+                  if (remainingAmount > 0)
+                    BillWhatsAppActionButton(
+                      bill: bill,
+                      userId: Supabase.instance.client.auth.currentUser?.id ?? '',
+                    ),
+                  const SizedBox(width: 8),
                   Expanded(
+                    flex: 2,
                     child: FilledButton.tonalIcon(
                       icon: const Icon(Icons.picture_as_pdf_outlined),
                       label: const Text('Show Bill'),

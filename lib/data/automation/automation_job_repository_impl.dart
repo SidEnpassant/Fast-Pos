@@ -1,4 +1,5 @@
 import 'package:inventopos/domain/automation/entities/automation_job.dart';
+import 'package:inventopos/domain/automation/entities/automation_trigger.dart';
 import 'package:inventopos/domain/automation/repositories/automation_job_port.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -28,16 +29,46 @@ class AutomationJobRepositoryImpl implements AutomationJobPort {
   @override
   Future<void> ensureDefaults(String userId) async {
     final existing = await listForUser(userId);
-    if (existing.any((j) => j.triggerType == 'daily_briefing')) return;
+    final existingTypes = existing.map((j) => j.triggerType).toSet();
+    for (final trigger in AutomationTrigger.values) {
+      if (existingTypes.contains(trigger.value)) continue;
+      try {
+        await _client.from('automation_jobs').insert({
+          'id': _uuid.v4(),
+          'user_id': userId,
+          'trigger_type': trigger.value,
+          'cron_expression': trigger.defaultCron,
+          'enabled': true,
+          'config_json': {},
+        });
+      } catch (_) {}
+    }
+  }
+
+  @override
+  Future<void> syncFromPreferences(
+    String userId,
+    Map<String, bool> jobEnabled,
+  ) async {
+    await ensureDefaults(userId);
+    final jobs = await listForUser(userId);
+    for (final job in jobs) {
+      final enabled = jobEnabled[job.triggerType];
+      if (enabled == null || enabled == job.enabled) continue;
+      try {
+        await _client
+            .from('automation_jobs')
+            .update({'enabled': enabled}).eq('id', job.id);
+      } catch (_) {}
+    }
+  }
+
+  @override
+  Future<void> toggleJob(String jobId, bool enabled) async {
     try {
-      await _client.from('automation_jobs').insert({
-        'id': _uuid.v4(),
-        'user_id': userId,
-        'trigger_type': 'daily_briefing',
-        'cron_expression': '0 8 * * *',
-        'enabled': true,
-        'config_json': {},
-      });
+      await _client
+          .from('automation_jobs')
+          .update({'enabled': enabled}).eq('id', jobId);
     } catch (_) {}
   }
 

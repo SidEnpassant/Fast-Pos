@@ -32,7 +32,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScreenScaffold(
-      title: 'Smart Assistant',
+      title: 'Automations',
       body: BlocBuilder<AiHubBloc, AiHubState>(
         builder: (context, hub) {
           if (hub.loading) {
@@ -46,15 +46,16 @@ class _AiHubScreenState extends State<AiHubScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('AI & automation settings'),
+                title: const Text('Automation settings'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () => context.push('/ai-settings'),
               ),
               ListTile(
-                leading: const Icon(Icons.mic),
-                title: const Text('Voice billing'),
-                subtitle: const Text('Open New Bill and use Billing Copilot'),
-                onTap: () => context.go('/app/new-bill'),
+                leading: const Icon(Icons.schedule),
+                title: const Text('Scheduled jobs'),
+                subtitle: const Text('Cron automations and last run times'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => context.push('/automation-jobs'),
               ),
               BlocBuilder<BusinessInsightsAiBloc, BusinessInsightsAiState>(
                 builder: (context, ins) {
@@ -120,7 +121,7 @@ class _EnablePrompt extends StatelessWidget {
           const Icon(Icons.smart_toy_outlined, size: 64),
           const SizedBox(height: AppSpacing.md),
           const Text(
-            'Enable Smart Assistant for voice billing, daily briefs, and reorder alerts.',
+            'Enable Automations for daily briefs, collections reminders, reorder alerts, and WhatsApp follow-ups.',
             textAlign: TextAlign.center,
           ),
           const SizedBox(height: AppSpacing.lg),

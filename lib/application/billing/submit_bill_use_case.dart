@@ -149,6 +149,11 @@ class SubmitBillUseCase {
       }
     }
 
-    return BillSubmissionResult(billId: billId, pdfPath: pdfPath);
+    final bill = await _bills.fetchBillById(billId);
+    if (bill == null) {
+      throw StateError('Failed to fetch newly created bill');
+    }
+
+    return BillSubmissionResult(billId: billId, pdfPath: pdfPath, bill: bill);
   }
 }

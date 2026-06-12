@@ -4,6 +4,7 @@ import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
 import 'package:inventopos/application/ai/save_ai_preferences_use_case.dart';
+import 'package:inventopos/application/automation/sync_automation_jobs_from_prefs_use_case.dart';
 import 'package:inventopos/domain/ai/entities/ai_preferences.dart';
 import 'package:inventopos/domain/ai/repositories/ai_preferences_port.dart';
 import 'package:inventopos/domain/automation/entities/automation_job.dart';
@@ -38,6 +39,15 @@ class _FakeJobs implements AutomationJobPort {
 
   @override
   Future<List<AutomationJob>> listForUser(String userId) async => [];
+
+  @override
+  Future<void> syncFromPreferences(
+    String userId,
+    Map<String, bool> jobEnabled,
+  ) async {}
+
+  @override
+  Future<void> toggleJob(String jobId, bool enabled) async {}
 }
 
 void main() {
@@ -45,7 +55,10 @@ void main() {
     'toggles enabled',
     build: () => AutomationSettingsBloc(
       ObserveAiPreferencesUseCase(_FakePrefs()),
-      SaveAiPreferencesUseCase(_FakePrefs(), _FakeJobs()),
+      SaveAiPreferencesUseCase(
+        _FakePrefs(),
+        SyncAutomationJobsFromPrefsUseCase(_FakeJobs()),
+      ),
     ),
     act: (b) async {
       b.add(const AutomationSettingsStarted('u1'));

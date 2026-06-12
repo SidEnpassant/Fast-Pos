@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/app/local_notifications_holder.dart';
+import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
 import 'package:inventopos/core/notifications/local_notification_service.dart';
 import 'package:inventopos/core/notifications/notification_sync_coordinator.dart';
 import 'package:inventopos/application/auth/request_password_reset_use_case.dart';
@@ -18,13 +19,16 @@ import 'package:inventopos/application/billing/regenerate_and_upload_bill_pdf_us
 import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
 import 'package:inventopos/application/ai/build_briefing_metrics_use_case.dart';
-import 'package:inventopos/application/ai/get_billing_suggestions_use_case.dart';
 import 'package:inventopos/application/ai/observe_ai_insights_use_case.dart';
 import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
-import 'package:inventopos/application/ai/parse_voice_bill_command_use_case.dart';
 import 'package:inventopos/application/ai/replay_offline_ai_queue_use_case.dart';
 import 'package:inventopos/application/ai/run_daily_business_brief_use_case.dart';
 import 'package:inventopos/application/ai/save_ai_preferences_use_case.dart';
+import 'package:inventopos/application/automation/automation_use_cases.dart';
+import 'package:inventopos/application/automation/sync_automation_jobs_from_prefs_use_case.dart';
+import 'package:inventopos/application/messaging/build_message_use_cases.dart';
+import 'package:inventopos/data/messaging/outbound_messaging_adapter.dart';
+import 'package:inventopos/domain/messaging/repositories/outbound_messaging_port.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/inventory/evaluate_reorder_alerts_use_case.dart';
 import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
@@ -263,29 +267,77 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     RepositoryProvider<AiTelemetry>(
       create: (_) => AiTelemetry(),
     ),
-    RepositoryProvider<ParseVoiceBillCommandUseCase>(
-      create: (c) => ParseVoiceBillCommandUseCase(
-        c.read<AiGatewayPort>(),
-        c.read<AiPreferencesPort>(),
-        c.read<AiRequestQueue>(),
-      ),
-    ),
-    RepositoryProvider<GetBillingSuggestionsUseCase>(
-      create: (c) => GetBillingSuggestionsUseCase(
-        c.read<AiGatewayPort>(),
-        c.read<AiPreferencesPort>(),
-      ),
-    ),
     RepositoryProvider<RunDailyBusinessBriefUseCase>(
       create: (c) => RunDailyBusinessBriefUseCase(
         c.read<AiGatewayPort>(),
         c.read<AiPreferencesPort>(),
       ),
     ),
+    RepositoryProvider<SyncAutomationJobsFromPrefsUseCase>(
+      create: (c) => SyncAutomationJobsFromPrefsUseCase(
+        c.read<AutomationJobPort>(),
+      ),
+    ),
+    RepositoryProvider<OutboundMessagingPort>(
+      create: (_) => CompositeOutboundMessagingAdapter(),
+    ),
+    RepositoryProvider<LaunchOutboundMessageUseCase>(
+      create: (c) => LaunchOutboundMessageUseCase(
+        c.read<OutboundMessagingPort>(),
+      ),
+    ),
+    RepositoryProvider<BuildPartialPaymentMessageUseCase>(
+      create: (_) => BuildPartialPaymentMessageUseCase(),
+    ),
+    RepositoryProvider<BuildPaymentThankYouMessageUseCase>(
+      create: (_) => BuildPaymentThankYouMessageUseCase(),
+    ),
+    RepositoryProvider<BuildReceiptMessageUseCase>(
+      create: (_) => BuildReceiptMessageUseCase(),
+    ),
+    RepositoryProvider<BuildEodSummaryMessageUseCase>(
+      create: (_) => BuildEodSummaryMessageUseCase(),
+    ),
+    RepositoryProvider<BuildRepeatOrderTemplateUseCase>(
+      create: (_) => BuildRepeatOrderTemplateUseCase(),
+    ),
+    RepositoryProvider<ListPendingMessageActionsUseCase>(
+      create: (c) => ListPendingMessageActionsUseCase(
+        buildPartial: c.read<BuildPartialPaymentMessageUseCase>(),
+        buildEod: c.read<BuildEodSummaryMessageUseCase>(),
+      ),
+    ),
+    RepositoryProvider<ListAutomationJobsUseCase>(
+      create: (c) => ListAutomationJobsUseCase(c.read<AutomationJobPort>()),
+    ),
+    RepositoryProvider<ToggleAutomationJobUseCase>(
+      create: (c) => ToggleAutomationJobUseCase(c.read<AutomationJobPort>()),
+    ),
+    RepositoryProvider<EvaluateCreditExposureUseCase>(
+      create: (_) => EvaluateCreditExposureUseCase(),
+    ),
+    RepositoryProvider<BuildOpeningSnapshotUseCase>(
+      create: (_) => BuildOpeningSnapshotUseCase(),
+    ),
+    RepositoryProvider<BuildEodSummaryUseCase>(
+      create: (_) => BuildEodSummaryUseCase(),
+    ),
+    RepositoryProvider<EvaluateExpenseSpikeUseCase>(
+      create: (_) => EvaluateExpenseSpikeUseCase(),
+    ),
+    RepositoryProvider<EvaluateDeadStockUseCase>(
+      create: (c) => EvaluateDeadStockUseCase(c.read<ProductRepository>()),
+    ),
+    RepositoryProvider<EvaluateMarginLeaksUseCase>(
+      create: (c) => EvaluateMarginLeaksUseCase(c.read<ProductRepository>()),
+    ),
+    RepositoryProvider<EvaluateBillSanityUseCase>(
+      create: (_) => EvaluateBillSanityUseCase(),
+    ),
     RepositoryProvider<SaveAiPreferencesUseCase>(
       create: (c) => SaveAiPreferencesUseCase(
         c.read<AiPreferencesPort>(),
-        c.read<AutomationJobPort>(),
+        c.read<SyncAutomationJobsFromPrefsUseCase>(),
       ),
     ),
     RepositoryProvider<ObserveAiPreferencesUseCase>(

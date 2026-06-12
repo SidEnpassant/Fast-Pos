@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:inventopos/domain/ai/entities/reorder_alert.dart';
+import 'package:inventopos/domain/automation/services/dead_stock_evaluator.dart';
+import 'package:inventopos/domain/automation/services/margin_leak_evaluator.dart';
 
 sealed class InventoryAutomationEvent extends Equatable {
   const InventoryAutomationEvent();
@@ -30,4 +32,16 @@ final class InventoryAutomationReorderDismissed extends InventoryAutomationEvent
 
   @override
   List<Object?> get props => [productId];
+}
+
+final class InventoryAutomationExtendedLoaded extends InventoryAutomationEvent {
+  const InventoryAutomationExtendedLoaded({
+    required this.deadStock,
+    required this.marginLeaks,
+  });
+  final List<DeadStockAlert> deadStock;
+  final List<MarginLeakAlert> marginLeaks;
+
+  @override
+  List<Object?> get props => [deadStock, marginLeaks];
 }

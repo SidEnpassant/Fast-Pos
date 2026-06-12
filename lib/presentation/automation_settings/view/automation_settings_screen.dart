@@ -16,6 +16,16 @@ class AutomationSettingsScreen extends StatefulWidget {
 }
 
 class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
+  final _ownerPhone = TextEditingController();
+  final _supplierPhone = TextEditingController();
+
+  @override
+  void dispose() {
+    _ownerPhone.dispose();
+    _supplierPhone.dispose();
+    super.dispose();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -28,13 +38,22 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
   @override
   Widget build(BuildContext context) {
     return AppScreenScaffold(
-      title: 'Smart Assistant',
+      title: 'Automations',
       body: BlocConsumer<AutomationSettingsBloc, AutomationSettingsState>(
         listener: (context, state) {
           if (state.saved) {
             ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(content: Text('Settings saved')),
             );
+          }
+          final p = state.preferences;
+          if (p != null) {
+            if (_ownerPhone.text != (p.ownerWhatsAppPhone ?? '')) {
+              _ownerPhone.text = p.ownerWhatsAppPhone ?? '';
+            }
+            if (_supplierPhone.text != (p.supplierWhatsAppPhone ?? '')) {
+              _supplierPhone.text = p.supplierWhatsAppPhone ?? '';
+            }
           }
         },
         builder: (context, state) {
@@ -43,49 +62,126 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
           }
           final p = state.preferences;
           if (p == null) {
-            return const Center(child: Text('Sign in to configure AI'));
+            return const Center(child: Text('Sign in to configure automations'));
           }
+          final on = p.enabled;
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
             children: [
               const Text(
-                'Fast-Pos uses cloud AI (Groq) via secure servers. '
-                'Your API key never lives on this device. '
-                'Voice and billing suggestions require your confirmation before applying.',
+                'Automations use rules on-device and optional cloud AI (Groq via secure servers). '
+                'WhatsApp and SMS open your messaging app — nothing is sent automatically.',
                 style: TextStyle(fontSize: 13),
               ),
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
-                title: const Text('Enable Smart Assistant'),
-                subtitle: const Text('Required for AI billing, briefings, alerts'),
+                title: const Text('Enable Automations'),
+                subtitle: const Text('Required for briefs, alerts, and messages'),
                 value: p.enabled,
                 onChanged: (v) => context
                     .read<AutomationSettingsBloc>()
                     .add(AutomationSettingsEnabledToggled(v)),
               ),
+              const Divider(),
+              const ListTile(title: Text('Collections')),
+              SwitchListTile(
+                title: const Text('Partial bill reminders'),
+                value: p.partialBillRemindersEnabled,
+                onChanged: on
+                    ? (v) => context.read<AutomationSettingsBloc>().add(
+                          AutomationSettingsPartialBillToggled(v),
+                        )
+                    : null,
+              ),
+              SwitchListTile(
+                title: const Text('Credit exposure alerts'),
+                value: p.creditAlertsEnabled,
+                onChanged: on
+                    ? (v) => context.read<AutomationSettingsBloc>().add(
+                          AutomationSettingsCreditAlertsToggled(v),
+                        )
+                    : null,
+              ),
+              SwitchListTile(
+                title: const Text('Auto receipt share prompt'),
+                value: p.autoReceiptShareEnabled,
+                onChanged: on
+                    ? (v) => context.read<AutomationSettingsBloc>().add(
+                          AutomationSettingsReceiptShareToggled(v),
+                        )
+                    : null,
+              ),
+              SwitchListTile(
+                title: const Text('Payment thank-you message'),
+                value: p.paymentThankYouEnabled,
+                onChanged: on
+                    ? (v) => context.read<AutomationSettingsBloc>().add(
+                          AutomationSettingsThankYouToggled(v),
+                        )
+                    : null,
+              ),
+              const Divider(),
+              const ListTile(title: Text('Inventory')),
+              SwitchListTile(
+                title: const Text('Reorder alerts'),
+                value: p.reorderAlertsEnabled,
+                onChanged: on
+                    ? (v) => context.read<AutomationSettingsBloc>().add(
+                          AutomationSettingsReorderToggled(v),
+                        )
+                    : null,
+              ),
+              const Divider(),
+              const ListTile(title: Text('Day operations')),
               SwitchListTile(
                 title: const Text('Daily business brief'),
                 value: p.dailyBriefEnabled,
-                onChanged: p.enabled
+                onChanged: on
                     ? (v) => context.read<AutomationSettingsBloc>().add(
                           AutomationSettingsDailyBriefToggled(v),
                         )
                     : null,
               ),
               SwitchListTile(
-                title: const Text('Reorder alerts'),
-                value: p.reorderAlertsEnabled,
-                onChanged: p.enabled
+                title: const Text('End-of-day summary'),
+                value: p.eodSummaryEnabled,
+                onChanged: on
                     ? (v) => context.read<AutomationSettingsBloc>().add(
-                          AutomationSettingsReorderToggled(v),
+                          AutomationSettingsEodSummaryToggled(v),
                         )
                     : null,
               ),
+              const Divider(),
+              const ListTile(title: Text('Messages & WhatsApp')),
+              TextField(
+                controller: _ownerPhone,
+                decoration: const InputDecoration(
+                  labelText: 'Owner WhatsApp (EOD summary)',
+                  hintText: '10-digit mobile',
+                ),
+                keyboardType: TextInputType.phone,
+                enabled: on,
+                onChanged: (v) => context.read<AutomationSettingsBloc>().add(
+                      AutomationSettingsOwnerPhoneChanged(v),
+                    ),
+              ),
+              const SizedBox(height: AppSpacing.sm),
+              TextField(
+                controller: _supplierPhone,
+                decoration: const InputDecoration(
+                  labelText: 'Supplier WhatsApp (reorder)',
+                  hintText: '10-digit mobile',
+                ),
+                keyboardType: TextInputType.phone,
+                enabled: on,
+                onChanged: (v) => context.read<AutomationSettingsBloc>().add(
+                      AutomationSettingsSupplierPhoneChanged(v),
+                    ),
+              ),
               SwitchListTile(
-                title: const Text('Enhanced context'),
-                subtitle: const Text('Send barcode hints for better matching (Hinglish)'),
+                title: const Text('Enhanced context (AI brief)'),
                 value: p.enhancedContext,
-                onChanged: p.enabled
+                onChanged: on
                     ? (v) => context.read<AutomationSettingsBloc>().add(
                           AutomationSettingsEnhancedToggled(v),
                         )
@@ -93,14 +189,13 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
               ),
               ListTile(
                 title: const Text('Language'),
-                subtitle: Text(p.language == 'hi' ? 'Hindi / Hinglish' : 'English'),
                 trailing: DropdownButton<String>(
                   value: p.language,
                   items: const [
                     DropdownMenuItem(value: 'en', child: Text('English')),
                     DropdownMenuItem(value: 'hi', child: Text('Hindi / Hinglish')),
                   ],
-                  onChanged: p.enabled
+                  onChanged: on
                       ? (v) {
                           if (v != null) {
                             context.read<AutomationSettingsBloc>().add(

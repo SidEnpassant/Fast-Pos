@@ -23,6 +23,7 @@ import 'package:inventopos/presentation/dashboard/widgets/dashboard_pulse_strip.
 import 'package:inventopos/presentation/dashboard/widgets/dashboard_top_sellers.dart';
 import 'package:inventopos/presentation/dashboard/widgets/dashboard_ai_bootstrap.dart';
 import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dart';
+import 'package:inventopos/presentation/day_operations/widgets/dashboard_opening_snapshot.dart';
 import 'package:inventopos/presentation/insights/widgets/dashboard_ai_briefing_card.dart';
 import 'package:inventopos/presentation/inventory_automation/widgets/dashboard_reorder_alerts.dart';
 import 'package:intl/intl.dart';
@@ -81,6 +82,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         QuickActionsGrid(state: state),
                         const SizedBox(height: AppSpacing.lg),
                         const DashboardAiBriefingCard(),
+                        const SizedBox(height: AppSpacing.lg),
+                        const DashboardOpeningSnapshot(),
                         const SizedBox(height: AppSpacing.lg),
                         const DashboardReorderAlerts(),
                         const SizedBox(height: AppSpacing.lg),

@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
+import 'package:inventopos/domain/entities/bill.dart';
 
 /// Customer + lines + payment snapshot for creating a bill (domain input).
 class BillSubmissionDraft extends Equatable {
@@ -52,11 +53,13 @@ class BillSubmissionResult extends Equatable {
   const BillSubmissionResult({
     required this.billId,
     required this.pdfPath,
+    required this.bill,
   });
 
   final String billId;
   final String pdfPath;
+  final Bill bill;
 
   @override
-  List<Object?> get props => [billId, pdfPath];
+  List<Object?> get props => [billId, pdfPath, bill];
 }

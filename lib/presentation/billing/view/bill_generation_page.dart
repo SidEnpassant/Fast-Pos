@@ -1,8 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
+import 'package:inventopos/domain/entities/user_profile.dart';
+import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
+import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_bloc.dart';
+import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_event.dart';
+import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_state.dart';
+import 'package:inventopos/presentation/billing/bloc/receipt_automation_bloc.dart';
+import 'package:inventopos/presentation/billing/bloc/repeat_order_bloc.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
+import 'package:inventopos/presentation/messaging/widgets/message_preview_sheet.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_add_product_chooser.dart';
 import 'package:inventopos/domain/billing/bill_submission.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
@@ -16,12 +28,13 @@ import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voic
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_state.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_generation_sections.dart';
 import 'package:inventopos/application/billing/print_receipt_use_case.dart';
+import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
 import 'package:inventopos/domain/entities/receipt_payload.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
-import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BillGenerationPage extends StatefulWidget {
   const BillGenerationPage({super.key});
@@ -39,7 +52,29 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   double _paidAmount = 0.0;
 
   @override
+  void initState() {
+    super.initState();
+    _customerPhoneController.addListener(_onPhoneChanged);
+  }
+
+  void _onPhoneChanged() {
+    final phone = _customerPhoneController.text.trim();
+    if (phone.length == 10) {
+      final bills = context.read<DashboardHubBloc>().state.bills;
+      if (bills == null) return;
+      // Find customer ID from phone if exists
+      final bill = bills.where((b) => b.customerPhone == phone).firstOrNull;
+      if (bill?.customerId != null) {
+        context.read<RepeatOrderBloc>().add(
+              RepeatOrderStarted(customerId: bill!.customerId!, bills: bills),
+            );
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    _customerPhoneController.removeListener(_onPhoneChanged);
     _customerNameController.dispose();
     _customerPhoneController.dispose();
     super.dispose();
@@ -51,13 +86,61 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return BillSubmissionFeedbackListener(
-      onSuccess: (listenerContext, submissionState) {
-        listenerContext.read<BillDraftBloc>().add(const BillDraftCleared());
-        _customerNameController.clear();
-        _customerPhoneController.clear();
-        _showPDFOptionsDialog(submissionState.result.pdfPath);
-      },
+    return MultiBlocListener(
+      listeners: [
+        BillSubmissionFeedbackListener(
+          onSuccess: (listenerContext, submissionState) async {
+            final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+            
+            // Capture dependencies before async gap
+            final prefsUseCase = listenerContext.read<ObserveAiPreferencesUseCase>();
+            final profileUseCase = listenerContext.read<ObserveProfileForCurrentUserUseCase>();
+            final receiptBloc = listenerContext.read<ReceiptAutomationBloc>();
+            final draftBloc = listenerContext.read<BillDraftBloc>();
+
+            final prefs = await prefsUseCase(uid).first;
+            final profileStream = profileUseCase.call();
+            List<UserProfile>? profileList;
+            if (profileStream != null) {
+              profileList = await profileStream.first;
+            }
+            
+            String shopName = 'Our Shop';
+            if (profileList != null && profileList.isNotEmpty) {
+              shopName = profileList.first.businessName ?? 'Our Shop';
+            }
+            
+            if (listenerContext.mounted) {
+              receiptBloc.add(
+                ReceiptAutomationSubmitted(
+                  bill: submissionState.result.bill,
+                  shopName: shopName,
+                  prefs: prefs,
+                ),
+              );
+              
+              draftBloc.add(const BillDraftCleared());
+              _customerNameController.clear();
+              _customerPhoneController.clear();
+              _showPDFOptionsDialog(submissionState.result.pdfPath);
+            }
+          },
+        ),
+        BlocListener<ReceiptAutomationBloc, ReceiptAutomationState>(
+          listener: (context, state) {
+            if (state.receiptMessage != null) {
+              _showReceiptAutomationOptions(state);
+            }
+          },
+        ),
+        BlocListener<BillSanityCheckBloc, BillSanityCheckState>(
+          listener: (context, state) {
+            if (state.result != null && !state.overridden) {
+              _showSanityWarning(state.result!.message);
+            }
+          },
+        ),
+      ],
       child: BlocBuilder<BillDraftBloc, BillDraftState>(
         builder: (context, draft) {
           final totalAmount = draft.subtotal;
@@ -80,15 +163,13 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      // ── Header matching dashboard style ──
                       _BillHeader(
                         lineCount: draft.lines.length,
                         totalAmount: totalAmount,
                       ),
-                      // ── Content ──
                       Expanded(
                         child: submitting
-                            ? _SubmittingIndicator()
+                            ? const _SubmittingIndicator()
                             : Form(
                                 key: _formKey,
                                 child: CustomScrollView(
@@ -151,7 +232,6 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                           const SizedBox(
                                             height: AppSpacing.lg,
                                           ),
-                                          // ── Generate bill button ──
                                           _GenerateBillButton(
                                             enabled: draft.lines.isNotEmpty &&
                                                 !submitting,
@@ -180,11 +260,24 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
 
   Future<void> _generateBill() async {
     if (!_formKey.currentState!.validate()) return;
-    final draftLines = context.read<BillDraftBloc>().state.lines;
+    final draft = context.read<BillDraftBloc>().state;
+    final draftLines = draft.lines;
     if (draftLines.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please add at least one product')),
       );
+      return;
+    }
+
+    final sanity = context.read<BillSanityCheckBloc>().state;
+    if (sanity.result != null && !sanity.overridden) {
+      context.read<BillSanityCheckBloc>().add(
+            BillSanityCheckRequested(
+              lines: draftLines,
+              draftTotal: draft.subtotal,
+              recentBills: context.read<DashboardHubBloc>().state.bills ?? [],
+            ),
+          );
       return;
     }
 
@@ -202,8 +295,82 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
         );
   }
 
-  Future<void> _showPDFOptionsDialog(String pdfPath) {
+  void _showSanityWarning(String message) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Bill Warning'),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              context
+                  .read<BillSanityCheckBloc>()
+                  .add(const BillSanityCheckOverrideConfirmed());
+              _generateBill();
+            },
+            child: const Text('Proceed anyway'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showReceiptAutomationOptions(ReceiptAutomationState state) {
     final theme = Theme.of(context);
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (ctx) => Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'Automations',
+              style: theme.textTheme.titleMedium,
+            ),
+            const SizedBox(height: 12),
+            if (state.receiptMessage != null)
+              ListTile(
+                leading: const Icon(Icons.chat, color: Colors.green),
+                title: const Text('WhatsApp Digital Receipt'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _launchMessaging(state.receiptMessage!);
+                },
+              ),
+            if (state.thankYouMessage != null)
+              ListTile(
+                leading: const Icon(Icons.favorite, color: Colors.pink),
+                title: const Text('Send Thank You Message'),
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  _launchMessaging(state.thankYouMessage!);
+                },
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _launchMessaging(OutboundMessage message) async {
+    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final prefs = await context.read<ObserveAiPreferencesUseCase>()(uid).first;
+    if (!mounted) return;
+    context.read<MessagingAutomationBloc>().add(
+          MessagingPreviewRequested(message, prefs),
+        );
+    showMessagePreviewSheet(context);
+  }
+
+  Future<void> _showPDFOptionsDialog(String pdfPath) {
     return showDialog<void>(
       context: context,
       builder: (BuildContext dialogContext) {
@@ -316,8 +483,6 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   }
 }
 
-// ─── Header ─────────────────────────────────────────────────────────────────
-
 class _BillHeader extends StatelessWidget {
   const _BillHeader({
     required this.lineCount,
@@ -384,9 +549,8 @@ class _BillHeader extends StatelessWidget {
   }
 }
 
-// ─── Submitting indicator ───────────────────────────────────────────────────
-
 class _SubmittingIndicator extends StatelessWidget {
+  const _SubmittingIndicator();
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -423,8 +587,6 @@ class _SubmittingIndicator extends StatelessWidget {
     );
   }
 }
-
-// ─── Generate bill button ───────────────────────────────────────────────────
 
 class _GenerateBillButton extends StatelessWidget {
   const _GenerateBillButton({

@@ -9,6 +9,7 @@ import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_form_components.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
+import 'package:inventopos/presentation/billing/widgets/repeat_order_suggestions.dart';
 import 'package:intl/intl.dart';
 
 class BillGenerationCustomerSection extends StatelessWidget {
@@ -78,6 +79,7 @@ class BillGenerationCustomerSection extends StatelessWidget {
               return null;
             },
           ),
+          const RepeatOrderSuggestions(),
         ],
       ),
     ).animate().fadeIn().slideX();

@@ -91,7 +91,7 @@ class DashboardAiBriefingCard extends StatelessWidget {
                   TextButton.icon(
                     onPressed: () => context.push('/ai-hub'),
                     icon: const Icon(Icons.open_in_new, size: 18),
-                    label: const Text('Open Smart Assistant'),
+                    label: const Text('Open Automations'),
                   ),
                 ],
               ),
@@ -192,11 +192,11 @@ class _EmptyBriefCard extends StatelessWidget {
     if (raw.contains('rateLimited') || raw.contains('429')) {
       return 'AI is busy. Please try again in a moment.';
     }
-    if (raw.contains('consentDenied') || raw.contains('Smart Assistant')) {
-      return 'Turn on Smart Assistant in My Account → Tools to use this feature.';
+    if (raw.contains('consentDenied') || raw.contains('Automations')) {
+      return 'Turn on Automations in My Account → Tools to use this feature.';
     }
     if (raw.length > 120) {
-      return 'Could not generate brief. Tap again or check Smart Assistant settings.';
+      return 'Could not generate brief. Tap again or check Automations settings.';
     }
     return raw;
   }

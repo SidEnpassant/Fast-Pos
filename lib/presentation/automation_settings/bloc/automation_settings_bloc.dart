@@ -16,8 +16,15 @@ class AutomationSettingsBloc
     on<AutomationSettingsEnabledToggled>(_onEnabled);
     on<AutomationSettingsDailyBriefToggled>(_onDailyBrief);
     on<AutomationSettingsReorderToggled>(_onReorder);
+    on<AutomationSettingsPartialBillToggled>(_onPartial);
+    on<AutomationSettingsCreditAlertsToggled>(_onCredit);
+    on<AutomationSettingsReceiptShareToggled>(_onReceipt);
+    on<AutomationSettingsThankYouToggled>(_onThankYou);
+    on<AutomationSettingsEodSummaryToggled>(_onEod);
     on<AutomationSettingsEnhancedToggled>(_onEnhanced);
     on<AutomationSettingsLanguageChanged>(_onLanguage);
+    on<AutomationSettingsOwnerPhoneChanged>(_onOwnerPhone);
+    on<AutomationSettingsSupplierPhoneChanged>(_onSupplierPhone);
     on<AutomationSettingsSaveRequested>(_onSave);
   }
 
@@ -40,10 +47,7 @@ class AutomationSettingsBloc
     AutomationSettingsPreferencesReceived event,
     Emitter<AutomationSettingsState> emit,
   ) {
-    emit(state.copyWith(
-      preferences: event.preferences,
-      loading: false,
-    ));
+    emit(state.copyWith(preferences: event.preferences, loading: false));
   }
 
   void _patch(
@@ -56,34 +60,41 @@ class AutomationSettingsBloc
   }
 
   void _onEnabled(
-    AutomationSettingsEnabledToggled event,
-    Emitter<AutomationSettingsState> emit,
-  ) =>
-      _patch(emit, (p) => p.copyWith(enabled: event.enabled));
-
+      AutomationSettingsEnabledToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(enabled: e.enabled));
   void _onDailyBrief(
-    AutomationSettingsDailyBriefToggled event,
-    Emitter<AutomationSettingsState> emit,
-  ) =>
-      _patch(emit, (p) => p.copyWith(dailyBriefEnabled: event.enabled));
-
+      AutomationSettingsDailyBriefToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(dailyBriefEnabled: e.enabled));
   void _onReorder(
-    AutomationSettingsReorderToggled event,
-    Emitter<AutomationSettingsState> emit,
-  ) =>
-      _patch(emit, (p) => p.copyWith(reorderAlertsEnabled: event.enabled));
-
+      AutomationSettingsReorderToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(reorderAlertsEnabled: e.enabled));
+  void _onPartial(
+      AutomationSettingsPartialBillToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(partialBillRemindersEnabled: e.enabled));
+  void _onCredit(
+      AutomationSettingsCreditAlertsToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(creditAlertsEnabled: e.enabled));
+  void _onReceipt(
+      AutomationSettingsReceiptShareToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(autoReceiptShareEnabled: e.enabled));
+  void _onThankYou(
+      AutomationSettingsThankYouToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(paymentThankYouEnabled: e.enabled));
+  void _onEod(
+      AutomationSettingsEodSummaryToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(eodSummaryEnabled: e.enabled));
   void _onEnhanced(
-    AutomationSettingsEnhancedToggled event,
-    Emitter<AutomationSettingsState> emit,
-  ) =>
-      _patch(emit, (p) => p.copyWith(enhancedContext: event.enabled));
-
+      AutomationSettingsEnhancedToggled e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(enhancedContext: e.enabled));
   void _onLanguage(
-    AutomationSettingsLanguageChanged event,
-    Emitter<AutomationSettingsState> emit,
-  ) =>
-      _patch(emit, (p) => p.copyWith(language: event.language));
+      AutomationSettingsLanguageChanged e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(language: e.language));
+  void _onOwnerPhone(
+      AutomationSettingsOwnerPhoneChanged e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(ownerWhatsAppPhone: e.phone));
+  void _onSupplierPhone(
+      AutomationSettingsSupplierPhoneChanged e, Emitter<AutomationSettingsState> s) =>
+      _patch(s, (p) => p.copyWith(supplierWhatsAppPhone: e.phone));
 
   Future<void> _onSave(
     AutomationSettingsSaveRequested event,

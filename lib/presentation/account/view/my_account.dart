@@ -341,7 +341,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                                     ),
                                     const SizedBox(height: 4),
                                     Text(
-                                      'Enable Smart Assistant for voice billing,daily briefs,and reorder alerts.',
+                                      'Enable Automations for daily briefs, collections reminders, and reorder alerts.',
                                       style: Theme.of(context)
                                           .textTheme
                                           .bodySmall
@@ -373,7 +373,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                           _AccountToolTile(
                             icon: Icons.smart_toy_outlined,
                             iconColor: Colors.deepPurple,
-                            title: 'Smart Assistant',
+                            title: 'Automations',
                             subtitle: 'AI billing, daily brief, reorder alerts',
                             onTap: () => context.push('/ai-settings'),
                           ),
