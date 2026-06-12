@@ -8,6 +8,8 @@ class CompleteTransactionsViewState extends Equatable {
     this.startDate,
     this.endDate,
     this.isSearching = false,
+    this.groupedTransactions = const {},
+    this.loading = true,
   });
 
   final List<Bill> bills;
@@ -15,6 +17,8 @@ class CompleteTransactionsViewState extends Equatable {
   final DateTime? startDate;
   final DateTime? endDate;
   final bool isSearching;
+  final Map<String, List<Bill>> groupedTransactions;
+  final bool loading;
 
   CompleteTransactionsViewState copyWith({
     List<Bill>? bills,
@@ -24,6 +28,8 @@ class CompleteTransactionsViewState extends Equatable {
     bool? isSearching,
     bool clearStartDate = false,
     bool clearEndDate = false,
+    Map<String, List<Bill>>? groupedTransactions,
+    bool? loading,
   }) {
     return CompleteTransactionsViewState(
       bills: bills ?? this.bills,
@@ -31,10 +37,19 @@ class CompleteTransactionsViewState extends Equatable {
       startDate: clearStartDate ? null : (startDate ?? this.startDate),
       endDate: clearEndDate ? null : (endDate ?? this.endDate),
       isSearching: isSearching ?? this.isSearching,
+      groupedTransactions: groupedTransactions ?? this.groupedTransactions,
+      loading: loading ?? this.loading,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [bills, searchQuery, startDate, endDate, isSearching];
+  List<Object?> get props => [
+        bills,
+        searchQuery,
+        startDate,
+        endDate,
+        isSearching,
+        groupedTransactions,
+        loading,
+      ];
 }

@@ -102,3 +102,7 @@ class DashboardHubAiUnreadChanged extends DashboardHubEvent {
   @override
   List<Object?> get props => [count];
 }
+
+class DashboardHubRecomputeRequested extends DashboardHubEvent {
+  const DashboardHubRecomputeRequested();
+}

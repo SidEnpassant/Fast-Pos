@@ -173,16 +173,14 @@ class _CompleteTransactionsScreenState
                               );
                             }
 
-                            if (txState.bills.isEmpty) {
+                            if (txState.loading && txState.bills.isEmpty) {
                               return const Center(
                                   child: CircularProgressIndicator());
                             }
 
-                            final completeRows = txState.bills
-                                .where((b) => b.paymentStatus == 'complete')
-                                .toList();
+                            final groupedTransactions = txState.groupedTransactions;
 
-                            if (completeRows.isEmpty) {
+                            if (groupedTransactions.isEmpty) {
                               return const AppEmptyState(
                                 icon: Icons.check_circle_outline,
                                 title: 'No completed transactions',
@@ -191,38 +189,12 @@ class _CompleteTransactionsScreenState
                               );
                             }
 
-                            final filteredRows = completeRows.where((bill) {
-                              final customerName = bill.customerName;
-                              final createdAt = bill.createdAt;
-
-                              final matchesSearchQuery = customerName
-                                  .toLowerCase()
-                                  .contains(txState.searchQuery.toLowerCase());
-
-                              final isWithinDateRange = (txState.startDate ==
-                                          null ||
-                                      createdAt.isAfter(txState.startDate!)) &&
-                                  (txState.endDate == null ||
-                                      createdAt.isBefore(txState.endDate!
-                                          .add(const Duration(days: 1))));
-
-                              return matchesSearchQuery && isWithinDateRange;
-                            }).toList();
-
-                            final Map<String, List<Bill>> groupedTransactions =
-                                {};
-                            for (final bill in filteredRows) {
-                              final date = DateFormat('yyyy-MM-dd')
-                                  .format(bill.createdAt);
-                              groupedTransactions.putIfAbsent(date, () => []);
-                              groupedTransactions[date]!.add(bill);
-                            }
+                            final dates = groupedTransactions.keys.toList();
 
                             return ListView.builder(
-                              itemCount: groupedTransactions.length,
+                              itemCount: dates.length,
                               itemBuilder: (context, index) {
-                                final date =
-                                    groupedTransactions.keys.elementAt(index);
+                                final date = dates[index];
                                 final transactions = groupedTransactions[date]!;
 
                                 return Column(

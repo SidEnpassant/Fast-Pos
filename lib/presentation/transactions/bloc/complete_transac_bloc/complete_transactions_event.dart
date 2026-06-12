@@ -39,3 +39,7 @@ final class CompleteDateRangeChanged extends CompleteTransactionsEvent {
 final class CompleteSearchModeToggled extends CompleteTransactionsEvent {
   const CompleteSearchModeToggled();
 }
+
+final class CompleteRecomputeRequested extends CompleteTransactionsEvent {
+  const CompleteRecomputeRequested();
+}

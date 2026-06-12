@@ -12,6 +12,7 @@ import 'package:inventopos/application/automation/automation_use_cases.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/inventory/evaluate_reorder_alerts_use_case.dart';
 import 'package:inventopos/application/messaging/build_message_use_cases.dart';
+import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
 import 'package:inventopos/core/router/app_router.dart';
 import 'package:inventopos/core/theme/app_theme.dart';
 import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
@@ -79,6 +80,7 @@ Widget fastPosRoot() {
         BlocProvider(
           create: (ctx) => MessagingAutomationBloc(
             ctx.read<LaunchOutboundMessageUseCase>(),
+            ctx.read<ListPendingMessageActionsUseCase>(),
           ),
         ),
         BlocProvider(

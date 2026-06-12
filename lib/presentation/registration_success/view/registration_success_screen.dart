@@ -75,29 +75,24 @@ class _RegistrationSuccessScreenState extends State<RegistrationSuccessScreen>
             ),
           ),
           child: SafeArea(
-            child: AnimatedBuilder(
-              animation: _controller,
-              builder: (context, child) {
-                return Opacity(
-                  opacity: _fadeAnimation.value,
-                  child: Transform.scale(
-                    scale: _scaleAnimation.value,
-                    child: Padding(
-                      padding: const EdgeInsets.all(32),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Spacer(),
-                          RegistrationSuccessHero(email: widget.email),
-                          const Spacer(),
-                          const RegistrationSuccessSlideTrack(),
-                          const SizedBox(height: 32),
-                        ],
-                      ),
-                    ),
+            child: FadeTransition(
+              opacity: _fadeAnimation,
+              child: ScaleTransition(
+                scale: _scaleAnimation,
+                child: Padding(
+                  padding: const EdgeInsets.all(32),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Spacer(),
+                      RegistrationSuccessHero(email: widget.email),
+                      const Spacer(),
+                      const RegistrationSuccessSlideTrack(),
+                      const SizedBox(height: 32),
+                    ],
                   ),
-                );
-              },
+                ),
+              ),
             ),
           ),
         ),

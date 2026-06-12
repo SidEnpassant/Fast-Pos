@@ -1,7 +1,14 @@
 import 'dart:async';
-
+import 'package:flutter/foundation.dart';
 import 'package:bloc/bloc.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/domain/analytics/business_analytics.dart';
+import 'package:inventopos/domain/billing/bill_revenue.dart';
+import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/domain/entities/customer.dart';
+import 'package:inventopos/domain/entities/expense.dart';
+import 'package:inventopos/domain/entities/product.dart';
+import 'package:inventopos/domain/entities/user_profile.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
@@ -31,6 +38,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     on<DashboardHubNotificationsReceived>(_onNotifications);
     on<DashboardHubConnectivityChanged>(_onConnectivity);
     on<DashboardHubAiUnreadChanged>(_onAiUnread);
+    on<DashboardHubRecomputeRequested>(_onRecompute);
   }
 
   final ObserveBillsUseCase _observeBills;
@@ -42,6 +50,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
   final NotificationsRepository _notifications;
 
   final List<StreamSubscription<dynamic>> _subs = [];
+  Timer? _debounce;
 
   Future<void> _onStarted(
     DashboardHubStarted event,
@@ -93,6 +102,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
 
   void _onBills(DashboardHubBillsReceived e, Emitter<DashboardHubState> emit) {
     emit(state.copyWith(bills: e.bills, loading: false));
+    _requestRecompute();
   }
 
   void _onProfile(
@@ -107,6 +117,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(products: e.products, loading: false));
+    _requestRecompute();
   }
 
   void _onExpenses(
@@ -114,6 +125,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(expenses: e.expenses));
+    _requestRecompute();
   }
 
   void _onCustomers(
@@ -121,6 +133,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(customers: e.customers));
+    _requestRecompute();
   }
 
   void _onPending(
@@ -128,6 +141,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(pendingSyncCount: e.count));
+    _requestRecompute();
   }
 
   void _onNotifications(
@@ -135,6 +149,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(notificationCount: e.notifications.length));
+    _requestRecompute();
   }
 
   void _onConnectivity(
@@ -142,6 +157,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(isOnline: e.isOnline));
+    _requestRecompute();
   }
 
   void _onAiUnread(
@@ -149,9 +165,59 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(aiUnreadCount: e.count));
+    _requestRecompute();
+  }
+
+  void _requestRecompute() {
+    _debounce?.cancel();
+    _debounce = Timer(const Duration(milliseconds: 100), () {
+      if (!isClosed) add(const DashboardHubRecomputeRequested());
+    });
+  }
+
+  Future<void> _onRecompute(
+    DashboardHubRecomputeRequested event,
+    Emitter<DashboardHubState> emit,
+  ) async {
+    final metrics = await compute(_computeDashboardMetrics, (
+      bills: state.bills ?? [],
+      products: state.products,
+      expenses: state.expenses,
+      customers: state.customers,
+      pendingSyncCount: state.pendingSyncCount,
+      isOnline: state.isOnline,
+      aiUnreadCount: state.aiUnreadCount,
+    ));
+
+    emit(state.copyWith(
+      revenueToday: metrics.revenueToday,
+      revenueThisMonth: metrics.revenueThisMonth,
+      billsToday: metrics.billsToday,
+      lowStockCount: metrics.lowStockCount,
+      monthExpenses: metrics.monthExpenses,
+      netProfitThisMonth: metrics.netProfitThisMonth,
+      totalCreditOutstanding: metrics.totalCreditOutstanding,
+      topCreditCustomers: metrics.topCreditCustomers,
+      lowStockProducts: metrics.lowStockProducts,
+      billsThisMonth: metrics.billsThisMonth,
+      avgBillValueToday: metrics.avgBillValueToday,
+      revenueYesterday: metrics.revenueYesterday,
+      revenueTodayVsYesterdayPercent: metrics.revenueTodayVsYesterdayPercent,
+      partialBills: metrics.partialBills,
+      partialBillsCount: metrics.partialBillsCount,
+      pendingCollectionAmount: metrics.pendingCollectionAmount,
+      outOfStockCount: metrics.outOfStockCount,
+      inventoryRetailValue: metrics.inventoryRetailValue,
+      activeCustomersThisMonth: metrics.activeCustomersThisMonth,
+      profitMarginPercent: metrics.profitMarginPercent,
+      monthPaymentMix: metrics.monthPaymentMix,
+      topProductsThisMonth: metrics.topProductsThisMonth,
+      attentionItemCount: metrics.attentionItemCount,
+    ));
   }
 
   Future<void> _cancelSubs() async {
+    _debounce?.cancel();
     for (final s in _subs) {
       await s.cancel();
     }
@@ -163,4 +229,189 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     await _cancelSubs();
     return super.close();
   }
+}
+
+typedef _MetricInputs = ({
+  List<Bill> bills,
+  List<Product> products,
+  List<Expense> expenses,
+  List<Customer> customers,
+  int pendingSyncCount,
+  bool isOnline,
+  int aiUnreadCount,
+});
+
+typedef _MetricOutputs = ({
+  double revenueToday,
+  double revenueThisMonth,
+  int billsToday,
+  int lowStockCount,
+  double monthExpenses,
+  double netProfitThisMonth,
+  double totalCreditOutstanding,
+  List<Customer> topCreditCustomers,
+  List<Product> lowStockProducts,
+  int billsThisMonth,
+  double avgBillValueToday,
+  double revenueYesterday,
+  double? revenueTodayVsYesterdayPercent,
+  List<Bill> partialBills,
+  int partialBillsCount,
+  double pendingCollectionAmount,
+  int outOfStockCount,
+  double inventoryRetailValue,
+  int activeCustomersThisMonth,
+  double? profitMarginPercent,
+  PaymentMixSnapshot monthPaymentMix,
+  List<DashboardTopProduct> topProductsThisMonth,
+  int attentionItemCount,
+});
+
+_MetricOutputs _computeDashboardMetrics(_MetricInputs input) {
+  final bills = input.bills;
+  final products = input.products;
+  final expenses = input.expenses;
+  final customers = input.customers;
+
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final yesterday = today.subtract(const Duration(days: 1));
+
+  double revToday = 0;
+  double revThisMonth = 0;
+  double revYesterday = 0;
+  int billsTodayCount = 0;
+  int billsThisMonthCount = 0;
+  final List<Bill> partials = [];
+
+  for (final b in bills) {
+    final amount = BillRevenue.recognizedAmount(b);
+    if (BillRevenue.isSameCalendarDay(b, today)) {
+      revToday += amount;
+      billsTodayCount++;
+    } else if (BillRevenue.isSameCalendarDay(b, yesterday)) {
+      revYesterday += amount;
+    }
+
+    if (BillRevenue.isSameCalendarMonth(b, now)) {
+      revThisMonth += amount;
+      billsThisMonthCount++;
+    }
+
+    if (b.paymentStatus.toLowerCase().trim() == 'partial') {
+      partials.add(b);
+    }
+  }
+
+  double monthExp = 0;
+  for (final e in expenses) {
+    if (e.expenseDate.year == now.year && e.expenseDate.month == now.month) {
+      monthExp += e.amount;
+    }
+  }
+
+  final netProfit = revThisMonth - monthExp;
+  final margin = revThisMonth > 0 ? (netProfit / revThisMonth) * 100 : null;
+
+  final activeProducts = products.where((p) => p.isActive).toList();
+  int lowStock = 0;
+  int outStock = 0;
+  double retailVal = 0;
+  final List<Product> lowStockProds = [];
+
+  for (final p in activeProducts) {
+    retailVal += p.price * p.stockQuantity;
+    if (p.stockQuantity <= 0) {
+      outStock++;
+      lowStockProds.add(p);
+    } else if (p.isLowStock) {
+      lowStock++;
+      lowStockProds.add(p);
+    }
+  }
+
+  double totalCredit = 0;
+  for (final c in customers) {
+    totalCredit += c.creditBalance;
+  }
+  final topCredit = [...customers]
+    ..sort((a, b) => b.creditBalance.compareTo(a.creditBalance));
+
+  final avgBillToday = billsTodayCount > 0 ? revToday / billsTodayCount : 0.0;
+  final trend = revYesterday == 0 ? (revToday > 0 ? 100.0 : null) : ((revToday - revYesterday) / revYesterday) * 100;
+
+  final pendingCol = partials.fold<double>(0, (s, b) => s + (b.totalAmount - b.paidAmount).clamp(0, double.infinity));
+
+  // Payment Mix
+  var complete = 0;
+  var partial = 0;
+  var pending = 0;
+  for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
+    switch (b.paymentStatus.toLowerCase().trim()) {
+      case 'complete': complete++;
+      case 'partial': partial++;
+      default: pending++;
+    }
+  }
+
+  // Top Products
+  final agg = <String, ({int units, double revenue})>{};
+  for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
+    for (final line in b.lineItems) {
+      final name = line.productName.trim();
+      if (name.isEmpty) continue;
+      final cur = agg[name];
+      agg[name] = (
+        units: (cur?.units ?? 0) + line.quantity,
+        revenue: (cur?.revenue ?? 0) + line.totalPrice,
+      );
+    }
+  }
+  final topProds = agg.entries
+      .map((e) => DashboardTopProduct(name: e.key, unitsSold: e.value.units, revenue: e.value.revenue))
+      .toList()
+    ..sort((a, b) => b.revenue.compareTo(a.revenue));
+
+  // Active Customers
+  final custKeys = <String>{};
+  for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
+    final phone = b.customerPhone.trim();
+    final name = b.customerName.trim();
+    if (phone.isNotEmpty) custKeys.add(phone);
+    else if (name.isNotEmpty) custKeys.add(name.toLowerCase());
+  }
+
+  var attention = 0;
+  if (partials.isNotEmpty) attention++;
+  if (lowStock > 0) attention++;
+  if (outStock > 0) attention++;
+  if (input.pendingSyncCount > 0) attention++;
+  if (!input.isOnline) attention++;
+  if (input.aiUnreadCount > 0) attention++;
+
+  return (
+    revenueToday: revToday,
+    revenueThisMonth: revThisMonth,
+    billsToday: billsTodayCount,
+    lowStockCount: lowStock,
+    monthExpenses: monthExp,
+    netProfitThisMonth: netProfit,
+    totalCreditOutstanding: totalCredit,
+    topCreditCustomers: topCredit.take(3).toList(),
+    lowStockProducts: lowStockProds.take(8).toList(),
+    billsThisMonth: billsThisMonthCount,
+    avgBillValueToday: avgBillToday,
+    revenueYesterday: revYesterday,
+    revenueTodayVsYesterdayPercent: trend,
+    partialBills: partials,
+    partialBillsCount: partials.length,
+    pendingCollectionAmount: pendingCol,
+    outOfStockCount: outStock,
+    inventoryRetailValue: retailVal,
+    activeCustomersThisMonth: custKeys.length,
+    profitMarginPercent: margin,
+    monthPaymentMix: PaymentMixSnapshot(complete: complete, partial: partial, pending: pending),
+    topProductsThisMonth: topProds,
+    attentionItemCount: attention,
+  );
 }

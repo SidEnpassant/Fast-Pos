@@ -1,22 +1,29 @@
+import 'package:flutter/foundation.dart';
 import 'package:bloc/bloc.dart';
 import 'package:inventopos/application/messaging/build_message_use_cases.dart';
+import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
 import 'package:inventopos/domain/ai/entities/ai_preferences.dart';
+import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_state.dart';
 
 class MessagingAutomationBloc
     extends Bloc<MessagingAutomationEvent, MessagingAutomationState> {
-  MessagingAutomationBloc(this._launch)
-      : super(const MessagingAutomationState()) {
+  MessagingAutomationBloc(
+    this._launch,
+    this._listPending,
+  ) : super(const MessagingAutomationState()) {
     on<MessagingPreviewRequested>(_onPreview);
     on<MessagingBodyEdited>(_onEdit);
     on<MessagingChannelChanged>(_onChannel);
     on<MessagingLaunchRequested>(_onLaunch);
+    on<MessagingBatchQueueRequested>(_onQueue);
     on<MessagingDismissed>(_onDismiss);
   }
 
   final LaunchOutboundMessageUseCase _launch;
+  final ListPendingMessageActionsUseCase _listPending;
 
   void _onPreview(
     MessagingPreviewRequested event,
@@ -82,6 +89,40 @@ class MessagingAutomationBloc
       error: err,
       clearPreview: err == null,
     ));
+  }
+
+  Future<void> _onQueue(
+    MessagingBatchQueueRequested event,
+    Emitter<MessagingAutomationState> emit,
+  ) async {
+    emit(state.copyWith(queueLoading: true));
+
+    // Heavy lifting on Isolate
+    final queue = await compute(_buildQueue, (
+      listPending: _listPending,
+      bills: event.bills as List<Bill>,
+      shopName: event.shopName,
+      prefs: event.prefs as AiPreferences,
+    ));
+
+    emit(state.copyWith(
+      queue: queue,
+      queueLoading: false,
+    ));
+  }
+
+  static List<OutboundMessage> _buildQueue(
+      ({
+        ListPendingMessageActionsUseCase listPending,
+        List<Bill> bills,
+        String shopName,
+        AiPreferences prefs
+      }) arg) {
+    return arg.listPending(
+      bills: arg.bills,
+      shopName: arg.shopName,
+      prefs: arg.prefs,
+    );
   }
 
   void _onDismiss(

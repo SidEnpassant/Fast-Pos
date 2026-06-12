@@ -34,6 +34,19 @@ final class MessagingLaunchRequested extends MessagingAutomationEvent {
   const MessagingLaunchRequested();
 }
 
+final class MessagingBatchQueueRequested extends MessagingAutomationEvent {
+  const MessagingBatchQueueRequested({
+    required this.bills,
+    required this.shopName,
+    required this.prefs,
+  });
+  final dynamic bills;
+  final String shopName;
+  final dynamic prefs;
+  @override
+  List<Object?> get props => [bills, shopName, prefs];
+}
+
 final class MessagingDismissed extends MessagingAutomationEvent {
   const MessagingDismissed();
 }

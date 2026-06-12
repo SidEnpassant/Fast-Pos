@@ -8,11 +8,47 @@ import 'package:inventopos/domain/entities/user_profile.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_state.dart';
 import 'package:inventopos/presentation/messaging/widgets/message_action_tile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class BatchMessageQueueScreen extends StatelessWidget {
+class BatchMessageQueueScreen extends StatefulWidget {
   const BatchMessageQueueScreen({super.key});
+
+  @override
+  State<BatchMessageQueueScreen> createState() => _BatchMessageQueueScreenState();
+}
+
+class _BatchMessageQueueScreenState extends State<BatchMessageQueueScreen> {
+  @override
+  void initState() {
+    super.initState();
+    _requestQueue();
+  }
+
+  Future<void> _requestQueue() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+    final prefs = await context.read<ObserveAiPreferencesUseCase>()(uid).first;
+    final profileStream = context.read<ObserveProfileForCurrentUserUseCase>().call();
+    final profileList = profileStream != null ? await profileStream.first : null;
+    
+    final shopName = profileList != null && profileList.isNotEmpty 
+        ? profileList.first.businessName ?? 'Our Shop'
+        : 'Our Shop';
+
+    if (mounted) {
+      final bills = context.read<DashboardHubBloc>().state.bills ?? [];
+      context.read<MessagingAutomationBloc>().add(
+            MessagingBatchQueueRequested(
+              bills: bills,
+              shopName: shopName,
+              prefs: prefs,
+            ),
+          );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,67 +56,29 @@ class BatchMessageQueueScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Message Queue'),
       ),
-      body: BlocBuilder<DashboardHubBloc, DashboardHubState>(
-        builder: (context, dashState) {
-          final bills = dashState.bills;
-          if (bills == null || (bills.isEmpty && dashState.loading)) {
+      body: BlocBuilder<MessagingAutomationBloc, MessagingAutomationState>(
+        builder: (context, state) {
+          if (state.queueLoading) {
             return const Center(child: CircularProgressIndicator());
           }
 
-          return FutureBuilder<List<OutboundMessage>>(
-            future: _buildActions(context, bills),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              final actions = snapshot.data ?? [];
-              if (actions.isEmpty) {
-                return const Center(
-                  child: Text('No pending messages for today.'),
-                );
-              }
+          final actions = state.queue;
+          if (actions.isEmpty) {
+            return const Center(
+              child: Text('No pending messages for today.'),
+            );
+          }
 
-              return ListView.separated(
-                padding: const EdgeInsets.all(16),
-                itemCount: actions.length,
-                separatorBuilder: (_, __) => const Divider(),
-                itemBuilder: (context, index) {
-                  return MessageActionTile(message: actions[index]);
-                },
-              );
+          return ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: actions.length,
+            separatorBuilder: (_, __) => const Divider(),
+            itemBuilder: (context, index) {
+              return MessageActionTile(message: actions[index]);
             },
           );
         },
       ),
-    );
-  }
-
-  Future<List<OutboundMessage>> _buildActions(
-      BuildContext context, List<Bill> bills) async {
-    final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
-    
-    // Capture dependencies before async gap
-    final prefsUseCase = context.read<ObserveAiPreferencesUseCase>();
-    final profileUseCase = context.read<ObserveProfileForCurrentUserUseCase>();
-    final pendingActionsUseCase = context.read<ListPendingMessageActionsUseCase>();
-
-    final prefs = await prefsUseCase(uid).first;
-    
-    final profileStream = profileUseCase.call();
-    List<UserProfile>? profileList;
-    if (profileStream != null) {
-      profileList = await profileStream.first;
-    }
-    
-    String shopName = 'Our Shop';
-    if (profileList != null && profileList.isNotEmpty) {
-      shopName = profileList.first.businessName ?? 'Our Shop';
-    }
-
-    return pendingActionsUseCase(
-      bills: bills,
-      shopName: shopName,
-      prefs: prefs,
     );
   }
 }

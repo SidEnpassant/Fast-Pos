@@ -32,103 +32,103 @@ class ProductListTile extends StatelessWidget {
         ? (p.stockQuantity / (p.minStockThreshold * 2)).clamp(0.0, 1.0)
         : 1.0;
 
-    return Padding(
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.md,
-        vertical: AppSpacing.xs,
-      ),
-      child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
-        child: InkWell(
-          onTap: onTap,
+    return RepaintBoundary(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md,
+          vertical: AppSpacing.xs,
+        ),
+        child: Material(
+          color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppRadii.lg),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(AppRadii.md),
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(AppRadii.lg),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadii.md),
+                        ),
+                        child: Icon(
+                          Icons.inventory_2_outlined,
+                          color: theme.colorScheme.primary,
+                          size: 22,
+                        ),
                       ),
-                      child: Icon(
-                        Icons.inventory_2_outlined,
-                        color: theme.colorScheme.primary,
-                        size: 22,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            p.name,
-                            style: theme.textTheme.titleSmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            fmt.format(p.price),
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              color: theme.colorScheme.primary,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                          if (p.category != null && p.category!.isNotEmpty)
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
                             Text(
-                              p.category!,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                color: theme.colorScheme.onSurfaceVariant,
+                              p.name,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              fmt.format(p.price),
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: theme.colorScheme.primary,
+                                fontWeight: FontWeight.w600,
                               ),
                             ),
-                        ],
+                            if (p.category != null && p.category!.isNotEmpty)
+                              Text(
+                                p.category!,
+                                style: theme.textTheme.labelSmall?.copyWith(
+                                  color: theme.colorScheme.onSurfaceVariant,
+                                ),
+                              ),
+                          ],
+                        ),
                       ),
-                    ),
-                    AppStatusChip(label: statusLabel, color: statusColor),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(4),
+                      AppStatusChip(label: statusLabel, color: statusColor),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
                         child: LinearProgressIndicator(
                           value: fill,
                           minHeight: 6,
                           backgroundColor:
                               theme.colorScheme.surfaceContainerHighest,
                           color: statusColor,
+                          borderRadius: BorderRadius.circular(4),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 12),
+                      const SizedBox(width: 12),
+                      Text(
+                        'Stock ${p.stockQuantity} / ${p.minStockThreshold}',
+                        style: theme.textTheme.labelSmall,
+                      ),
+                    ],
+                  ),
+                  if (p.barcode != null && p.barcode!.isNotEmpty) ...[
+                    const SizedBox(height: 6),
                     Text(
-                      'Stock ${p.stockQuantity} / ${p.minStockThreshold}',
-                      style: theme.textTheme.labelSmall,
+                      p.barcode!,
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        color: theme.colorScheme.outline,
+                      ),
                     ),
                   ],
-                ),
-                if (p.barcode != null && p.barcode!.isNotEmpty) ...[
-                  const SizedBox(height: 6),
-                  Text(
-                    p.barcode!,
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: theme.colorScheme.outline,
-                    ),
-                  ),
                 ],
-              ],
+              ),
             ),
           ),
         ),

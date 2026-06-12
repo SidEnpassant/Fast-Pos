@@ -20,19 +20,22 @@ class MessageActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      leading: CircleAvatar(
-        backgroundColor: _colorFor(message.channel).withOpacity(0.1),
-        child: Icon(_iconFor(message.channel), color: _colorFor(message.channel)),
+    return RepaintBoundary(
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: _colorFor(message.channel).withValues(alpha: 0.1),
+          child:
+              Icon(_iconFor(message.channel), color: _colorFor(message.channel)),
+        ),
+        title: Text(message.recipientName ?? message.phone),
+        subtitle: Text(
+          message.body,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+        ),
+        trailing: trailing ?? const Icon(Icons.chevron_right),
+        onTap: () => _openPreview(context),
       ),
-      title: Text(message.recipientName ?? message.phone),
-      subtitle: Text(
-        message.body,
-        maxLines: 1,
-        overflow: TextOverflow.ellipsis,
-      ),
-      trailing: trailing ?? const Icon(Icons.chevron_right),
-      onTap: () => _openPreview(context),
     );
   }
 

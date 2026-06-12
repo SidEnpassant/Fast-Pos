@@ -274,39 +274,69 @@ abstract final class BusinessAnalytics {
     DateTime? reference,
   }) {
     final now = (reference ?? DateTime.now()).toLocal();
-    final prev = _previousMonth(now);
+    final today = DateTime(now.year, now.month, now.day);
+    final prevMonth = _previousMonth(now);
 
-    final revenueNow = revenueForMonth(bills, now);
-    final revenuePrev = revenueForMonth(bills, prev);
-    final billsNow = billsCountForMonth(bills, now);
-    final billsPrev = billsCountForMonth(bills, prev);
-    final expNow = expensesForMonth(expenses, now);
-    final expPrev = expensesForMonth(expenses, prev);
-    final profitNow = revenueNow - expNow;
-    final profitPrev = revenuePrev - expPrev;
+    double revenueNow = 0;
+    double revenuePrev = 0;
+    int billsNow = 0;
+    int billsPrev = 0;
+    
+    final List<Bill> monthBills = [];
+    final List<Bill> sortedBills = List<Bill>.from(bills)
+      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-    final monthBills =
-        bills.where((b) => BillRevenue.isSameCalendarMonth(b, now)).toList();
-    final avgBill = billsNow > 0 ? revenueNow / billsNow : 0.0;
-
-    var complete = 0;
-    var partial = 0;
-    var pending = 0;
-    for (final b in monthBills) {
-      switch (b.paymentStatus.toLowerCase().trim()) {
-        case 'complete':
-          complete++;
-        case 'partial':
-          partial++;
-        default:
-          pending++;
+    for (final b in bills) {
+      final amount = BillRevenue.recognizedAmount(b);
+      if (BillRevenue.isSameCalendarMonth(b, now)) {
+        revenueNow += amount;
+        billsNow++;
+        monthBills.add(b);
+      } else if (BillRevenue.isSameCalendarMonth(b, prevMonth)) {
+        revenuePrev += amount;
+        billsPrev++;
       }
     }
 
-    final recent = List<Bill>.from(bills)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
+    double expNow = 0;
+    double expPrev = 0;
+    final Map<String, double> categoriesNow = {};
 
-    final recentRows = recent.take(6).map((b) {
+    for (final e in expenses) {
+      if (e.expenseDate.year == now.year && e.expenseDate.month == now.month) {
+        expNow += e.amount;
+        final cat = e.category.trim().isEmpty ? 'Uncategorized' : e.category.trim();
+        categoriesNow.update(cat, (v) => v + e.amount, ifAbsent: () => e.amount);
+      } else if (e.expenseDate.year == prevMonth.year && e.expenseDate.month == prevMonth.month) {
+        expPrev += e.amount;
+      }
+    }
+
+    final profitNow = revenueNow - expNow;
+    final profitPrev = revenuePrev - expPrev;
+    final avgBill = billsNow > 0 ? revenueNow / billsNow : 0.0;
+
+    var complete = 0, partial = 0, pending = 0;
+    final productAgg = <String, ({int units, double revenue})>{};
+
+    for (final b in monthBills) {
+      switch (b.paymentStatus.toLowerCase().trim()) {
+        case 'complete': complete++; break;
+        case 'partial': partial++; break;
+        default: pending++; break;
+      }
+      for (final line in b.lineItems) {
+        final name = line.productName.trim();
+        if (name.isEmpty) continue;
+        final cur = productAgg[name];
+        productAgg[name] = (
+          units: (cur?.units ?? 0) + line.quantity,
+          revenue: (cur?.revenue ?? 0) + line.totalPrice,
+        );
+      }
+    }
+
+    final recentRows = sortedBills.take(6).map((b) {
       final num = b.displayBillNumber?.trim();
       return RecentBillRow(
         id: b.id,
@@ -318,88 +348,47 @@ abstract final class BusinessAnalytics {
       );
     }).toList();
 
-    final productAgg = <String, ({int units, double revenue})>{};
-    for (final b in monthBills) {
-      for (final line in b.lineItems) {
-        final name = line.productName.trim();
-        if (name.isEmpty) continue;
-        final cur = productAgg[name];
-        productAgg[name] = (
-          units: (cur?.units ?? 0) + line.quantity,
-          revenue: (cur?.revenue ?? 0) + line.totalPrice,
-        );
-      }
-    }
     final topProducts = productAgg.entries
-        .map(
-          (e) => TopProductRow(
-            name: e.key,
-            unitsSold: e.value.units,
-            revenue: e.value.revenue,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.revenue.compareTo(a.revenue));
+        .map((e) => TopProductRow(name: e.key, unitsSold: e.value.units, revenue: e.value.revenue))
+        .toList()..sort((a, b) => b.revenue.compareTo(a.revenue));
 
-    final monthExpenses =
-        expenses.where((e) => e.expenseDate.year == now.year && e.expenseDate.month == now.month);
-    final byCategory = <String, double>{};
-    for (final e in monthExpenses) {
-      final cat = e.category.trim().isEmpty ? 'Uncategorized' : e.category.trim();
-      byCategory.update(cat, (v) => v + e.amount, ifAbsent: () => e.amount);
-    }
-    final totalExp = expNow;
-    final breakdown = byCategory.entries
-        .map(
-          (e) => ExpenseCategoryRow(
+    final breakdown = categoriesNow.entries
+        .map((e) => ExpenseCategoryRow(
             category: e.key,
             amount: e.value,
-            sharePercent: totalExp > 0 ? (e.value / totalExp) * 100 : 0,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.amount.compareTo(a.amount));
+            sharePercent: expNow > 0 ? (e.value / expNow) * 100 : 0))
+        .toList()..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final activeProducts =
-        products.where((p) => p.isActive && p.deletedAt == null).toList();
-    var out = 0;
-    var low = 0;
-    var healthy = 0;
-    var retail = 0.0;
-    var cost = 0.0;
+    final activeProducts = products.where((p) => p.isActive && p.deletedAt == null);
+    int out = 0, low = 0, healthy = 0;
+    double retail = 0, cost = 0;
+    final List<InventoryProductRow> lowItems = [];
+
     for (final p in activeProducts) {
       retail += p.price * p.stockQuantity;
-      if (p.costPrice != null) {
-        cost += p.costPrice! * p.stockQuantity;
-      }
+      if (p.costPrice != null) cost += p.costPrice! * p.stockQuantity;
+      
       if (p.stockQuantity <= 0) {
         out++;
+        lowItems.add(InventoryProductRow(
+          id: p.id, name: p.name, stockQuantity: p.stockQuantity,
+          minStockThreshold: p.minStockThreshold, price: p.price, isOutOfStock: true,
+        ));
       } else if (p.isLowStock) {
         low++;
+        lowItems.add(InventoryProductRow(
+          id: p.id, name: p.name, stockQuantity: p.stockQuantity,
+          minStockThreshold: p.minStockThreshold, price: p.price, isOutOfStock: false,
+        ));
       } else {
         healthy++;
       }
     }
 
-    final lowItems = activeProducts
-        .where((p) => p.isLowStock)
-        .map(
-          (p) => InventoryProductRow(
-            id: p.id,
-            name: p.name,
-            stockQuantity: p.stockQuantity,
-            minStockThreshold: p.minStockThreshold,
-            price: p.price,
-            isOutOfStock: p.stockQuantity <= 0,
-          ),
-        )
-        .toList()
-      ..sort((a, b) {
-        if (a.isOutOfStock != b.isOutOfStock) {
-          return a.isOutOfStock ? -1 : 1;
-        }
-        return a.stockQuantity.compareTo(b.stockQuantity);
-      });
+    lowItems.sort((a, b) {
+      if (a.isOutOfStock != b.isOutOfStock) return a.isOutOfStock ? -1 : 1;
+      return a.stockQuantity.compareTo(b.stockQuantity);
+    });
 
     return BusinessAnalyticsSnapshot(
       revenueTrend: MonthTrend(current: revenueNow, previous: revenuePrev),
@@ -407,21 +396,14 @@ abstract final class BusinessAnalytics {
       expensesTrend: MonthTrend(current: expNow, previous: expPrev),
       profitTrend: MonthTrend(current: profitNow, previous: profitPrev),
       avgBillValueThisMonth: avgBill,
-      paymentMix: PaymentMixSnapshot(
-        complete: complete,
-        partial: partial,
-        pending: pending,
-      ),
+      paymentMix: PaymentMixSnapshot(complete: complete, partial: partial, pending: pending),
       recentBills: recentRows,
       topProductsThisMonth: topProducts.take(8).toList(),
       expenseBreakdownThisMonth: breakdown,
       inventory: InventoryInsightsSnapshot(
-        totalSkus: activeProducts.length,
-        outOfStock: out,
-        lowStock: low,
-        inStock: healthy,
-        retailValue: retail,
-        costValue: cost,
+        totalSkus: out + low + healthy,
+        outOfStock: out, lowStock: low, inStock: healthy,
+        retailValue: retail, costValue: cost,
         lowStockItems: lowItems.take(20).toList(),
       ),
     );

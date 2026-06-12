@@ -51,64 +51,260 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
       body: SafeArea(
-        child: BlocBuilder<DashboardHubBloc, DashboardHubState>(
-          builder: (context, state) {
-            if (state.loading && state.bills == null) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            return DashboardAiBootstrap(
-              child: RefreshIndicator(
-              onRefresh: () async {
-                final uid =
-                    context.read<AuthRepository>().currentSession?.userId;
-                if (uid != null) {
-                  context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
-                }
-              },
-              child: CustomScrollView(
-                slivers: [
-                  SliverToBoxAdapter(child: _Header(state: state)),
-                  SliverPadding(
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    sliver: SliverList(
-                      delegate: SliverChildListDelegate([
-                        _KpiGrid(state: state),
-                        const SizedBox(height: AppSpacing.md),
-                        DashboardPulseStrip(state: state),
-                        const SizedBox(height: AppSpacing.lg),
-                        DashboardNeedsAttention(state: state),
-                        if (state.attentionItemCount > 0)
-                          const SizedBox(height: AppSpacing.lg),
-                        QuickActionsGrid(state: state),
-                        const SizedBox(height: AppSpacing.lg),
-                        const DashboardAiBriefingCard(),
-                        const SizedBox(height: AppSpacing.lg),
-                        const DashboardOpeningSnapshot(),
-                        const SizedBox(height: AppSpacing.lg),
-                        const DashboardReorderAlerts(),
-                        const SizedBox(height: AppSpacing.lg),
-                        DashboardPaymentHealth(state: state),
-                        if (state.monthPaymentMix.total > 0)
-                          const SizedBox(height: AppSpacing.lg),
-                        DashboardTopSellers(state: state),
-                        if (state.topProductsThisMonth.isNotEmpty)
-                          const SizedBox(height: AppSpacing.lg),
-                        if (state.lowStockProducts.isNotEmpty) ...[
-                          _LowStockAlerts(state: state),
-                          const SizedBox(height: AppSpacing.lg),
-                        ],
-                        _RecentBills(state: state),
-                        const SizedBox(height: AppSpacing.lg),
-                      ]),
-                    ),
+        child: DashboardAiBootstrap(
+          child: RefreshIndicator(
+            onRefresh: () async {
+              final uid =
+                  context.read<AuthRepository>().currentSession?.userId;
+              if (uid != null) {
+                context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
+              }
+            },
+            child: CustomScrollView(
+              slivers: [
+                const SliverToBoxAdapter(child: _DashboardHeader()),
+                SliverPadding(
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  sliver: SliverList(
+                    delegate: SliverChildListDelegate([
+                      const _KpiSection(),
+                      const SizedBox(height: AppSpacing.md),
+                      const _PulseSection(),
+                      const SizedBox(height: AppSpacing.lg),
+                      const _AttentionSection(),
+                      const _QuickActionsSection(),
+                      const SizedBox(height: AppSpacing.lg),
+                      const DashboardAiBriefingCard(),
+                      const SizedBox(height: AppSpacing.lg),
+                      const DashboardOpeningSnapshot(),
+                      const SizedBox(height: AppSpacing.lg),
+                      const DashboardReorderAlerts(),
+                      const SizedBox(height: AppSpacing.lg),
+                      const _PaymentHealthSection(),
+                      const _TopSellersSection(),
+                      const _LowStockSection(),
+                      const _RecentBillsSection(),
+                      const SizedBox(height: AppSpacing.lg),
+                    ]),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-            );
-          },
+          ),
         ),
       ),
+    );
+  }
+}
+
+class _DashboardHeader extends StatelessWidget {
+  const _DashboardHeader();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) =>
+          p.profiles != c.profiles || p.notificationCount != c.notificationCount,
+      builder: (context, state) {
+        final theme = Theme.of(context);
+        final hour = DateTime.now().hour;
+        final business = state.profiles?.isNotEmpty == true
+            ? state.profiles!.first.businessName ?? 'Your business'
+            : 'Your business';
+
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _greetingForHour(hour),
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                    Text(
+                      business,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      DateFormat('EEEE, d MMMM').format(DateTime.now()),
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              BlocBuilder<ConnectivityBloc, ConnectivityState>(
+                builder: (context, conn) {
+                  return AppSyncStatusChip(
+                    isOnline: conn.isOnline,
+                    pendingCount: conn.pendingSyncCount,
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.person_2_outlined),
+                tooltip: 'Profile',
+                onPressed: () => context.push('/app/profile'),
+              ),
+              IconButton(
+                icon: Badge(
+                  label: state.notificationCount > 0
+                      ? Text('${state.notificationCount}')
+                      : null,
+                  child: const Icon(Icons.notifications_outlined),
+                ),
+                onPressed: () => context.push('/app/notifications'),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _KpiSection extends StatelessWidget {
+  const _KpiSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) =>
+          p.revenueToday != c.revenueToday ||
+          p.revenueThisMonth != c.revenueThisMonth ||
+          p.partialBillsCount != c.partialBillsCount ||
+          p.netProfitThisMonth != c.netProfitThisMonth,
+      builder: (context, state) {
+        return _KpiGrid(state: state);
+      },
+    );
+  }
+}
+
+class _PulseSection extends StatelessWidget {
+  const _PulseSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) => p.bills != c.bills,
+      builder: (context, state) => DashboardPulseStrip(state: state),
+    );
+  }
+}
+
+class _AttentionSection extends StatelessWidget {
+  const _AttentionSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) => p.attentionItemCount != c.attentionItemCount,
+      builder: (context, state) {
+        if (state.attentionItemCount == 0) return const SizedBox.shrink();
+        return Column(
+          children: [
+            DashboardNeedsAttention(state: state),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _QuickActionsSection extends StatelessWidget {
+  const _QuickActionsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) =>
+          p.partialBillsCount != c.partialBillsCount ||
+          p.lowStockCount != c.lowStockCount,
+      builder: (context, state) => QuickActionsGrid(state: state),
+    );
+  }
+}
+
+class _PaymentHealthSection extends StatelessWidget {
+  const _PaymentHealthSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) => p.monthPaymentMix != c.monthPaymentMix,
+      builder: (context, state) {
+        if (state.monthPaymentMix.total == 0) return const SizedBox.shrink();
+        return Column(
+          children: [
+            DashboardPaymentHealth(state: state),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _TopSellersSection extends StatelessWidget {
+  const _TopSellersSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) => p.topProductsThisMonth != c.topProductsThisMonth,
+      builder: (context, state) {
+        if (state.topProductsThisMonth.isEmpty) return const SizedBox.shrink();
+        return Column(
+          children: [
+            DashboardTopSellers(state: state),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _LowStockSection extends StatelessWidget {
+  const _LowStockSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) => p.lowStockProducts != c.lowStockProducts,
+      builder: (context, state) {
+        if (state.lowStockProducts.isEmpty) return const SizedBox.shrink();
+        return Column(
+          children: [
+            _LowStockAlerts(state: state),
+            const SizedBox(height: AppSpacing.lg),
+          ],
+        );
+      },
+    );
+  }
+}
+
+class _RecentBillsSection extends StatelessWidget {
+  const _RecentBillsSection();
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<DashboardHubBloc, DashboardHubState>(
+      buildWhen: (p, c) => p.bills != c.bills,
+      builder: (context, state) => _RecentBills(state: state),
     );
   }
 }

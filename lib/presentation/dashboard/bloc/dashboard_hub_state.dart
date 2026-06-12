@@ -32,6 +32,29 @@ class DashboardHubState extends Equatable {
     this.aiUnreadCount = 0,
     this.isOnline = true,
     this.loading = true,
+    this.revenueToday = 0,
+    this.revenueThisMonth = 0,
+    this.billsToday = 0,
+    this.lowStockCount = 0,
+    this.monthExpenses = 0,
+    this.netProfitThisMonth = 0,
+    this.totalCreditOutstanding = 0,
+    this.topCreditCustomers = const [],
+    this.lowStockProducts = const [],
+    this.billsThisMonth = 0,
+    this.avgBillValueToday = 0,
+    this.revenueYesterday = 0,
+    this.revenueTodayVsYesterdayPercent,
+    this.partialBills = const [],
+    this.partialBillsCount = 0,
+    this.pendingCollectionAmount = 0,
+    this.outOfStockCount = 0,
+    this.inventoryRetailValue = 0,
+    this.activeCustomersThisMonth = 0,
+    this.profitMarginPercent,
+    this.monthPaymentMix = const PaymentMixSnapshot(complete: 0, partial: 0, pending: 0),
+    this.topProductsThisMonth = const [],
+    this.attentionItemCount = 0,
   });
 
   final List<UserProfile>? profiles;
@@ -45,186 +68,29 @@ class DashboardHubState extends Equatable {
   final bool isOnline;
   final bool loading;
 
-  double get revenueToday {
-    final bills = this.bills;
-    if (bills == null) return 0;
-    final today = DateTime.now();
-    return bills
-        .where((b) => BillRevenue.isSameCalendarDay(b, today))
-        .fold(0.0, (sum, b) => sum + BillRevenue.recognizedAmount(b));
-  }
-
-  double get revenueThisMonth {
-    final bills = this.bills;
-    if (bills == null) return 0;
-    final now = DateTime.now();
-    return bills
-        .where((b) => BillRevenue.isSameCalendarMonth(b, now))
-        .fold(0.0, (sum, b) => sum + BillRevenue.recognizedAmount(b));
-  }
-
-  int get billsToday {
-    final bills = this.bills;
-    if (bills == null) return 0;
-    final today = DateTime.now();
-    return bills.where((b) => BillRevenue.isSameCalendarDay(b, today)).length;
-  }
-
-  int get lowStockCount => products.where((p) => p.isLowStock && p.isActive).length;
-
-  double get monthExpenses {
-    final now = DateTime.now();
-    return expenses
-        .where((e) => e.expenseDate.year == now.year && e.expenseDate.month == now.month)
-        .fold(0.0, (s, e) => s + e.amount);
-  }
-
-  double get netProfitThisMonth => revenueThisMonth - monthExpenses;
-
-  double get totalCreditOutstanding =>
-      customers.fold(0.0, (s, c) => s + c.creditBalance);
-
-  List<Customer> get topCreditCustomers {
-    final withCredit = customers.where((c) => c.creditBalance > 0).toList()
-      ..sort((a, b) => b.creditBalance.compareTo(a.creditBalance));
-    return withCredit.take(3).toList();
-  }
-
-  List<Product> get lowStockProducts =>
-      products.where((p) => p.isLowStock && p.isActive).take(8).toList();
-
-  int get billsThisMonth {
-    final bills = this.bills;
-    if (bills == null) return 0;
-    final now = DateTime.now();
-    return bills.where((b) => BillRevenue.isSameCalendarMonth(b, now)).length;
-  }
-
-  double get avgBillValueToday =>
-      billsToday > 0 ? revenueToday / billsToday : 0;
-
-  double get revenueYesterday {
-    final bills = this.bills;
-    if (bills == null) return 0;
-    final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return bills
-        .where((b) => BillRevenue.isSameCalendarDay(b, yesterday))
-        .fold(0.0, (s, b) => s + BillRevenue.recognizedAmount(b));
-  }
-
-  double? get revenueTodayVsYesterdayPercent {
-    final prev = revenueYesterday;
-    final cur = revenueToday;
-    if (prev == 0) return cur > 0 ? 100 : null;
-    return ((cur - prev) / prev) * 100;
-  }
-
-  List<Bill> get partialBills =>
-      bills
-          ?.where((b) => b.paymentStatus.toLowerCase().trim() == 'partial')
-          .toList() ??
-      const [];
-
-  int get partialBillsCount => partialBills.length;
-
-  double get pendingCollectionAmount => partialBills.fold(
-        0.0,
-        (s, b) => s + (b.totalAmount - b.paidAmount).clamp(0, double.infinity),
-      );
-
-  int get outOfStockCount =>
-      products.where((p) => p.isActive && p.stockQuantity <= 0).length;
-
-  double get inventoryRetailValue => products
-      .where((p) => p.isActive && p.deletedAt == null)
-      .fold(0.0, (s, p) => s + p.price * p.stockQuantity);
-
-  int get activeCustomersThisMonth {
-    final bills = this.bills;
-    if (bills == null) return 0;
-    final now = DateTime.now();
-    final keys = <String>{};
-    for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
-      final phone = b.customerPhone.trim();
-      final name = b.customerName.trim();
-      if (phone.isNotEmpty) {
-        keys.add(phone);
-      } else if (name.isNotEmpty) {
-        keys.add(name.toLowerCase());
-      }
-    }
-    return keys.length;
-  }
-
-  double? get profitMarginPercent {
-    if (revenueThisMonth <= 0) return null;
-    return (netProfitThisMonth / revenueThisMonth) * 100;
-  }
-
-  PaymentMixSnapshot get monthPaymentMix {
-    final bills = this.bills;
-    if (bills == null) {
-      return const PaymentMixSnapshot(complete: 0, partial: 0, pending: 0);
-    }
-    final now = DateTime.now();
-    var complete = 0;
-    var partial = 0;
-    var pending = 0;
-    for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
-      switch (b.paymentStatus.toLowerCase().trim()) {
-        case 'complete':
-          complete++;
-        case 'partial':
-          partial++;
-        default:
-          pending++;
-      }
-    }
-    return PaymentMixSnapshot(
-      complete: complete,
-      partial: partial,
-      pending: pending,
-    );
-  }
-
-  List<DashboardTopProduct> get topProductsThisMonth {
-    final bills = this.bills;
-    if (bills == null) return const [];
-    final now = DateTime.now();
-    final agg = <String, ({int units, double revenue})>{};
-    for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
-      for (final line in b.lineItems) {
-        final name = line.productName.trim();
-        if (name.isEmpty) continue;
-        final cur = agg[name];
-        agg[name] = (
-          units: (cur?.units ?? 0) + line.quantity,
-          revenue: (cur?.revenue ?? 0) + line.totalPrice,
-        );
-      }
-    }
-    return agg.entries
-        .map(
-          (e) => DashboardTopProduct(
-            name: e.key,
-            unitsSold: e.value.units,
-            revenue: e.value.revenue,
-          ),
-        )
-        .toList()
-      ..sort((a, b) => b.revenue.compareTo(a.revenue));
-  }
-
-  int get attentionItemCount {
-    var n = 0;
-    if (partialBillsCount > 0) n++;
-    if (lowStockCount > 0) n++;
-    if (outOfStockCount > 0) n++;
-    if (pendingSyncCount > 0) n++;
-    if (!isOnline) n++;
-    if (aiUnreadCount > 0) n++;
-    return n;
-  }
+  final double revenueToday;
+  final double revenueThisMonth;
+  final int billsToday;
+  final int lowStockCount;
+  final double monthExpenses;
+  final double netProfitThisMonth;
+  final double totalCreditOutstanding;
+  final List<Customer> topCreditCustomers;
+  final List<Product> lowStockProducts;
+  final int billsThisMonth;
+  final double avgBillValueToday;
+  final double revenueYesterday;
+  final double? revenueTodayVsYesterdayPercent;
+  final List<Bill> partialBills;
+  final int partialBillsCount;
+  final double pendingCollectionAmount;
+  final int outOfStockCount;
+  final double inventoryRetailValue;
+  final int activeCustomersThisMonth;
+  final double? profitMarginPercent;
+  final PaymentMixSnapshot monthPaymentMix;
+  final List<DashboardTopProduct> topProductsThisMonth;
+  final int attentionItemCount;
 
   DashboardHubState copyWith({
     List<UserProfile>? profiles,
@@ -237,6 +103,29 @@ class DashboardHubState extends Equatable {
     int? aiUnreadCount,
     bool? isOnline,
     bool? loading,
+    double? revenueToday,
+    double? revenueThisMonth,
+    int? billsToday,
+    int? lowStockCount,
+    double? monthExpenses,
+    double? netProfitThisMonth,
+    double? totalCreditOutstanding,
+    List<Customer>? topCreditCustomers,
+    List<Product>? lowStockProducts,
+    int? billsThisMonth,
+    double? avgBillValueToday,
+    double? revenueYesterday,
+    double? revenueTodayVsYesterdayPercent,
+    List<Bill>? partialBills,
+    int? partialBillsCount,
+    double? pendingCollectionAmount,
+    int? outOfStockCount,
+    double? inventoryRetailValue,
+    int? activeCustomersThisMonth,
+    double? profitMarginPercent,
+    PaymentMixSnapshot? monthPaymentMix,
+    List<DashboardTopProduct>? topProductsThisMonth,
+    int? attentionItemCount,
   }) {
     return DashboardHubState(
       profiles: profiles ?? this.profiles,
@@ -249,6 +138,32 @@ class DashboardHubState extends Equatable {
       aiUnreadCount: aiUnreadCount ?? this.aiUnreadCount,
       isOnline: isOnline ?? this.isOnline,
       loading: loading ?? this.loading,
+      revenueToday: revenueToday ?? this.revenueToday,
+      revenueThisMonth: revenueThisMonth ?? this.revenueThisMonth,
+      billsToday: billsToday ?? this.billsToday,
+      lowStockCount: lowStockCount ?? this.lowStockCount,
+      monthExpenses: monthExpenses ?? this.monthExpenses,
+      netProfitThisMonth: netProfitThisMonth ?? this.netProfitThisMonth,
+      totalCreditOutstanding: totalCreditOutstanding ?? this.totalCreditOutstanding,
+      topCreditCustomers: topCreditCustomers ?? this.topCreditCustomers,
+      lowStockProducts: lowStockProducts ?? this.lowStockProducts,
+      billsThisMonth: billsThisMonth ?? this.billsThisMonth,
+      avgBillValueToday: avgBillValueToday ?? this.avgBillValueToday,
+      revenueYesterday: revenueYesterday ?? this.revenueYesterday,
+      revenueTodayVsYesterdayPercent:
+          revenueTodayVsYesterdayPercent ?? this.revenueTodayVsYesterdayPercent,
+      partialBills: partialBills ?? this.partialBills,
+      partialBillsCount: partialBillsCount ?? this.partialBillsCount,
+      pendingCollectionAmount:
+          pendingCollectionAmount ?? this.pendingCollectionAmount,
+      outOfStockCount: outOfStockCount ?? this.outOfStockCount,
+      inventoryRetailValue: inventoryRetailValue ?? this.inventoryRetailValue,
+      activeCustomersThisMonth:
+          activeCustomersThisMonth ?? this.activeCustomersThisMonth,
+      profitMarginPercent: profitMarginPercent ?? this.profitMarginPercent,
+      monthPaymentMix: monthPaymentMix ?? this.monthPaymentMix,
+      topProductsThisMonth: topProductsThisMonth ?? this.topProductsThisMonth,
+      attentionItemCount: attentionItemCount ?? this.attentionItemCount,
     );
   }
 
@@ -264,5 +179,28 @@ class DashboardHubState extends Equatable {
         aiUnreadCount,
         isOnline,
         loading,
+        revenueToday,
+        revenueThisMonth,
+        billsToday,
+        lowStockCount,
+        monthExpenses,
+        netProfitThisMonth,
+        totalCreditOutstanding,
+        topCreditCustomers,
+        lowStockProducts,
+        billsThisMonth,
+        avgBillValueToday,
+        revenueYesterday,
+        revenueTodayVsYesterdayPercent,
+        partialBills,
+        partialBillsCount,
+        pendingCollectionAmount,
+        outOfStockCount,
+        inventoryRetailValue,
+        activeCustomersThisMonth,
+        profitMarginPercent,
+        monthPaymentMix,
+        topProductsThisMonth,
+        attentionItemCount,
       ];
 }
