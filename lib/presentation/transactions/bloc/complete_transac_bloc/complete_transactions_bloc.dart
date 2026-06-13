@@ -25,6 +25,8 @@ class CompleteTransactionsBloc
   final ObserveBillsUseCase _observeBills;
   StreamSubscription<List<Bill>>? _sub;
   Timer? _debounce;
+  int _computeGeneration = 0;
+  bool _pendingImmediateRecompute = true;
 
   void setSearchQuery(String q) => add(CompleteSearchQueryChanged(q));
 
@@ -72,7 +74,12 @@ class CompleteTransactionsBloc
 
   void _requestRecompute() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 150), () {
+    if (_pendingImmediateRecompute) {
+      _pendingImmediateRecompute = false;
+      if (!isClosed) add(const CompleteRecomputeRequested());
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       if (!isClosed) add(const CompleteRecomputeRequested());
     });
   }
@@ -81,12 +88,16 @@ class CompleteTransactionsBloc
     CompleteRecomputeRequested event,
     Emitter<CompleteTransactionsViewState> emit,
   ) async {
-    final grouped = await compute(_groupTransactions, (
+    final generation = ++_computeGeneration;
+    final input = (
       bills: state.bills,
       query: state.searchQuery,
       start: state.startDate,
       end: state.endDate,
-    ));
+    );
+    final grouped = await compute(_groupTransactions, input);
+
+    if (isClosed || generation != _computeGeneration) return;
 
     emit(state.copyWith(
       groupedTransactions: grouped,
@@ -97,7 +108,7 @@ class CompleteTransactionsBloc
   static Map<String, List<Bill>> _groupTransactions(
       ({List<Bill> bills, String query, DateTime? start, DateTime? end}) arg) {
     final filtered = arg.bills.where((b) {
-      if (b.paymentStatus != 'complete') return false;
+      if (b.paymentStatus.toLowerCase().trim() != 'complete') return false;
 
       final matchesQuery = b.customerName.toLowerCase().contains(arg.query.toLowerCase());
       
@@ -120,6 +131,7 @@ class CompleteTransactionsBloc
   @override
   Future<void> close() {
     _debounce?.cancel();
+    _computeGeneration++;
     _sub?.cancel();
     return super.close();
   }

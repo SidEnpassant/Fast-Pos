@@ -17,14 +17,30 @@ class ProductRepositoryImpl implements ProductRepository {
   final SupabaseClient _client;
   final HiveProductDao _local;
   final _uuid = const Uuid();
+  final Map<String, Future<void>> _pullInFlight = {};
 
   @override
   Stream<List<Product>> watchProductsForUser(String userId) {
-    _pullRemote(userId);
+    unawaited(_pullRemote(userId));
     return _local.watchForUser(userId);
   }
 
   Future<void> _pullRemote(String userId) async {
+    final inFlight = _pullInFlight[userId];
+    if (inFlight != null) return inFlight;
+
+    final future = _pullRemoteOnce(userId);
+    _pullInFlight[userId] = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_pullInFlight[userId], future)) {
+        _pullInFlight.remove(userId);
+      }
+    }
+  }
+
+  Future<void> _pullRemoteOnce(String userId) async {
     try {
       final rows = await _client.from('products').select().eq('user_id', userId);
       final products = (rows as List)

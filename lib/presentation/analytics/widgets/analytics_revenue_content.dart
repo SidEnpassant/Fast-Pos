@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_chart.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_table.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
@@ -16,7 +15,7 @@ import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 class AnalyticsRevenueContent extends StatelessWidget {
   const AnalyticsRevenueContent({super.key, required this.state});
 
-  final AnalyticsState state;
+  final AnalyticsHubState state;
 
   @override
   Widget build(BuildContext context) {
@@ -89,7 +88,7 @@ class AnalyticsRevenueContent extends StatelessWidget {
                         }).toList(),
                         onChanged: (String? newValue) {
                           if (newValue != null) {
-                            context.read<AnalyticsBloc>().setSelectedMonth(
+                            context.read<AnalyticsHubBloc>().setSelectedMonth(
                                   newValue,
                                 );
                           }
@@ -180,7 +179,7 @@ class AnalyticsRevenueContent extends StatelessWidget {
                       ),
                       TextButton.icon(
                         onPressed: () =>
-                            context.read<AnalyticsBloc>().toggleChartTable(),
+                            context.read<AnalyticsHubBloc>().toggleChartTable(),
                         icon: Icon(
                           state.showChart
                               ? Icons.table_chart

@@ -44,7 +44,6 @@ class CompleteTransactionsViewState extends Equatable {
 
   @override
   List<Object?> get props => [
-        bills,
         searchQuery,
         startDate,
         endDate,

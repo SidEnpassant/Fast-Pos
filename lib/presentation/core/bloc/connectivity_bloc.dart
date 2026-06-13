@@ -24,6 +24,11 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
     ConnectivityStarted event,
     Emitter<ConnectivityState> emit,
   ) async {
+    await _connectivitySub?.cancel();
+    await _pendingSub?.cancel();
+    _connectivitySub = null;
+    _pendingSub = null;
+
     final online = await _sync.isOnline();
     emit(state.copyWith(isOnline: online));
 

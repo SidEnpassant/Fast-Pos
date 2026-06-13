@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:inventopos/core/search/inverted_index_builder.dart';
+import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/data/mappers/product_mapper.dart';
 import 'package:inventopos/domain/entities/product.dart';
@@ -11,7 +12,10 @@ class HiveProductDao {
   Box<Map> get _tokens => Hive.box<Map>(HiveBoxes.searchTokens);
 
   Stream<List<Product>> watchForUser(String userId) {
-    return _box.watch().map((_) => listForUser(userId));
+    return hiveWatchStream(
+      events: _box.watch(),
+      read: () => listForUser(userId),
+    );
   }
 
   List<Product> listForUser(String userId) {

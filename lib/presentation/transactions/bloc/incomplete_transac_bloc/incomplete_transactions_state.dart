@@ -7,18 +7,26 @@ class IncompleteTransactionsViewState extends Equatable {
     this.searchQuery = '',
     this.selectedDate,
     this.isSearching = false,
+    this.groupedTransactions = const {},
+    this.loading = true,
   });
 
   final List<Bill> bills;
   final String searchQuery;
   final DateTime? selectedDate;
   final bool isSearching;
+  final Map<String, List<Bill>> groupedTransactions;
+  final bool loading;
+
+  bool get hasPartialBills => groupedTransactions.isNotEmpty;
 
   IncompleteTransactionsViewState copyWith({
     List<Bill>? bills,
     String? searchQuery,
     DateTime? selectedDate,
     bool? isSearching,
+    Map<String, List<Bill>>? groupedTransactions,
+    bool? loading,
     bool clearSelectedDate = false,
   }) {
     return IncompleteTransactionsViewState(
@@ -27,10 +35,17 @@ class IncompleteTransactionsViewState extends Equatable {
       selectedDate:
           clearSelectedDate ? null : (selectedDate ?? this.selectedDate),
       isSearching: isSearching ?? this.isSearching,
+      groupedTransactions: groupedTransactions ?? this.groupedTransactions,
+      loading: loading ?? this.loading,
     );
   }
 
   @override
-  List<Object?> get props =>
-      [bills, searchQuery, selectedDate, isSearching];
+  List<Object?> get props => [
+        searchQuery,
+        selectedDate,
+        isSearching,
+        groupedTransactions,
+        loading,
+      ];
 }

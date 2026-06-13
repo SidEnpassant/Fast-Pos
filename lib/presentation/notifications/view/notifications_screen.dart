@@ -20,6 +20,9 @@ class NotificationsScreen extends StatelessWidget {
       ),
       body: BlocBuilder<NotificationsBloc, NotificationsViewState>(
         builder: (context, state) {
+          if (state.loading) {
+            return const Center(child: CircularProgressIndicator());
+          }
           final list = state.notifications;
           if (list.isEmpty) {
             return const Center(

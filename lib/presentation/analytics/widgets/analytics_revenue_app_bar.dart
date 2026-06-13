@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 
 class AnalyticsRevenueAppBar extends StatelessWidget implements PreferredSizeWidget {
   const AnalyticsRevenueAppBar({super.key, required this.showChart});
@@ -33,7 +33,7 @@ class AnalyticsRevenueAppBar extends StatelessWidget implements PreferredSizeWid
               showChart ? Icons.table_chart : Icons.show_chart,
               color: Theme.of(context).colorScheme.primary,
             ),
-            onPressed: () => context.read<AnalyticsBloc>().toggleChartTable(),
+            onPressed: () => context.read<AnalyticsHubBloc>().toggleChartTable(),
           ),
         ],
       ),

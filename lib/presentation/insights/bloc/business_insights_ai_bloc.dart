@@ -45,33 +45,41 @@ class BusinessInsightsAiBloc
     BusinessInsightsAiStarted event,
     Emitter<BusinessInsightsAiState> emit,
   ) async {
+    final sameUser = _userId == event.userId && _insightsSub != null;
     _userId = event.userId;
     _bills = event.bills;
     _expenses = event.expenses;
     _products = event.products;
 
-    // ── Restore cached briefing on start ──
-    final cached = _cache.loadBriefing(_userId);
-    final cachedAt = _cache.lastGeneratedAt(_userId);
-    if (cached != null) {
-      emit(state.copyWith(
-        briefing: cached,
-        lastGeneratedAt: cachedAt,
-        loadingBrief: false,
-      ));
-    }
+    if (!sameUser) {
+      final cached = _cache.loadBriefing(_userId);
+      final cachedAt = _cache.lastGeneratedAt(_userId);
+      if (cached != null) {
+        emit(state.copyWith(
+          briefing: cached,
+          lastGeneratedAt: cachedAt,
+          loadingBrief: false,
+        ));
+      }
 
-    await _insightsSub?.cancel();
-    _insightsSub = _observeInsights(event.userId).listen(
-      (list) => add(BusinessInsightsAiInsightsReceived(list)),
-    );
+      await _insightsSub?.cancel();
+      _insightsSub = _observeInsights(event.userId).listen(
+        (list) => add(BusinessInsightsAiInsightsReceived(list)),
+      );
+    }
   }
 
   Future<void> _onBriefRequested(
     BusinessInsightsAiBriefingRequested event,
     Emitter<BusinessInsightsAiState> emit,
   ) async {
-    if (_userId.isEmpty) return;
+    if (_userId.isEmpty) {
+      emit(state.copyWith(
+        loadingBrief: false,
+        error: 'Dashboard is still loading. Please try again in a moment.',
+      ));
+      return;
+    }
     emit(state.copyWith(loadingBrief: true, error: null));
     final metrics = _metrics(
       bills: _bills,

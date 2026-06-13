@@ -17,7 +17,6 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
 import 'package:inventopos/presentation/account/view/my_account.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
 import 'package:inventopos/presentation/analytics/view/monthly_revenue_analysis.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
@@ -427,8 +426,12 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
               GoRoute(
                 path: '/app/analysis',
                 builder: (context, state) => BlocProvider(
-                  create: (ctx) =>
-                      AnalyticsBloc(ctx.read<ObserveBillsUseCase>()),
+                  create: (ctx) => AnalyticsHubBloc(
+                    ctx.read<ObserveBillsUseCase>(),
+                    ctx.read<ExpenseRepository>(),
+                    ctx.read<ProductRepository>(),
+                    ctx.read<CustomerRepository>(),
+                  ),
                   child: const AnalyticsSuiteScreen(),
                 ),
               ),

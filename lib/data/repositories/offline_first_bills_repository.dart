@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_bill_dao.dart';
 import 'package:inventopos/data/mappers/merge_bills.dart';
 import 'package:inventopos/data/repositories/bills_repository_impl.dart';
@@ -27,13 +28,40 @@ class OfflineFirstBillsRepository implements BillsRepository {
   final SupabaseClient _client;
   final _uuid = const Uuid();
 
+  Stream<List<Bill>>? _sharedWatchStream;
+  String? _sharedWatchUserId;
+  List<Bill>? _cachedBills;
+
   String? get _userId => _client.auth.currentUser?.id;
 
   @override
   Stream<List<Bill>> watchBillsForCurrentUser() {
     final uid = _userId;
-    if (uid == null) return const Stream.empty();
+    if (uid == null) {
+      _clearSharedWatchStream();
+      return const Stream.empty();
+    }
 
+    if (_sharedWatchUserId != uid) {
+      _clearSharedWatchStream();
+      _sharedWatchUserId = uid;
+      _cachedBills = _local.listForUser(uid);
+      _sharedWatchStream = _buildMergedStream(uid).map((bills) {
+        _cachedBills = bills;
+        return bills;
+      }).asBroadcastStream();
+    }
+
+    return replayStream(_sharedWatchStream!, _cachedBills);
+  }
+
+  void _clearSharedWatchStream() {
+    _sharedWatchStream = null;
+    _sharedWatchUserId = null;
+    _cachedBills = null;
+  }
+
+  Stream<List<Bill>> _buildMergedStream(String uid) {
     final localStream = _local.watchForUser(uid);
     final remoteStream = _remote.watchBillsForCurrentUser();
 
@@ -67,11 +95,11 @@ class OfflineFirstBillsRepository implements BillsRepository {
       });
       remoteSub = remoteStream.listen((bills) {
         remoteBills = bills;
-        for (final b in bills) {
-          unawaited(_local.mergeFromRemote(b, mergeBillSnapshots));
-        }
+        unawaited(_local.mergeAllFromRemote(bills, mergeBillSnapshots));
         emitMerged();
       }, onError: (_) {});
+
+      emitMerged();
 
       controller.onCancel = () async {
         await localSub?.cancel();

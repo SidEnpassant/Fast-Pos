@@ -1,9 +1,7 @@
-import 'package:flutter/foundation.dart';
 import 'package:bloc/bloc.dart';
 import 'package:inventopos/application/messaging/build_message_use_cases.dart';
 import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
 import 'package:inventopos/domain/ai/entities/ai_preferences.dart';
-import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_state.dart';
@@ -97,32 +95,16 @@ class MessagingAutomationBloc
   ) async {
     emit(state.copyWith(queueLoading: true));
 
-    // Heavy lifting on Isolate
-    final queue = await compute(_buildQueue, (
-      listPending: _listPending,
-      bills: event.bills as List<Bill>,
+    final queue = _listPending(
+      bills: event.bills,
       shopName: event.shopName,
-      prefs: event.prefs as AiPreferences,
-    ));
+      prefs: event.prefs,
+    );
 
     emit(state.copyWith(
       queue: queue,
       queueLoading: false,
     ));
-  }
-
-  static List<OutboundMessage> _buildQueue(
-      ({
-        ListPendingMessageActionsUseCase listPending,
-        List<Bill> bills,
-        String shopName,
-        AiPreferences prefs
-      }) arg) {
-    return arg.listPending(
-      bills: arg.bills,
-      shopName: arg.shopName,
-      prefs: arg.prefs,
-    );
   }
 
   void _onDismiss(

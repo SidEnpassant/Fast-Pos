@@ -36,7 +36,10 @@ class NotificationsBloc
     NotificationsReceived event,
     Emitter<NotificationsViewState> emit,
   ) {
-    emit(state.copyWith(notifications: event.notifications));
+    emit(state.copyWith(
+      notifications: event.notifications,
+      loading: false,
+    ));
   }
 
   @override

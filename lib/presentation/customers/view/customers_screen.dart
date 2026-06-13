@@ -90,6 +90,9 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   .read<CustomerRepository>()
                   .watchCustomersForUser(uid),
               builder: (context, snap) {
+                if (snap.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
                 var list = snap.data ?? [];
                 if (_query.isNotEmpty) {
                   final normalizedQuery = PhoneNormalizer.normalize(_query);

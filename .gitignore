@@ -50,6 +50,7 @@ android/app/release-key.keystore
 android/key.properties
 lib/supabase_config.dart
 lib/supabase_mappers.dart
+.env
 supabase/migrations/20250504000000_initial_schema.sql
 supabase/
 chat_context_antigravity.md

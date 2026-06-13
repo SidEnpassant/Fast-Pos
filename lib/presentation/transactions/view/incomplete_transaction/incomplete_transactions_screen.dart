@@ -133,15 +133,11 @@ class _IncompleteTransactionsScreenState
                         );
                       }
 
-                      if (txState.bills.isEmpty) {
+                      if (txState.loading) {
                         return const Center(child: CircularProgressIndicator());
                       }
 
-                      final partialRows = txState.bills
-                          .where((b) => b.paymentStatus == 'partial')
-                          .toList();
-
-                      if (partialRows.isEmpty) {
+                      if (!txState.hasPartialBills) {
                         return const AppEmptyState(
                           icon: Icons.pending_actions_outlined,
                           title: 'No pending payments',
@@ -150,30 +146,7 @@ class _IncompleteTransactionsScreenState
                         );
                       }
 
-                      final filteredBills = partialRows.where((bill) {
-                        final customerName = bill.customerName;
-                        return customerName
-                            .toLowerCase()
-                            .contains(txState.searchQuery);
-                      }).toList();
-
-                      final dateFilteredBills = txState.selectedDate != null
-                          ? filteredBills.where((bill) {
-                              final createdAt = bill.createdAt;
-                              return DateFormat('yyyy-MM-dd')
-                                      .format(createdAt) ==
-                                  DateFormat('yyyy-MM-dd')
-                                      .format(txState.selectedDate!);
-                            }).toList()
-                          : filteredBills;
-
-                      final Map<String, List<Bill>> groupedBills = {};
-                      for (final bill in dateFilteredBills) {
-                        final date =
-                            DateFormat('yyyy-MM-dd').format(bill.createdAt);
-                        groupedBills.putIfAbsent(date, () => []);
-                        groupedBills[date]!.add(bill);
-                      }
+                      final groupedBills = txState.groupedTransactions;
 
                       return ListView.builder(
                         itemCount: groupedBills.length,

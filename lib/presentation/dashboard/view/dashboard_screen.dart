@@ -37,59 +37,62 @@ class DashboardScreen extends StatefulWidget {
 
 class _DashboardScreenState extends State<DashboardScreen> {
   @override
-  void initState() {
-    super.initState();
-    final uid = context.read<AuthRepository>().currentSession?.userId;
-    if (uid != null) {
-      context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
-    }
-  }
-
-  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Scaffold(
       backgroundColor: theme.colorScheme.surfaceContainerLowest,
       body: SafeArea(
         child: DashboardAiBootstrap(
-          child: RefreshIndicator(
-            onRefresh: () async {
-              final uid =
-                  context.read<AuthRepository>().currentSession?.userId;
-              if (uid != null) {
-                context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
+          child: BlocBuilder<DashboardHubBloc, DashboardHubState>(
+            buildWhen: (prev, curr) => prev.loading != curr.loading,
+            builder: (context, hubState) {
+              if (hubState.loading) {
+                return const Center(child: CircularProgressIndicator());
               }
-            },
-            child: CustomScrollView(
-              slivers: [
-                const SliverToBoxAdapter(child: _DashboardHeader()),
-                SliverPadding(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  sliver: SliverList(
-                    delegate: SliverChildListDelegate([
-                      const _KpiSection(),
-                      const SizedBox(height: AppSpacing.md),
-                      const _PulseSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                      const _AttentionSection(),
-                      const _QuickActionsSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                      const DashboardAiBriefingCard(),
-                      const SizedBox(height: AppSpacing.lg),
-                      const DashboardOpeningSnapshot(),
-                      const SizedBox(height: AppSpacing.lg),
-                      const DashboardReorderAlerts(),
-                      const SizedBox(height: AppSpacing.lg),
-                      const _PaymentHealthSection(),
-                      const _TopSellersSection(),
-                      const _LowStockSection(),
-                      const _RecentBillsSection(),
-                      const SizedBox(height: AppSpacing.lg),
-                    ]),
-                  ),
+
+              return RefreshIndicator(
+                onRefresh: () async {
+                  final uid =
+                      context.read<AuthRepository>().currentSession?.userId;
+                  if (uid != null) {
+                    context
+                        .read<DashboardHubBloc>()
+                        .add(DashboardHubStarted(uid));
+                  }
+                },
+                child: CustomScrollView(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  slivers: [
+                    const SliverToBoxAdapter(child: _DashboardHeader()),
+                    SliverPadding(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      sliver: SliverList(
+                        delegate: SliverChildListDelegate([
+                          const _KpiSection(),
+                          const SizedBox(height: AppSpacing.md),
+                          const _PulseSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          const _AttentionSection(),
+                          const _QuickActionsSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                          const DashboardAiBriefingCard(),
+                          const SizedBox(height: AppSpacing.lg),
+                          const DashboardOpeningSnapshot(),
+                          const SizedBox(height: AppSpacing.lg),
+                          const DashboardReorderAlerts(),
+                          const SizedBox(height: AppSpacing.lg),
+                          const _PaymentHealthSection(),
+                          const _TopSellersSection(),
+                          const _LowStockSection(),
+                          const _RecentBillsSection(),
+                          const SizedBox(height: AppSpacing.lg),
+                        ]),
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
         ),
       ),

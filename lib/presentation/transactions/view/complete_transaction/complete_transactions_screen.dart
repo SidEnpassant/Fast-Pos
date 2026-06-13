@@ -173,7 +173,7 @@ class _CompleteTransactionsScreenState
                               );
                             }
 
-                            if (txState.loading && txState.bills.isEmpty) {
+                            if (txState.loading) {
                               return const Center(
                                   child: CircularProgressIndicator());
                             }

@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/router/app_shell_navigation.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_message_center.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_customers_content.dart';
@@ -110,9 +108,9 @@ class _RevenueTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AnalyticsBloc, AnalyticsState>(
+    return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
       builder: (context, state) {
-        if (!state.ready) return const AnalyticsShimmerPlaceholder();
+        if (state.loading) return const AnalyticsShimmerPlaceholder();
         if (!state.hasRevenueData) {
           return const AnalyticsMessageCenter(
             message: 'No transaction data available',
@@ -131,60 +129,56 @@ class _PnLTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
       builder: (context, hub) {
-        return BlocBuilder<AnalyticsBloc, AnalyticsState>(
-          builder: (context, state) {
-            if (hub.loading || !state.ready) {
-              return const Center(child: CircularProgressIndicator());
-            }
-            final monthKey = state.selectedMonth;
-            final monthDate =
-                BusinessAnalytics.parseMonthKey(monthKey) ?? DateTime.now();
-            final revenue = monthKey != null
-                ? (state.monthlyRevenues[monthKey] ?? 0)
-                : hub.revenueThisMonth;
-            final expenses = BusinessAnalytics.expensesForMonth(
-              hub.expenses,
-              monthDate,
-            );
-            final breakdown = BusinessAnalytics.expenseBreakdownForMonth(
-              hub.expenses,
-              monthDate,
-            );
-            return Column(
-              children: [
-                if (state.sortedMonths.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                    child: DropdownButtonFormField<String>(
-                      value: monthKey,
-                      decoration: const InputDecoration(
-                        labelText: 'Month',
-                        border: OutlineInputBorder(),
-                        isDense: true,
-                      ),
-                      items: state.sortedMonths
-                          .map(
-                            (m) => DropdownMenuItem(value: m, child: Text(m)),
-                          )
-                          .toList(),
-                      onChanged: (m) {
-                        if (m != null) {
-                          context.read<AnalyticsBloc>().setSelectedMonth(m);
-                        }
-                      },
-                    ),
+        if (hub.loading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        final monthKey = hub.selectedMonth;
+        final monthDate =
+            BusinessAnalytics.parseMonthKey(monthKey) ?? DateTime.now();
+        final revenue = monthKey != null
+            ? (hub.monthlyRevenues[monthKey] ?? 0)
+            : hub.revenueThisMonth;
+        final expenses = BusinessAnalytics.expensesForMonth(
+          hub.expenses,
+          monthDate,
+        );
+        final breakdown = BusinessAnalytics.expenseBreakdownForMonth(
+          hub.expenses,
+          monthDate,
+        );
+        return Column(
+          children: [
+            if (hub.sortedMonths.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                child: DropdownButtonFormField<String>(
+                  value: monthKey,
+                  decoration: const InputDecoration(
+                    labelText: 'Month',
+                    border: OutlineInputBorder(),
+                    isDense: true,
                   ),
-                Expanded(
-                  child: AnalyticsPnLContent(
-                    revenue: revenue,
-                    expenses: expenses,
-                    breakdown: breakdown,
-                    monthLabel: monthKey,
-                  ),
+                  items: hub.sortedMonths
+                      .map(
+                        (m) => DropdownMenuItem(value: m, child: Text(m)),
+                      )
+                      .toList(),
+                  onChanged: (m) {
+                    if (m != null) {
+                      context.read<AnalyticsHubBloc>().setSelectedMonth(m);
+                    }
+                  },
                 ),
-              ],
-            );
-          },
+              ),
+            Expanded(
+              child: AnalyticsPnLContent(
+                revenue: revenue,
+                expenses: expenses,
+                breakdown: breakdown,
+                monthLabel: monthKey,
+              ),
+            ),
+          ],
         );
       },
     );

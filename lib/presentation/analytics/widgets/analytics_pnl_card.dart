@@ -3,13 +3,13 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 
 /// Net profit = revenue − expenses for selected month (feature 6/13).
 class AnalyticsPnLCard extends StatelessWidget {
   const AnalyticsPnLCard({super.key, required this.state});
 
-  final AnalyticsState state;
+  final AnalyticsHubState state;
 
   @override
   Widget build(BuildContext context) {

@@ -38,3 +38,7 @@ final class IncompleteSelectedDateChanged extends IncompleteTransactionsEvent {
 final class IncompleteSearchModeToggled extends IncompleteTransactionsEvent {
   const IncompleteSearchModeToggled();
 }
+
+final class IncompleteRecomputeRequested extends IncompleteTransactionsEvent {
+  const IncompleteRecomputeRequested();
+}

@@ -526,27 +526,14 @@ flutter pub get
 
 ### 2. Supabase config (required)
 
-Create **`lib/supabase_config.dart`** (gitignored):
+Create a **`.env`** file in the root directory:
 
-```dart
-abstract final class SupabaseConfig {
-  static const String url = String.fromEnvironment(
-    'SUPABASE_URL',
-    defaultValue: 'https://YOUR_PROJECT.supabase.co',
-  );
-
-  static const String anonKey = String.fromEnvironment(
-    'SUPABASE_ANON_KEY',
-    defaultValue: 'eyJ...', // anon public JWT from Dashboard → API
-  );
-}
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
 ```
 
-Or run with dart-defines:
-
-```bash
-flutter run --dart-define=SUPABASE_URL=https://xxx.supabase.co --dart-define=SUPABASE_ANON_KEY=eyJ...
-```
+The app will load these values automatically at startup.
 
 ### 3. Database
 
@@ -569,7 +556,7 @@ Then use **Generate today's brief** on the dashboard or **Billing Copilot** on N
 
 | Item | Location |
 |------|----------|
-| Supabase URL/key | `lib/supabase_config.dart` or dart-defines |
+| Supabase URL/key | `.env` file |
 | Barcode Lookup API | `BarcodeProductLookupRepositoryImpl` (replace placeholder key) |
 | Launcher icons | `pubspec.yaml` → `flutter_launcher_icons` |
 | Groq secrets | Supabase Dashboard → Edge Functions → Secrets |

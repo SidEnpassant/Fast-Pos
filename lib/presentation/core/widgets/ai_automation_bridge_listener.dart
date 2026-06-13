@@ -45,6 +45,10 @@ class _AiAutomationBridgeListenerState extends State<AiAutomationBridgeListener>
     }
   }
 
+  void _onSignedOut() {
+    context.read<SyncCoordinator>().stop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocListener<AuthBloc, AuthFlowState>(
@@ -52,6 +56,8 @@ class _AiAutomationBridgeListenerState extends State<AiAutomationBridgeListener>
       listener: (context, state) async {
         if (state.status == AuthFlowStatus.authenticated) {
           await _onAuthenticated();
+        } else if (state.status == AuthFlowStatus.unauthenticated) {
+          _onSignedOut();
         }
       },
       child: widget.child,

@@ -144,6 +144,7 @@ class _FastPosAppState extends State<FastPosApp> {
       final uid = context.read<AuthRepository>().currentSession?.userId;
       if (uid != null) {
         context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
+        context.read<ConnectivityBloc>().add(const ConnectivityStarted());
       }
     }
   }
@@ -167,6 +168,7 @@ class _FastPosAppState extends State<FastPosApp> {
           final uid = context.read<AuthRepository>().currentSession?.userId;
           if (uid != null) {
             context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
+            context.read<ConnectivityBloc>().add(const ConnectivityStarted());
           }
         }
       },

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
@@ -28,6 +29,11 @@ class AnalyticsHubState extends Equatable {
     this.billsThisMonth = 0,
     this.expensesThisMonth = 0.0,
     this.lowStockProducts = const [],
+    this.monthlyRevenues = const {},
+    this.monthlyTransactions = const {},
+    this.sortedMonths = const [],
+    this.selectedMonth,
+    this.showChart = true,
   });
 
   final List<Bill> bills;
@@ -43,7 +49,15 @@ class AnalyticsHubState extends Equatable {
   final double expensesThisMonth;
   final List<Product> lowStockProducts;
 
+  final Map<String, double> monthlyRevenues;
+  final Map<String, int> monthlyTransactions;
+  final List<String> sortedMonths;
+  final String? selectedMonth;
+  final bool showChart;
+
   double get netProfit => revenueThisMonth - expensesThisMonth;
+
+  bool get hasRevenueData => monthlyRevenues.isNotEmpty;
 
   AnalyticsHubState copyWith({
     List<Bill>? bills,
@@ -57,6 +71,11 @@ class AnalyticsHubState extends Equatable {
     int? billsThisMonth,
     double? expensesThisMonth,
     List<Product>? lowStockProducts,
+    Map<String, double>? monthlyRevenues,
+    Map<String, int>? monthlyTransactions,
+    List<String>? sortedMonths,
+    String? selectedMonth,
+    bool? showChart,
   }) {
     return AnalyticsHubState(
       bills: bills ?? this.bills,
@@ -70,22 +89,28 @@ class AnalyticsHubState extends Equatable {
       billsThisMonth: billsThisMonth ?? this.billsThisMonth,
       expensesThisMonth: expensesThisMonth ?? this.expensesThisMonth,
       lowStockProducts: lowStockProducts ?? this.lowStockProducts,
+      monthlyRevenues: monthlyRevenues ?? this.monthlyRevenues,
+      monthlyTransactions: monthlyTransactions ?? this.monthlyTransactions,
+      sortedMonths: sortedMonths ?? this.sortedMonths,
+      selectedMonth: selectedMonth ?? this.selectedMonth,
+      showChart: showChart ?? this.showChart,
     );
   }
 
   @override
   List<Object?> get props => [
-        bills,
-        expenses,
-        products,
-        customers,
         loading,
         businessInsights,
         customerInsights,
         revenueThisMonth,
         billsThisMonth,
         expensesThisMonth,
-        lowStockProducts,
+        lowStockProducts.length,
+        monthlyRevenues,
+        monthlyTransactions,
+        sortedMonths,
+        selectedMonth,
+        showChart,
       ];
 }
 
@@ -97,6 +122,19 @@ sealed class AnalyticsHubEvent extends Equatable {
 
 class AnalyticsHubStarted extends AnalyticsHubEvent {
   const AnalyticsHubStarted();
+}
+
+class AnalyticsHubMonthSelected extends AnalyticsHubEvent {
+  const AnalyticsHubMonthSelected(this.month);
+
+  final String month;
+
+  @override
+  List<Object?> get props => [month];
+}
+
+class AnalyticsHubChartToggled extends AnalyticsHubEvent {
+  const AnalyticsHubChartToggled();
 }
 
 class _AnalyticsHubDataChanged extends AnalyticsHubEvent {
@@ -115,11 +153,32 @@ class _AnalyticsHubDataChanged extends AnalyticsHubEvent {
   List<Object?> get props => [bills, expenses, products, customers];
 }
 
+typedef _AnalyticsComputeInput = ({
+  List<Bill> bills,
+  List<Expense> expenses,
+  List<Product> products,
+  List<Customer> customers,
+});
+
+typedef _AnalyticsComputeOutput = ({
+  BusinessAnalyticsSnapshot business,
+  CustomerAnalyticsSnapshot customer,
+  Map<String, double> monthlyRevenues,
+  Map<String, int> monthlyTransactions,
+  List<String> sortedMonths,
+});
+
 class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
   AnalyticsHubBloc(this._bills, this._expenses, this._products, this._customers)
-      : super(const AnalyticsHubState()) {
+      : super(
+          AnalyticsHubState(
+            selectedMonth: DateFormat('MMM yyyy').format(DateTime.now()),
+          ),
+        ) {
     on<AnalyticsHubStarted>(_onStarted);
     on<_AnalyticsHubDataChanged>(_onDataChanged);
+    on<AnalyticsHubMonthSelected>(_onMonthSelected);
+    on<AnalyticsHubChartToggled>(_onChartToggled);
   }
 
   final ObserveBillsUseCase _bills;
@@ -128,57 +187,80 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
   final CustomerRepository _customers;
 
   final List<StreamSubscription<dynamic>> _subs = [];
+  Timer? _debounce;
+  int _computeGeneration = 0;
+  String? _activeUserId;
+  bool _pendingImmediateCompute = true;
+
+  List<Bill> _latestBills = const [];
+  List<Expense> _latestExpenses = const [];
+  List<Product> _latestProducts = const [];
+  List<Customer> _latestCustomers = const [];
+
+  void setSelectedMonth(String? month) {
+    if (month == null) return;
+    add(AnalyticsHubMonthSelected(month));
+  }
+
+  void toggleChartTable() => add(const AnalyticsHubChartToggled());
 
   Future<void> _onStarted(
     AnalyticsHubStarted event,
     Emitter<AnalyticsHubState> emit,
   ) async {
-    await _cancel();
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) {
       emit(state.copyWith(loading: false));
       return;
     }
 
-    // Sync state updates using a combined stream approach or simple triggers.
-    // For performance, we wait for all streams to emit at least once before initial compute.
-    StreamSubscription<void> combine() {
-      return Stream.periodic(const Duration(milliseconds: 300)).listen((_) async {
-        if (_subs.length < 4) return;
-        // This is a simplified debounce/throttle for data changes.
-      });
+    if (_activeUserId == uid && _subs.isNotEmpty) {
+      _scheduleCompute();
+      return;
     }
 
-    _subs.add(_bills().listen((_) => _triggerCompute()));
-    _subs.add(_expenses.watchExpensesForUser(uid).listen((_) => _triggerCompute()));
-    _subs.add(_products.watchProductsForUser(uid).listen((_) => _triggerCompute()));
-    _subs.add(_customers.watchCustomersForUser(uid).listen((_) => _triggerCompute()));
+    await _cancel();
+    _activeUserId = uid;
+
+    _subs.add(_bills().listen((bills) {
+      _latestBills = bills;
+      _scheduleCompute();
+    }));
+    _subs.add(_expenses.watchExpensesForUser(uid).listen((expenses) {
+      _latestExpenses = expenses;
+      _scheduleCompute();
+    }));
+    _subs.add(_products.watchProductsForUser(uid).listen((products) {
+      _latestProducts = products;
+      _scheduleCompute();
+    }));
+    _subs.add(_customers.watchCustomersForUser(uid).listen((customers) {
+      _latestCustomers = customers;
+      _scheduleCompute();
+    }));
   }
 
-  Timer? _debounce;
-  void _triggerCompute() {
+  void _scheduleCompute() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 200), () async {
+    if (_pendingImmediateCompute) {
+      _pendingImmediateCompute = false;
       if (isClosed) return;
-      final uid = Supabase.instance.client.auth.currentUser?.id;
-      if (uid == null) return;
-
-      // We need to fetch current snapshots to compute. 
-      // Ideally repository watch streams should be cached.
-      // For now, we rely on the fact that these are likely fast local reads.
-      final bills = await _bills().first;
-      final expenses = await _expenses.watchExpensesForUser(uid).first;
-      final products = await _products.watchProductsForUser(uid).first;
-      final customers = await _customers.watchCustomersForUser(uid).first;
-
-      if (!isClosed) {
-        add(_AnalyticsHubDataChanged(
-          bills: bills,
-          expenses: expenses,
-          products: products,
-          customers: customers,
-        ));
-      }
+      add(_AnalyticsHubDataChanged(
+        bills: _latestBills,
+        expenses: _latestExpenses,
+        products: _latestProducts,
+        customers: _latestCustomers,
+      ));
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 350), () {
+      if (isClosed) return;
+      add(_AnalyticsHubDataChanged(
+        bills: _latestBills,
+        expenses: _latestExpenses,
+        products: _latestProducts,
+        customers: _latestCustomers,
+      ));
     });
   }
 
@@ -186,17 +268,16 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
     _AnalyticsHubDataChanged event,
     Emitter<AnalyticsHubState> emit,
   ) async {
-    // Offload heavy computation to Isolate
-    final businessInsights = await compute(_computeBusiness, (
+    final generation = ++_computeGeneration;
+
+    final insights = await compute(_computeInsights, (
       bills: event.bills,
       expenses: event.expenses,
       products: event.products,
-    ));
-
-    final customerInsights = await compute(_computeCustomer, (
-      bills: event.bills,
       customers: event.customers,
     ));
+
+    if (isClosed || generation != _computeGeneration) return;
 
     final now = DateTime.now();
     final revenueMonth = event.bills
@@ -208,49 +289,88 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
         .length;
 
     final expensesMonth = event.expenses
-        .where((e) => e.expenseDate.year == now.year && e.expenseDate.month == now.month)
+        .where((e) =>
+            e.expenseDate.year == now.year && e.expenseDate.month == now.month)
         .fold(0.0, (s, e) => s + e.amount);
 
     final lowStock = event.products.where((p) => p.isLowStock).take(10).toList();
+
+    var selected = state.selectedMonth;
+    if (insights.sortedMonths.isEmpty) {
+      selected = null;
+    } else if (selected == null || !insights.sortedMonths.contains(selected)) {
+      selected = insights.sortedMonths.first;
+    }
 
     emit(state.copyWith(
       bills: event.bills,
       expenses: event.expenses,
       products: event.products,
       customers: event.customers,
-      businessInsights: businessInsights,
-      customerInsights: customerInsights,
+      businessInsights: insights.business,
+      customerInsights: insights.customer,
       revenueThisMonth: revenueMonth,
       billsThisMonth: billsMonth,
       expensesThisMonth: expensesMonth,
       lowStockProducts: lowStock,
+      monthlyRevenues: insights.monthlyRevenues,
+      monthlyTransactions: insights.monthlyTransactions,
+      sortedMonths: insights.sortedMonths,
+      selectedMonth: selected,
       loading: false,
     ));
   }
 
-  static BusinessAnalyticsSnapshot _computeBusiness(
-      ({List<Bill> bills, List<Expense> expenses, List<Product> products}) arg) {
-    return BusinessAnalytics.compute(
-      bills: arg.bills,
-      expenses: arg.expenses,
-      products: arg.products,
-    );
+  void _onMonthSelected(
+    AnalyticsHubMonthSelected event,
+    Emitter<AnalyticsHubState> emit,
+  ) {
+    emit(state.copyWith(selectedMonth: event.month));
   }
 
-  static CustomerAnalyticsSnapshot _computeCustomer(
-      ({List<Bill> bills, List<Customer> customers}) arg) {
-    return CustomerAnalytics.compute(
-      bills: arg.bills,
-      customers: arg.customers,
+  void _onChartToggled(
+    AnalyticsHubChartToggled event,
+    Emitter<AnalyticsHubState> emit,
+  ) {
+    emit(state.copyWith(showChart: !state.showChart));
+  }
+
+  static _AnalyticsComputeOutput _computeInsights(_AnalyticsComputeInput input) {
+    final monthlyRevenues = BusinessAnalytics.monthlyRevenueMap(input.bills);
+    final monthlyTransactions =
+        BusinessAnalytics.monthlyTransactionMap(input.bills);
+    final sortedMonths = monthlyRevenues.keys.toList()
+      ..sort(
+        (a, b) => DateFormat('MMM yyyy')
+            .parse(b)
+            .compareTo(DateFormat('MMM yyyy').parse(a)),
+      );
+
+    return (
+      business: BusinessAnalytics.compute(
+        bills: input.bills,
+        expenses: input.expenses,
+        products: input.products,
+      ),
+      customer: CustomerAnalytics.compute(
+        bills: input.bills,
+        customers: input.customers,
+      ),
+      monthlyRevenues: monthlyRevenues,
+      monthlyTransactions: monthlyTransactions,
+      sortedMonths: sortedMonths,
     );
   }
 
   Future<void> _cancel() async {
     _debounce?.cancel();
+    _computeGeneration++;
+    _pendingImmediateCompute = true;
     for (final s in _subs) {
       await s.cancel();
     }
     _subs.clear();
+    _activeUserId = null;
   }
 
   @override

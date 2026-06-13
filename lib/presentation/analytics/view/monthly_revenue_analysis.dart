@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_bloc.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_state.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_message_center.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_app_bar.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_content.dart';
@@ -12,12 +11,12 @@ class MonthlyRevenueAnalysis extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AnalyticsBloc, AnalyticsState>(
+    return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
       builder: (context, state) {
         return Scaffold(
           backgroundColor: Theme.of(context).scaffoldBackgroundColor,
           appBar: AnalyticsRevenueAppBar(showChart: state.showChart),
-          body: !state.ready
+          body: state.loading
               ? const AnalyticsShimmerPlaceholder()
               : !state.hasRevenueData
                   ? const AnalyticsMessageCenter(

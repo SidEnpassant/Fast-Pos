@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
@@ -13,13 +14,17 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
 
   final SupabaseClient _client;
   final _uuid = const Uuid();
+  final Map<String, Future<void>> _pullInFlight = {};
 
   Box<Map> get _box => Hive.box<Map>(HiveBoxes.expenses);
 
   @override
   Stream<List<Expense>> watchExpensesForUser(String userId) {
-    _pull(userId);
-    return _box.watch().map((_) => _list(userId));
+    unawaited(_pull(userId));
+    return hiveWatchStream(
+      events: _box.watch(),
+      read: () => _list(userId),
+    );
   }
 
   List<Expense> _list(String userId) {
@@ -31,6 +36,21 @@ class ExpenseRepositoryImpl implements ExpenseRepository {
   }
 
   Future<void> _pull(String userId) async {
+    final inFlight = _pullInFlight[userId];
+    if (inFlight != null) return inFlight;
+
+    final future = _pullOnce(userId);
+    _pullInFlight[userId] = future;
+    try {
+      await future;
+    } finally {
+      if (identical(_pullInFlight[userId], future)) {
+        _pullInFlight.remove(userId);
+      }
+    }
+  }
+
+  Future<void> _pullOnce(String userId) async {
     try {
       final rows =
           await _client.from('expenses').select().eq('user_id', userId);

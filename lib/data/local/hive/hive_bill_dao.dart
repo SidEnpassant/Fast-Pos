@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/data/mappers/bill_mapper.dart';
 import 'package:inventopos/domain/entities/bill.dart';
@@ -8,7 +9,10 @@ class HiveBillDao {
   Box<Map> get _box => Hive.box<Map>(HiveBoxes.bills);
 
   Stream<List<Bill>> watchForUser(String userId) {
-    return _box.watch().map((_) => listForUser(userId));
+    return hiveWatchStream(
+      events: _box.watch(),
+      read: () => listForUser(userId),
+    );
   }
 
   List<Bill> listForUser(String userId) {
@@ -90,5 +94,14 @@ class HiveBillDao {
       Map<String, dynamic>.from(existing),
     );
     await putFromBill(merge(remote, local));
+  }
+
+  Future<void> mergeAllFromRemote(
+    List<Bill> remotes,
+    Bill Function(Bill remote, Bill local) merge,
+  ) async {
+    for (final remote in remotes) {
+      await mergeFromRemote(remote, merge);
+    }
   }
 }

@@ -51,12 +51,59 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
 
   final List<StreamSubscription<dynamic>> _subs = [];
   Timer? _debounce;
+  int _computeGeneration = 0;
+  String? _activeUserId;
+  bool _pendingImmediateRecompute = true;
+  bool _gotBills = false;
+  bool _gotProducts = false;
+  bool _gotExpenses = false;
+  bool _gotCustomers = false;
+  bool _gotMetrics = false;
+
+  void _resetInitialLoadFlags() {
+    _gotBills = false;
+    _gotProducts = false;
+    _gotExpenses = false;
+    _gotCustomers = false;
+    _gotMetrics = false;
+    _pendingImmediateRecompute = true;
+  }
+
+  void _markRefreshLoadFlagsFromState() {
+    _gotBills = state.bills != null;
+    _gotProducts = true;
+    _gotExpenses = true;
+    _gotCustomers = true;
+    _gotMetrics = false;
+    _pendingImmediateRecompute = true;
+  }
+
+  void _maybeFinishInitialLoad(Emitter<DashboardHubState> emit) {
+    if (!_gotBills ||
+        !_gotProducts ||
+        !_gotExpenses ||
+        !_gotCustomers ||
+        !_gotMetrics) {
+      return;
+    }
+    if (!state.loading) return;
+    emit(state.copyWith(loading: false));
+  }
 
   Future<void> _onStarted(
     DashboardHubStarted event,
     Emitter<DashboardHubState> emit,
   ) async {
+    if (_activeUserId == event.userId && _subs.isNotEmpty) {
+      _markRefreshLoadFlagsFromState();
+      emit(state.copyWith(loading: true));
+      _requestRecompute();
+      return;
+    }
+
     await _cancelSubs();
+    _activeUserId = event.userId;
+    _resetInitialLoadFlags();
     emit(state.copyWith(loading: true));
 
     _subs.add(
@@ -101,8 +148,10 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
   }
 
   void _onBills(DashboardHubBillsReceived e, Emitter<DashboardHubState> emit) {
-    emit(state.copyWith(bills: e.bills, loading: false));
+    _gotBills = true;
+    emit(state.copyWith(bills: e.bills));
     _requestRecompute();
+    _maybeFinishInitialLoad(emit);
   }
 
   void _onProfile(
@@ -116,24 +165,30 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     DashboardHubProductsReceived e,
     Emitter<DashboardHubState> emit,
   ) {
-    emit(state.copyWith(products: e.products, loading: false));
+    _gotProducts = true;
+    emit(state.copyWith(products: e.products));
     _requestRecompute();
+    _maybeFinishInitialLoad(emit);
   }
 
   void _onExpenses(
     DashboardHubExpensesReceived e,
     Emitter<DashboardHubState> emit,
   ) {
+    _gotExpenses = true;
     emit(state.copyWith(expenses: e.expenses));
     _requestRecompute();
+    _maybeFinishInitialLoad(emit);
   }
 
   void _onCustomers(
     DashboardHubCustomersReceived e,
     Emitter<DashboardHubState> emit,
   ) {
+    _gotCustomers = true;
     emit(state.copyWith(customers: e.customers));
     _requestRecompute();
+    _maybeFinishInitialLoad(emit);
   }
 
   void _onPending(
@@ -141,7 +196,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(pendingSyncCount: e.count));
-    _requestRecompute();
+    _refreshAttentionOnly(emit);
   }
 
   void _onNotifications(
@@ -149,7 +204,6 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(notificationCount: e.notifications.length));
-    _requestRecompute();
   }
 
   void _onConnectivity(
@@ -157,7 +211,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(isOnline: e.isOnline));
-    _requestRecompute();
+    _refreshAttentionOnly(emit);
   }
 
   void _onAiUnread(
@@ -165,12 +219,29 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     Emitter<DashboardHubState> emit,
   ) {
     emit(state.copyWith(aiUnreadCount: e.count));
-    _requestRecompute();
+    _refreshAttentionOnly(emit);
+  }
+
+  void _refreshAttentionOnly(Emitter<DashboardHubState> emit) {
+    var attention = 0;
+    if (state.partialBillsCount > 0) attention++;
+    if (state.lowStockCount > 0) attention++;
+    if (state.outOfStockCount > 0) attention++;
+    if (state.pendingSyncCount > 0) attention++;
+    if (!state.isOnline) attention++;
+    if (state.aiUnreadCount > 0) attention++;
+    if (attention == state.attentionItemCount) return;
+    emit(state.copyWith(attentionItemCount: attention));
   }
 
   void _requestRecompute() {
     _debounce?.cancel();
-    _debounce = Timer(const Duration(milliseconds: 100), () {
+    if (_pendingImmediateRecompute) {
+      _pendingImmediateRecompute = false;
+      if (!isClosed) add(const DashboardHubRecomputeRequested());
+      return;
+    }
+    _debounce = Timer(const Duration(milliseconds: 300), () {
       if (!isClosed) add(const DashboardHubRecomputeRequested());
     });
   }
@@ -179,6 +250,7 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
     DashboardHubRecomputeRequested event,
     Emitter<DashboardHubState> emit,
   ) async {
+    final generation = ++_computeGeneration;
     final metrics = await compute(_computeDashboardMetrics, (
       bills: state.bills ?? [],
       products: state.products,
@@ -189,6 +261,9 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
       aiUnreadCount: state.aiUnreadCount,
     ));
 
+    if (isClosed || generation != _computeGeneration) return;
+
+    _gotMetrics = true;
     emit(state.copyWith(
       revenueToday: metrics.revenueToday,
       revenueThisMonth: metrics.revenueThisMonth,
@@ -214,14 +289,18 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
       topProductsThisMonth: metrics.topProductsThisMonth,
       attentionItemCount: metrics.attentionItemCount,
     ));
+    _maybeFinishInitialLoad(emit);
   }
 
   Future<void> _cancelSubs() async {
     _debounce?.cancel();
+    _computeGeneration++;
+    _resetInitialLoadFlags();
     for (final s in _subs) {
       await s.cancel();
     }
     _subs.clear();
+    _activeUserId = null;
   }
 
   @override

@@ -10,22 +10,30 @@ class OfflineBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<ConnectivityBloc, ConnectivityState>(
-      builder: (context, state) {
-        return Column(
-          children: [
-            if (!state.isOnline)
-              MaterialBanner(
-                content: Text(
-                  state.pendingSyncCount > 0
-                      ? 'Offline — ${state.pendingSyncCount} changes pending sync'
-                      : 'Offline mode — changes will sync when connected',
+    return BlocSelector<ConnectivityBloc, ConnectivityState, bool>(
+      selector: (state) => state.isOnline,
+      builder: (context, isOnline) {
+        if (isOnline) {
+          return child;
+        }
+        return BlocSelector<ConnectivityBloc, ConnectivityState, int>(
+          selector: (state) => state.pendingSyncCount,
+          builder: (context, pendingSyncCount) {
+            return Column(
+              children: [
+                MaterialBanner(
+                  content: Text(
+                    pendingSyncCount > 0
+                        ? 'Offline — $pendingSyncCount changes pending sync'
+                        : 'Offline mode — changes will sync when connected',
+                  ),
+                  leading: const Icon(Icons.cloud_off),
+                  actions: const [SizedBox.shrink()],
                 ),
-                leading: const Icon(Icons.cloud_off),
-                actions: const [SizedBox.shrink()],
-              ),
-            Expanded(child: child),
-          ],
+                Expanded(child: child),
+              ],
+            );
+          },
         );
       },
     );

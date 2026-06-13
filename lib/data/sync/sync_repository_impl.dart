@@ -19,6 +19,7 @@ class SyncRepositoryImpl implements SyncRepository {
   final SupabaseClient _client;
   final HiveOutboxDao _outbox;
   final Connectivity _connectivity;
+  final Map<String, Future<int>> _processInFlight = {};
 
   @override
   Stream<int> watchPendingOutboxCount(String userId) =>
@@ -45,6 +46,22 @@ class SyncRepositoryImpl implements SyncRepository {
   @override
   Future<int> processOutbox(String userId) async {
     if (!await isOnline()) return 0;
+
+    final inFlight = _processInFlight[userId];
+    if (inFlight != null) return inFlight;
+
+    final future = _processOutboxOnce(userId);
+    _processInFlight[userId] = future;
+    try {
+      return await future;
+    } finally {
+      if (identical(_processInFlight[userId], future)) {
+        _processInFlight.remove(userId);
+      }
+    }
+  }
+
+  Future<int> _processOutboxOnce(String userId) async {
     var synced = 0;
     final pending = _outbox.pendingForUser(userId);
     final remote = BillsRepositoryImpl(client: _client);
