@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:inventopos/core/design/app_radii.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 
 /// Filled action button using the active [ColorScheme].
 class AppPrimaryButton extends StatelessWidget {
@@ -18,20 +19,18 @@ class AppPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final labelWidget = Row(
+      mainAxisSize: MainAxisSize.min,
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (icon != null) ...[icon!, const SizedBox(width: 8)],
+        Text(label),
+      ],
+    );
+
     final child = isLoading
-        ? const SizedBox(
-            height: 22,
-            width: 22,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          )
-        : Row(
-            mainAxisSize: MainAxisSize.min,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              if (icon != null) ...[icon!, const SizedBox(width: 8)],
-              Text(label),
-            ],
-          );
+        ? AppShimmer(child: labelWidget)
+        : labelWidget;
 
     return SizedBox(
       width: double.infinity,

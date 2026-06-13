@@ -12,6 +12,7 @@ import 'package:inventopos/presentation/customers/bloc/customer_detail_bloc.dart
 import 'package:inventopos/presentation/customers/bloc/customer_detail_event.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_state.dart';
 import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
+import 'package:inventopos/presentation/customers/widgets/customer_detail_skeleton.dart';
 import 'package:intl/intl.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
@@ -49,7 +50,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
       body: BlocBuilder<CustomerDetailBloc, CustomerDetailState>(
         builder: (context, state) {
           if (state.loading && state.customer == null) {
-            return const Center(child: CircularProgressIndicator());
+            return const CustomerDetailSkeleton();
           }
           final customer = state.customer;
           if (customer == null) {

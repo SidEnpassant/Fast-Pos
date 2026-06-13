@@ -11,6 +11,7 @@ import 'package:inventopos/presentation/auth/widgets/auth_step_progress_bar.dart
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/bloc/register_event.dart';
 import 'package:inventopos/presentation/register/bloc/register_state.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/register/widgets/register_step_fields.dart';
 
 class RegisterScreen extends StatefulWidget {
@@ -268,14 +269,14 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       }
                                     },
                               child: submitting
-                                  ? const SizedBox(
-                                      height: 22,
-                                      width: 22,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
+                                  ? AppShimmer(
+                                      child: Text(isLastStep
+                                          ? 'Create account'
+                                          : 'Continue'),
                                     )
-                                  : Text(isLastStep ? 'Create account' : 'Continue'),
+                                  : Text(isLastStep
+                                      ? 'Create account'
+                                      : 'Continue'),
                             ),
                           ),
                         ],

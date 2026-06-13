@@ -1,32 +1,26 @@
 import 'package:flutter/material.dart';
-import 'package:shimmer/shimmer.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 
 class AnalyticsShimmerPlaceholder extends StatelessWidget {
   const AnalyticsShimmerPlaceholder({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Shimmer.fromColors(
-      baseColor: Colors.grey[300]!,
-      highlightColor: Colors.grey[100]!,
+    return const AppShimmer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            height: 50,
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(8),
-            ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: AppSkeleton(height: 50),
           ),
-          Container(
-            height: 200,
-            margin: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
-            ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: AppSkeleton(height: 200, borderRadius: 12),
+          ),
+          Padding(
+            padding: EdgeInsets.all(16),
+            child: AppSkeleton(height: 150, borderRadius: 12),
           ),
         ],
       ),

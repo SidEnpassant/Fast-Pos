@@ -7,6 +7,7 @@ import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
@@ -91,7 +92,7 @@ class _CustomersScreenState extends State<CustomersScreen> {
                   .watchCustomersForUser(uid),
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const AppSkeletonList(itemCount: 8);
                 }
                 var list = snap.data ?? [];
                 if (_query.isNotEmpty) {

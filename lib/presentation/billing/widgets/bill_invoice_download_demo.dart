@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/application/billing/download_remote_pdf_to_device_use_case.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 
 /// Demo / utility: download a remote PDF to device storage (keeps legacy behavior).
 abstract final class BillInvoiceDownloadDemo {
@@ -22,8 +23,36 @@ abstract final class BillInvoiceDownloadDemo {
         context: context,
         barrierDismissible: false,
         builder: (BuildContext dialogContext) {
-          return const Center(
-            child: CircularProgressIndicator(),
+          return Center(
+            child: AppShimmer(
+              child: Card(
+                child: Padding(
+                  padding: EdgeInsets.all(24),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      Container(
+                        width: 120,
+                        height: 16,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
           );
         },
       );

@@ -8,6 +8,7 @@ import 'package:inventopos/domain/ai/entities/ai_insight.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_bloc.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_event.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_state.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/insights/widgets/ai_brief_markdown_view.dart';
 import 'package:intl/intl.dart';
 
@@ -68,10 +69,27 @@ class DashboardAiBriefingCard extends StatelessWidget {
                   ),
                 ),
                 child: state.loadingBrief
-                    ? const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(16),
-                          child: CircularProgressIndicator(),
+                    ? AppShimmer(
+                        child: Column(
+                          children: [
+                            Container(
+                              height: 16,
+                              width: double.infinity,
+                              decoration: BoxDecoration(color: Colors.white),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              height: 16,
+                              width: double.infinity,
+                              decoration: BoxDecoration(color: Colors.white),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              height: 16,
+                              width: 150,
+                              decoration: BoxDecoration(color: Colors.white),
+                            ),
+                          ],
                         ),
                       )
                     : AiBriefMarkdownView(markdown: state.briefing!.markdown),
@@ -158,14 +176,11 @@ class _EmptyBriefCard extends StatelessWidget {
                       const BusinessInsightsAiBriefingRequested(),
                     ),
             icon: state.loadingBrief
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
+                ? const Icon(Icons.bolt, color: Colors.transparent)
                 : const Icon(Icons.bolt),
-            label: Text(
-                state.loadingBrief ? 'Generating…' : 'Generate today\'s brief'),
+            label: state.loadingBrief
+                ? const AppShimmer(child: Text('Generating…'))
+                : const Text('Generate today\'s brief'),
           ),
           if (state.error != null) ...[
             const SizedBox(height: AppSpacing.sm),

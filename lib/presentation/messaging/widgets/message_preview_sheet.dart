@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/messaging/entities/message_channel.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
@@ -110,10 +111,8 @@ class _MessagePreviewBodyState extends State<_MessagePreviewBody> {
                         .read<MessagingAutomationBloc>()
                         .add(const MessagingLaunchRequested()),
                 child: state.launching
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                    ? const AppShimmer(
+                        child: Text('Open in messaging app'),
                       )
                     : const Text('Open in messaging app'),
               ),

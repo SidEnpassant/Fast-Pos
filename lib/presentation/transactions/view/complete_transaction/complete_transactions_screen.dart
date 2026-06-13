@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/widgets/m3/app_date_section_header.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
@@ -38,13 +40,13 @@ class _CompleteTransactionsScreenState
   }
 
   Future<void> _showDateRangePicker(BuildContext blocContext) async {
-    final cubit = blocContext.read<CompleteTransactionsBloc>();
+    final bloc = blocContext.read<CompleteTransactionsBloc>();
     final lastSelectable = DateTime.now();
     final firstSelectable = DateTime(2000);
 
     DateTimeRange? initialRange;
-    final s = cubit.state.startDate;
-    final e = cubit.state.endDate;
+    final s = bloc.state.startDate;
+    final e = bloc.state.endDate;
     if (s != null) {
       final start = DatePickerUtils.clampInitial(
         preferred: s,
@@ -72,7 +74,7 @@ class _CompleteTransactionsScreenState
     );
 
     if (result != null) {
-      cubit.setDateRange(result.start, result.end);
+      bloc.setDateRange(result.start, result.end);
     }
   }
 
@@ -83,7 +85,37 @@ class _CompleteTransactionsScreenState
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => const Center(child: CircularProgressIndicator()),
+      builder: (_) =>  Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: AppShimmer(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  Container(
+                    width: 100,
+                    height: 16,
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
 
     if (!mounted) return;
@@ -174,8 +206,7 @@ class _CompleteTransactionsScreenState
                             }
 
                             if (txState.loading) {
-                              return const Center(
-                                  child: CircularProgressIndicator());
+                              return const AppSkeletonList(itemCount: 8);
                             }
 
                             final groupedTransactions = txState.groupedTransactions;

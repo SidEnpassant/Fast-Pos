@@ -130,7 +130,7 @@ class _PnLTab extends StatelessWidget {
     return BlocBuilder<AnalyticsHubBloc, AnalyticsHubState>(
       builder: (context, hub) {
         if (hub.loading) {
-          return const Center(child: CircularProgressIndicator());
+          return const AnalyticsShimmerPlaceholder();
         }
         final monthKey = hub.selectedMonth;
         final monthDate =

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_event.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_state.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/forgot_password/widgets/forgot_password_email_field.dart';
 import 'package:inventopos/presentation/forgot_password/widgets/forgot_password_footer_links.dart';
 import 'package:inventopos/presentation/forgot_password/widgets/forgot_password_header.dart';
@@ -97,12 +98,14 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                               ),
                               child: Center(
                                 child: loading
-                                    ? const SizedBox(
-                                        width: 22,
-                                        height: 22,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.black,
+                                    ? const AppShimmer(
+                                        child: Text(
+                                          'Send Email',
+                                          style: TextStyle(
+                                            color: Colors.black,
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       )
                                     : const Text(

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/application/billing/download_bill_pdf_use_case.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:open_file/open_file.dart';
 
 /// Opens invoice PDF from Supabase storage, local cache, or cloud URL.
@@ -21,17 +22,33 @@ Future<void> openBillPdf(BuildContext context, String? pdfUrl) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => const Center(
+    builder: (ctx) =>  Center(
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Opening invoice…'),
-            ],
+          child: AppShimmer(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Container(
+                  width: 120,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -66,17 +83,33 @@ Future<void> openBillPdfForBill(BuildContext context, Bill bill) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) => const Center(
+    builder: (ctx) =>  Center(
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Opening invoice…'),
-            ],
+          child: AppShimmer(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(height: 16),
+                Container(
+                  width: 120,
+                  height: 16,
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -131,8 +164,33 @@ class BillPdfViewerPage extends StatelessWidget {
       openBillPdf(context, pdfUrl);
       Navigator.pop(context);
     });
-    return const Scaffold(
-      body: Center(child: CircularProgressIndicator()),
+    return  Scaffold(
+      body: Center(
+        child: AppShimmer(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  shape: BoxShape.circle,
+                ),
+              ),
+              SizedBox(height: 24),
+              Container(
+                width: 150,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/application/billing/validate_bill_line_quantity.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
@@ -161,7 +162,15 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
           if (_loading)
             const Padding(
               padding: EdgeInsets.all(16),
-              child: Center(child: CircularProgressIndicator()),
+              child: AppShimmer(
+                child: Column(
+                  children: [
+                    AppSkeletonText(height: 40),
+                    SizedBox(height: 12),
+                    AppSkeletonText(width: 150),
+                  ],
+                ),
+              ),
             )
           else ...[
             if (_availableStock != null)

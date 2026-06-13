@@ -25,8 +25,9 @@ import 'package:inventopos/presentation/dashboard/widgets/dashboard_ai_bootstrap
 import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dart';
 import 'package:inventopos/presentation/day_operations/widgets/dashboard_opening_snapshot.dart';
 import 'package:inventopos/presentation/insights/widgets/dashboard_ai_briefing_card.dart';
-import 'package:inventopos/presentation/inventory_automation/widgets/dashboard_reorder_alerts.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_skeleton.dart';
 import 'package:intl/intl.dart';
+import 'package:inventopos/presentation/inventory_automation/widgets/dashboard_reorder_alerts.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -47,7 +48,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             buildWhen: (prev, curr) => prev.loading != curr.loading,
             builder: (context, hubState) {
               if (hubState.loading) {
-                return const Center(child: CircularProgressIndicator());
+                return const DashboardSkeleton();
               }
 
               return RefreshIndicator(

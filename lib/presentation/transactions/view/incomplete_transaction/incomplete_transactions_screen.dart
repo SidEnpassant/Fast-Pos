@@ -6,6 +6,8 @@ import 'package:inventopos/core/widgets/m3/app_date_section_header.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/presentation/transactions/widgets/pending_transaction_bill_card.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
@@ -134,7 +136,7 @@ class _IncompleteTransactionsScreenState
                       }
 
                       if (txState.loading) {
-                        return const Center(child: CircularProgressIndicator());
+                        return const AppSkeletonList(itemCount: 8);
                       }
 
                       if (!txState.hasPartialBills) {
@@ -391,71 +393,39 @@ class _UpdatePaymentLoader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      key: const ValueKey('loader'),
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        SizedBox(
-          height: 96,
-          width: 96,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              SizedBox(
-                height: 96,
-                width: 96,
-                child: CircularProgressIndicator(
-                  strokeWidth: 3.5,
-                  color: theme.colorScheme.primary,
-                  backgroundColor:
-                      theme.colorScheme.primary.withValues(alpha: 0.12),
-                ),
-              ),
-              Container(
-                height: 52,
-                width: 52,
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.payments_rounded,
-                  size: 28,
-                  color: theme.colorScheme.onPrimaryContainer,
-                ),
-              )
-                  .animate(onPlay: (c) => c.repeat(reverse: true))
-                  .scale(
-                    begin: const Offset(0.92, 0.92),
-                    end: const Offset(1, 1),
-                    duration: 900.ms,
-                    curve: Curves.easeInOut,
-                  ),
-            ],
+    return AppShimmer(
+      child: Column(
+        key: const ValueKey('loader'),
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            height: 96,
+            width: 96,
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+            ),
           ),
-        ),
-        const SizedBox(height: 24),
-        Text(
-          'Updating payment…',
-          style: theme.textTheme.titleSmall?.copyWith(
-            fontWeight: FontWeight.w600,
+          const SizedBox(height: 24),
+          Container(
+            height: 20,
+            width: 150,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-        )
-            .animate()
-            .fadeIn(duration: 280.ms)
-            .slideY(begin: 0.15, end: 0, duration: 280.ms),
-        const SizedBox(height: 8),
-        Text(
-          'Syncing your invoice PDF',
-          style: theme.textTheme.bodySmall?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+          const SizedBox(height: 8),
+          Container(
+            height: 14,
+            width: 200,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(4),
+            ),
           ),
-          textAlign: TextAlign.center,
-        )
-            .animate()
-            .fadeIn(delay: 120.ms, duration: 320.ms)
-            .slideY(begin: 0.12, end: 0, delay: 120.ms, duration: 320.ms),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/auth_login/view/login_screen.dart';
 
 /// Splash gate driven by [AuthRepository.sessionStream] (no Supabase in the widget).
@@ -19,7 +20,21 @@ class SplashScreen extends StatelessWidget {
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting &&
                 auth.currentSession == null) {
-              return const CircularProgressIndicator();
+              return AppShimmer(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 100,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ],
+                ),
+              );
             }
             final session = snapshot.data ?? auth.currentSession;
             if (session != null) {

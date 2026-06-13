@@ -13,8 +13,9 @@ import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_event.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_state.dart';
-import 'package:inventopos/presentation/inventory/widgets/product_list_tile.dart';
+import 'package:inventopos/presentation/inventory/widgets/inventory_skeleton.dart';
 import 'package:intl/intl.dart';
+import 'package:inventopos/presentation/inventory/widgets/product_list_tile.dart';
 
 class InventoryScreen extends StatefulWidget {
   const InventoryScreen({super.key});
@@ -215,9 +216,7 @@ class _InventoryScreenState extends State<InventoryScreen> {
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 8)),
               if (state.loading)
-                const SliverFillRemaining(
-                  child: Center(child: CircularProgressIndicator()),
-                )
+                InventorySkeleton(viewMode: state.viewMode)
               else if (state.filteredProducts.isEmpty)
                 SliverFillRemaining(
                   child: AppEmptyState(

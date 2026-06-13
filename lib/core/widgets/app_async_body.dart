@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 
 /// Standard loading / error / empty / content slots for async pages.
 class AppAsyncBody<T> extends StatelessWidget {
@@ -9,6 +10,7 @@ class AppAsyncBody<T> extends StatelessWidget {
     required this.child,
     this.errorMessage,
     this.onRetry,
+    this.loadingWidget,
   });
 
   final bool isLoading;
@@ -16,6 +18,7 @@ class AppAsyncBody<T> extends StatelessWidget {
   final Widget child;
   final String? errorMessage;
   final VoidCallback? onRetry;
+  final Widget? loadingWidget;
 
   @override
   Widget build(BuildContext context) {
@@ -39,7 +42,7 @@ class AppAsyncBody<T> extends StatelessWidget {
       );
     }
     if (isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return loadingWidget ?? const AppSkeletonList();
     }
     if (isEmpty) {
       return Center(

@@ -12,6 +12,9 @@ import 'package:inventopos/presentation/insights/bloc/business_insights_ai_event
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_state.dart';
 import 'package:inventopos/presentation/insights/widgets/ai_brief_markdown_view.dart';
 
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
+import 'package:intl/intl.dart';
+
 class AiHubScreen extends StatefulWidget {
   const AiHubScreen({super.key});
 
@@ -36,7 +39,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
       body: BlocBuilder<AiHubBloc, AiHubState>(
         builder: (context, hub) {
           if (hub.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppSkeletonList(itemCount: 8);
           }
           if (!hub.aiEnabled) {
             return _EnablePrompt(onSettings: () => context.push('/ai-settings'));

@@ -12,6 +12,7 @@ import 'package:inventopos/presentation/expenses/bloc/expenses_bloc.dart';
 import 'package:inventopos/presentation/expenses/bloc/expenses_event.dart';
 import 'package:inventopos/presentation/expenses/bloc/expenses_state.dart';
 import 'package:inventopos/presentation/expenses/view/expense_editor_page.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:intl/intl.dart';
 
 class ExpensesScreen extends StatefulWidget {
@@ -52,7 +53,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
       body: BlocBuilder<ExpensesBloc, ExpensesState>(
         builder: (context, state) {
           if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppSkeletonList(itemCount: 8);
           }
           return Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

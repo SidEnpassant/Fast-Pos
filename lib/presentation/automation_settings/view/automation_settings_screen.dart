@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/automation_settings/bloc/automation_settings_bloc.dart';
 import 'package:inventopos/presentation/automation_settings/bloc/automation_settings_event.dart';
 import 'package:inventopos/presentation/automation_settings/bloc/automation_settings_state.dart';
@@ -58,7 +60,7 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
         },
         builder: (context, state) {
           if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppSkeletonList(itemCount: 12);
           }
           final p = state.preferences;
           if (p == null) {
@@ -214,10 +216,8 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
                         .read<AutomationSettingsBloc>()
                         .add(const AutomationSettingsSaveRequested()),
                 child: state.saving
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(strokeWidth: 2),
+                    ? const AppShimmer(
+                        child: Text('Save'),
                       )
                     : const Text('Save'),
               ),

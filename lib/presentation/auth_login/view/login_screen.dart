@@ -8,6 +8,7 @@ import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_event.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_state.dart';
 import 'package:inventopos/presentation/auth_login/widgets/login_credentials_fields.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/auth_login/widgets/login_register_prompt.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -92,12 +93,8 @@ class _LoginScreenState extends State<LoginScreen> {
                     FilledButton(
                       onPressed: state.isSubmitting ? null : _submit,
                       child: state.isSubmitting
-                          ? const SizedBox(
-                              height: 22,
-                              width: 22,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                              ),
+                          ? const AppShimmer(
+                              child: Text('Sign in'),
                             )
                           : const Text('Sign in'),
                     ),

@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/automation_scheduler/bloc/automation_scheduler_bloc.dart';
 import 'package:inventopos/presentation/automation_scheduler/bloc/automation_scheduler_event.dart';
 import 'package:inventopos/presentation/automation_scheduler/bloc/automation_scheduler_state.dart';
@@ -34,7 +35,7 @@ class _AutomationSchedulerScreenState extends State<AutomationSchedulerScreen> {
       body: BlocBuilder<AutomationSchedulerBloc, AutomationSchedulerState>(
         builder: (context, state) {
           if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppSkeletonList(itemCount: 8);
           }
           if (state.jobs.isEmpty) {
             return const Center(

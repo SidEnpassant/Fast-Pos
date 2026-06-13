@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/domain/entities/pos_notification.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_bloc.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_view_state.dart';
@@ -21,7 +22,7 @@ class NotificationsScreen extends StatelessWidget {
       body: BlocBuilder<NotificationsBloc, NotificationsViewState>(
         builder: (context, state) {
           if (state.loading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppSkeletonList(itemCount: 10);
           }
           final list = state.notifications;
           if (list.isEmpty) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 
 Future<void> showSignedBillPreviewDialog(
   BuildContext context, {
@@ -36,8 +37,11 @@ Future<void> showSignedBillPreviewDialog(
                                 loadingBuilder:
                                     (context, child, loadingProgress) {
                                   if (loadingProgress == null) return child;
-                                  return const Center(
-                                    child: CircularProgressIndicator(),
+                                  return const AppShimmer(
+                                    child: Center(
+                                      child: Icon(Icons.image,
+                                          size: 100, color: Colors.white),
+                                    ),
                                   );
                                 },
                                 errorBuilder: (context, error, stackTrace) {
@@ -67,7 +71,12 @@ Future<void> showSignedBillPreviewDialog(
                   fit: BoxFit.contain,
                   loadingBuilder: (context, child, loadingProgress) {
                     if (loadingProgress == null) return child;
-                    return const Center(child: CircularProgressIndicator());
+                    return const AppShimmer(
+                      child: Center(
+                        child:
+                            Icon(Icons.image, size: 200, color: Colors.white),
+                      ),
+                    );
                   },
                   errorBuilder: (context, error, stackTrace) {
                     return const Center(child: Text('Error loading image'));

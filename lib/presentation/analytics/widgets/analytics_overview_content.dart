@@ -3,8 +3,9 @@ import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
-import 'package:inventopos/presentation/analytics/widgets/analytics_trend_chip.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_shimmer_placeholder.dart';
 import 'package:intl/intl.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_trend_chip.dart';
 
 class AnalyticsOverviewContent extends StatelessWidget {
   const AnalyticsOverviewContent({
@@ -29,7 +30,7 @@ class AnalyticsOverviewContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (loading) {
-      return const Center(child: CircularProgressIndicator());
+      return const AnalyticsShimmerPlaceholder();
     }
 
     final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');

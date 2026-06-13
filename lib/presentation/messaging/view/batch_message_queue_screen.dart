@@ -11,6 +11,7 @@ import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart'
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_state.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/messaging/widgets/message_action_tile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -59,7 +60,7 @@ class _BatchMessageQueueScreenState extends State<BatchMessageQueueScreen> {
       body: BlocBuilder<MessagingAutomationBloc, MessagingAutomationState>(
         builder: (context, state) {
           if (state.queueLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const AppSkeletonList(itemCount: 8);
           }
 
           final actions = state.queue;

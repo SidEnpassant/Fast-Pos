@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 
 class LoginSubmitButton extends StatelessWidget {
   const LoginSubmitButton({
@@ -23,12 +24,10 @@ class LoginSubmitButton extends StatelessWidget {
           ),
         ),
         child: isLoading
-            ? const SizedBox(
-                height: 24,
-                width: 24,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  color: Colors.white,
+            ? const AppShimmer(
+                child: Text(
+                  'Login',
+                  style: TextStyle(fontSize: 16),
                 ),
               )
             : const Text(

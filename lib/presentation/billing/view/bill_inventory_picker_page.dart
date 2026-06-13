@@ -7,6 +7,7 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_event.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_state.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 
 class BillInventoryPickerPage extends StatefulWidget {
@@ -66,7 +67,7 @@ class _BillInventoryPickerPageState extends State<BillInventoryPickerPage> {
             child: BlocBuilder<BillInventoryPickerBloc, BillInventoryPickerState>(
               builder: (context, state) {
                 if (state.loading) {
-                  return const Center(child: CircularProgressIndicator());
+                  return const AppSkeletonList(itemCount: 10);
                 }
                 if (state.filteredProducts.isEmpty) {
                   return const AppEmptyState(
