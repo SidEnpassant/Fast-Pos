@@ -28,6 +28,7 @@ import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dar
 import 'package:inventopos/presentation/day_operations/widgets/dashboard_opening_snapshot.dart';
 import 'package:inventopos/presentation/insights/widgets/dashboard_ai_briefing_card.dart';
 import 'package:inventopos/presentation/inventory_automation/widgets/dashboard_reorder_alerts.dart';
+import 'package:inventopos/core/updates/shorebird_updater.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -37,6 +38,16 @@ class DashboardScreen extends StatefulWidget {
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        FastPosShorebirdUpdater.checkForUpdates(context);
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

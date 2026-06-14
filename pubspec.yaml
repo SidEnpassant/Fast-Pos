@@ -94,6 +94,7 @@ dependencies:
   workmanager: ^0.6.0
   video_player: ^2.10.0
   flutter_dotenv: ^5.2.1
+  shorebird_code_push: ^2.0.6
 
 dev_dependencies:
   flutter_test:
@@ -139,6 +140,7 @@ flutter:
     - assets/icon/app_icon.png
     - assets/icon/
     - assets/video_asset/
+    - shorebird.yaml
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images
