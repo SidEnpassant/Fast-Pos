@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
@@ -10,7 +11,6 @@ import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_form_components.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 import 'package:inventopos/presentation/billing/widgets/repeat_order_suggestions.dart';
-import 'package:intl/intl.dart';
 
 class BillGenerationCustomerSection extends StatelessWidget {
   const BillGenerationCustomerSection({

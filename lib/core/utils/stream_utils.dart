@@ -6,10 +6,14 @@ import 'package:hive_flutter/hive_flutter.dart';
 Stream<T> hiveWatchStream<T>({
   required Stream<BoxEvent> events,
   required T Function() read,
+  bool Function(BoxEvent)? filter,
 }) {
   return Stream.multi((controller) {
     controller.add(read());
-    final sub = events.map((_) => read()).listen(
+    final sub = events
+        .where((e) => filter == null || filter(e))
+        .map((_) => read())
+        .listen(
           controller.add,
           onError: controller.addError,
           onDone: controller.close,

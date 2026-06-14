@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_event.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_inventory_picker_state.dart';
-import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 
 class BillInventoryPickerPage extends StatefulWidget {

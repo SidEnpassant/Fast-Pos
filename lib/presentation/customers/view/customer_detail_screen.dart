@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
@@ -11,9 +12,8 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_bloc.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_event.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_state.dart';
-import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
 import 'package:inventopos/presentation/customers/widgets/customer_detail_skeleton.dart';
-import 'package:intl/intl.dart';
+import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   const CustomerDetailScreen({super.key, required this.customerId});

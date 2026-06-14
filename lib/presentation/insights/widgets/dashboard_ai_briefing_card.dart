@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/ai/entities/ai_insight.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_bloc.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_event.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_state.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/insights/widgets/ai_brief_markdown_view.dart';
-import 'package:intl/intl.dart';
 
 class DashboardAiBriefingCard extends StatelessWidget {
   const DashboardAiBriefingCard({super.key});
@@ -75,19 +75,19 @@ class DashboardAiBriefingCard extends StatelessWidget {
                             Container(
                               height: 16,
                               width: double.infinity,
-                              decoration: BoxDecoration(color: Colors.white),
+                              decoration: const BoxDecoration(color: Colors.white),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Container(
                               height: 16,
                               width: double.infinity,
-                              decoration: BoxDecoration(color: Colors.white),
+                              decoration: const BoxDecoration(color: Colors.white),
                             ),
-                            SizedBox(height: 8),
+                            const SizedBox(height: 8),
                             Container(
                               height: 16,
                               width: 150,
-                              decoration: BoxDecoration(color: Colors.white),
+                              decoration: const BoxDecoration(color: Colors.white),
                             ),
                           ],
                         ),

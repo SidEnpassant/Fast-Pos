@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
-import 'package:intl/intl.dart';
 
 class ExpenseEditorPage extends StatefulWidget {
   const ExpenseEditorPage({super.key, this.expense});

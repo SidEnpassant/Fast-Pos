@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:bloc/bloc.dart';
+import 'package:bloc_concurrency/bloc_concurrency.dart';
 import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_event.dart';
@@ -10,7 +11,10 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   InventoryBloc(this._products) : super(const InventoryState()) {
     on<InventoryStarted>(_onStarted);
     on<InventoryProductsReceived>(_onProductsReceived);
-    on<InventorySearchQueryChanged>(_onSearchChanged);
+    on<InventorySearchQueryChanged>(
+      _onSearchChanged,
+      transformer: restartable(),
+    );
     on<InventoryProductSaved>(_onProductSaved);
     on<InventoryProductDeleted>(_onProductDeleted);
     on<InventoryFilterChanged>(_onFilterChanged);

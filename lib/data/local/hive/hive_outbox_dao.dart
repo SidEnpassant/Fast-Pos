@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:hive_flutter/hive_flutter.dart';
+import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:uuid/uuid.dart';
 
@@ -16,7 +17,10 @@ class HiveOutboxDao {
   }
 
   Stream<int> watchPendingCount(String userId) {
-    return _box.watch().map((_) => pendingCount(userId));
+    return hiveWatchStream(
+      events: _box.watch(),
+      read: () => pendingCount(userId),
+    );
   }
 
   Future<String> enqueue({
@@ -48,11 +52,7 @@ class HiveOutboxDao {
   }
 
   Future<void> markSynced(String id) async {
-    final raw = _box.get(id);
-    if (raw == null) return;
-    final m = Map<String, dynamic>.from(raw);
-    m['status'] = 'synced';
-    await _box.put(id, m);
+    await _box.delete(id);
   }
 
   Future<void> incrementRetry(String id) async {

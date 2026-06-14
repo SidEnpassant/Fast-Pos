@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
 import 'package:inventopos/domain/entities/product.dart';
-import 'package:intl/intl.dart';
 
 class ProductListTile extends StatelessWidget {
   const ProductListTile({

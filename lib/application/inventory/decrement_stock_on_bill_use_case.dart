@@ -65,15 +65,16 @@ class DecrementStockOnBillUseCase {
           await sync.processOutbox(userId);
         }
       }
-    } else if (sync != null) {
+    } else {
       await sync.enqueue(
-        userId: userId,
-        operationType: 'decrement_stock',
-        payload: {
-          'bill_id': billId,
-          'lines': payload,
-        },
-      );
+      userId: userId,
+      operationType: 'decrement_stock',
+      payload: {
+        'bill_id': billId,
+        'lines': payload,
+      },
+    );
     }
+  
   }
 }

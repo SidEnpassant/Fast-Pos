@@ -68,6 +68,10 @@ class NotificationSyncCoordinator {
 
     final currentIds = list.map((n) => n.id).toSet();
     _seenIds.removeWhere((id) => !currentIds.contains(id));
+
+    final currentDedupKeys =
+        list.where((n) => n.dedupKey != null).map((n) => n.dedupKey!).toSet();
+    _seenDedupKeys.removeWhere((k) => !currentDedupKeys.contains(k));
   }
 
   Future<void> _maybeShow(PosNotification n) async {

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
-import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/router/app_shell_navigation.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/presentation/inventory_automation/bloc/inventory_automation_bloc.dart';

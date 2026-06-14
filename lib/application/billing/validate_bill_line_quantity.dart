@@ -30,7 +30,7 @@ abstract final class ValidateBillLineQuantity {
     }
 
     if (productId == null || productId.isEmpty || availableStock == null) {
-      return BillLineQuantityValidation(isValid: true, maxAllowed: null);
+      return const BillLineQuantityValidation(isValid: true, maxAllowed: null);
     }
 
     var draftQty = 0;

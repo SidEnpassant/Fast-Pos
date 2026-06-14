@@ -2,11 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/router/app_shell_navigation.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
-import 'package:inventopos/presentation/analytics/widgets/analytics_message_center.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_customers_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_inventory_content.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_message_center.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_overview_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_pnl_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_content.dart';
@@ -152,7 +152,7 @@ class _PnLTab extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: DropdownButtonFormField<String>(
-                  value: monthKey,
+                  initialValue: monthKey,
                   decoration: const InputDecoration(
                     labelText: 'Month',
                     border: OutlineInputBorder(),

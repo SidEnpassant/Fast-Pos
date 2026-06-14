@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_bill_dao.dart';
 import 'package:inventopos/data/mappers/merge_bills.dart';
@@ -70,6 +71,7 @@ class OfflineFirstBillsRepository implements BillsRepository {
       StreamSubscription<List<Bill>>? remoteSub;
       List<Bill> localBills = _local.listForUser(uid);
       List<Bill> remoteBills = [];
+      List<Bill>? lastEmitted;
 
       void emitMerged() {
         final byId = <String, Bill>{};
@@ -86,7 +88,11 @@ class OfflineFirstBillsRepository implements BillsRepository {
         }
         final merged = byId.values.toList()
           ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        controller.add(merged);
+
+        if (!listEquals(merged, lastEmitted)) {
+          lastEmitted = merged;
+          controller.add(merged);
+        }
       }
 
       localSub = localStream.listen((bills) {

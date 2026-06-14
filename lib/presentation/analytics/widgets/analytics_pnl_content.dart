@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
-import 'package:intl/intl.dart';
 
 class AnalyticsPnLContent extends StatelessWidget {
   const AnalyticsPnLContent({

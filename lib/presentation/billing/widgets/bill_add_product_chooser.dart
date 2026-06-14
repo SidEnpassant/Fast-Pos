@@ -3,12 +3,12 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/application/billing/resolve_product_for_barcode_use_case.dart';
 import 'package:inventopos/core/widgets/m3/app_barcode_scan_sheet.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/domain/entities/product.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 
 Future<void> showBillAddProductChooser(BuildContext context) async {
@@ -103,7 +103,7 @@ Future<void> _runScanFlow(BuildContext context) async {
     builder: (ctx) => Center(
       child: Card(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: AppShimmer(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -111,12 +111,12 @@ Future<void> _runScanFlow(BuildContext context) async {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Container(
                   width: 120,
                   height: 16,

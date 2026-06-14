@@ -27,19 +27,19 @@ abstract final class BillInvoiceDownloadDemo {
             child: AppShimmer(
               child: Card(
                 child: Padding(
-                  padding: EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(24),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Container(
                         width: 48,
                         height: 48,
-                        decoration: BoxDecoration(
+                        decoration: const BoxDecoration(
                           color: Colors.white,
                           shape: BoxShape.circle,
                         ),
                       ),
-                      SizedBox(height: 16),
+                      const SizedBox(height: 16),
                       Container(
                         width: 120,
                         height: 16,

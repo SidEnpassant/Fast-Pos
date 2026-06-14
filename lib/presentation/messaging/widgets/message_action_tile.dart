@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
 import 'package:inventopos/domain/messaging/entities/message_channel.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
 import 'package:inventopos/presentation/messaging/widgets/message_preview_sheet.dart';
-import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MessageActionTile extends StatelessWidget {

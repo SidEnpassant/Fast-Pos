@@ -1,16 +1,17 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/domain/analytics/business_analytics.dart';
+import 'package:inventopos/domain/analytics/customer_analytics.dart';
 import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/entities/product.dart';
-import 'package:inventopos/domain/analytics/business_analytics.dart';
-import 'package:inventopos/domain/analytics/customer_analytics.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';

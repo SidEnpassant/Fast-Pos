@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_event.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_state.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/forgot_password/widgets/forgot_password_email_field.dart';
 import 'package:inventopos/presentation/forgot_password/widgets/forgot_password_footer_links.dart';
 import 'package:inventopos/presentation/forgot_password/widgets/forgot_password_header.dart';

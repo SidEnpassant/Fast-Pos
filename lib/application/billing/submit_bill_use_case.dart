@@ -1,6 +1,6 @@
 import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
-import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
 import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
+import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
 import 'package:inventopos/core/performance/main_isolate.dart';

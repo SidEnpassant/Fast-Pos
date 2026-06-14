@@ -1,5 +1,8 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
+import 'package:hive_flutter/hive_flutter.dart';
+import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/data/local/hive/hive_product_dao.dart';
 import 'package:inventopos/data/mappers/product_mapper.dart';
 import 'package:inventopos/domain/entities/product.dart';
@@ -18,6 +21,7 @@ class ProductRepositoryImpl implements ProductRepository {
   final HiveProductDao _local;
   final _uuid = const Uuid();
   final Map<String, Future<void>> _pullInFlight = {};
+  DateTime? _lastPullAt;
 
   @override
   Stream<List<Product>> watchProductsForUser(String userId) {
@@ -26,6 +30,11 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   Future<void> _pullRemote(String userId) async {
+    if (_lastPullAt != null &&
+        DateTime.now().difference(_lastPullAt!) < const Duration(seconds: 30)) {
+      return;
+    }
+
     final inFlight = _pullInFlight[userId];
     if (inFlight != null) return inFlight;
 
@@ -33,6 +42,7 @@ class ProductRepositoryImpl implements ProductRepository {
     _pullInFlight[userId] = future;
     try {
       await future;
+      _lastPullAt = DateTime.now();
     } finally {
       if (identical(_pullInFlight[userId], future)) {
         _pullInFlight.remove(userId);
@@ -42,12 +52,38 @@ class ProductRepositoryImpl implements ProductRepository {
 
   Future<void> _pullRemoteOnce(String userId) async {
     try {
-      final rows = await _client.from('products').select().eq('user_id', userId);
+      final cursor = _getCursor(userId);
+      final rows = await _client
+          .from('products')
+          .select()
+          .eq('user_id', userId)
+          .gt('updated_at', cursor)
+          .order('updated_at');
+
       final products = (rows as List)
           .map((e) => ProductMapper.fromRow(Map<String, dynamic>.from(e as Map)))
           .toList();
-      await _local.putAll(products);
-    } catch (_) {}
+
+      if (products.isNotEmpty) {
+        await _local.putAll(products);
+        final latest =
+            rows.map((e) => e['updated_at'] as String).toList()..sort();
+        await _setCursor(userId, latest.last);
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('ProductRepo._pullRemoteOnce failed: $e');
+    }
+  }
+
+  String _getCursor(String userId) {
+    final b = Hive.box<Map>(HiveBoxes.syncCursors);
+    return b.get('products:$userId')?['last_updated'] as String? ??
+        '1970-01-01T00:00:00Z';
+  }
+
+  Future<void> _setCursor(String userId, String cursor) async {
+    final b = Hive.box<Map>(HiveBoxes.syncCursors);
+    await b.put('products:$userId', {'last_updated': cursor});
   }
 
   @override
@@ -71,7 +107,8 @@ class ProductRepositoryImpl implements ProductRepository {
       final p = ProductMapper.fromRow(Map<String, dynamic>.from(row));
       await _local.put(p);
       return p;
-    } catch (_) {
+    } catch (e) {
+      if (kDebugMode) debugPrint('ProductRepo.findByBarcode failed: $e');
       return null;
     }
   }
@@ -110,7 +147,9 @@ class ProductRepositoryImpl implements ProductRepository {
     };
     try {
       await _client.from('products').insert(row);
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('ProductRepo.createProduct failed: $e');
+    }
     final p = ProductMapper.fromRow(row);
     await _local.put(p);
     return p;
@@ -121,7 +160,9 @@ class ProductRepositoryImpl implements ProductRepository {
     final row = ProductMapper.toRow(product);
     try {
       await _client.from('products').update(row).eq('id', product.id);
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('ProductRepo.updateProduct failed: $e');
+    }
     await _local.put(product);
     return product;
   }
@@ -132,7 +173,9 @@ class ProductRepositoryImpl implements ProductRepository {
       await _client.from('products').update({
         'deleted_at': DateTime.now().toUtc().toIso8601String(),
       }).eq('id', id);
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('ProductRepo.deleteProduct failed: $e');
+    }
     final p = _local.findById(id);
     if (p != null) {
       await _local.put(
@@ -184,7 +227,9 @@ class ProductRepositoryImpl implements ProductRepository {
         'p_user_id': userId,
         'p_json': rows,
       });
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('ProductRepo.bulkUpsertLocal failed: $e');
+    }
   }
 
   @override

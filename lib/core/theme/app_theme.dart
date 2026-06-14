@@ -4,13 +4,14 @@ import 'package:inventopos/core/design/app_radii.dart';
 
 abstract final class AppTheme {
   static const Color _seedBlue = Color(0xFF2962FF);
+  static final _textTheme = GoogleFonts.poppinsTextTheme();
 
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
       seedColor: _seedBlue,
       brightness: Brightness.light,
     );
-    final textTheme = GoogleFonts.poppinsTextTheme();
+    final textTheme = _textTheme;
     final shape = RoundedRectangleBorder(
       borderRadius: BorderRadius.circular(AppRadii.lg),
     );
@@ -57,7 +58,7 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(AppRadii.md),
         ),
       ),
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadii.xl)),
         ),

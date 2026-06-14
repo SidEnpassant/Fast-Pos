@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/application/billing/download_bill_pdf_use_case.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:open_file/open_file.dart';
 
 /// Opens invoice PDF from Supabase storage, local cache, or cloud URL.
@@ -25,7 +25,7 @@ Future<void> openBillPdf(BuildContext context, String? pdfUrl) async {
     builder: (ctx) =>  Center(
       child: Card(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: AppShimmer(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -33,12 +33,12 @@ Future<void> openBillPdf(BuildContext context, String? pdfUrl) async {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Container(
                   width: 120,
                   height: 16,
@@ -86,7 +86,7 @@ Future<void> openBillPdfForBill(BuildContext context, Bill bill) async {
     builder: (ctx) =>  Center(
       child: Card(
         child: Padding(
-          padding: EdgeInsets.all(24),
+          padding: const EdgeInsets.all(24),
           child: AppShimmer(
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -94,12 +94,12 @@ Future<void> openBillPdfForBill(BuildContext context, Bill bill) async {
                 Container(
                   width: 48,
                   height: 48,
-                  decoration: BoxDecoration(
+                  decoration: const BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
                   ),
                 ),
-                SizedBox(height: 16),
+                const SizedBox(height: 16),
                 Container(
                   width: 120,
                   height: 16,
@@ -173,12 +173,12 @@ class BillPdfViewerPage extends StatelessWidget {
               Container(
                 width: 64,
                 height: 64,
-                decoration: BoxDecoration(
+                decoration: const BoxDecoration(
                   color: Colors.white,
                   shape: BoxShape.circle,
                 ),
               ),
-              SizedBox(height: 24),
+              const SizedBox(height: 24),
               Container(
                 width: 150,
                 height: 20,

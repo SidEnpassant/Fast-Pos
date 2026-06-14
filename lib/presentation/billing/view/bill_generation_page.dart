@@ -1,22 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
+import 'package:inventopos/application/billing/print_receipt_use_case.dart';
 import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
+import 'package:inventopos/domain/billing/bill_submission.dart';
+import 'package:inventopos/domain/entities/receipt_payload.dart';
 import 'package:inventopos/domain/entities/user_profile.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
+import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_bloc.dart';
 import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_event.dart';
 import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_state.dart';
-import 'package:inventopos/presentation/billing/bloc/receipt_automation_bloc.dart';
-import 'package:inventopos/presentation/billing/bloc/repeat_order_bloc.dart';
-import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
-import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
-import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
-import 'package:inventopos/presentation/messaging/widgets/message_preview_sheet.dart';
-import 'package:inventopos/presentation/billing/widgets/bill_add_product_chooser.dart';
-import 'package:inventopos/domain/billing/bill_submission.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_draft_state.dart';
@@ -26,16 +24,17 @@ import 'package:inventopos/presentation/billing/bloc/bill_submission_state.dart'
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_bloc.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_event.dart';
 import 'package:inventopos/presentation/billing/bloc/bill_voice_assist/bill_voice_assist_state.dart';
+import 'package:inventopos/presentation/billing/bloc/receipt_automation_bloc.dart';
+import 'package:inventopos/presentation/billing/bloc/repeat_order_bloc.dart';
+import 'package:inventopos/presentation/billing/widgets/bill_add_product_chooser.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_generation_sections.dart';
-import 'package:inventopos/application/billing/print_receipt_use_case.dart';
-import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
-import 'package:inventopos/domain/entities/receipt_payload.dart';
-import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
+import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
+import 'package:inventopos/presentation/messaging/widgets/message_preview_sheet.dart';
 import 'package:open_file/open_file.dart';
 import 'package:share_plus/share_plus.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
-import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class BillGenerationPage extends StatefulWidget {
@@ -146,8 +145,9 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
       child: BlocBuilder<BillDraftBloc, BillDraftState>(
         builder: (context, draft) {
           final totalAmount = draft.subtotal;
-          final submitting = context.watch<BillSubmissionBloc>().state
-              is BillSubmissionLoading;
+          final submitting = context.select<BillSubmissionBloc, bool>(
+            (bloc) => bloc.state is BillSubmissionLoading,
+          );
 
           return BlocConsumer<BillVoiceAssistBloc, BillVoiceAssistState>(
             listenWhen: (previous, current) =>
@@ -206,30 +206,13 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                           const SizedBox(
                                             height: AppSpacing.md,
                                           ),
-                                          BillGenerationPaymentSection(
-                                            paymentMethod: _paymentMethod,
-                                            paymentStatus: _paymentStatus,
-                                            paidAmount: _paidAmount,
+                                          _PaymentSection(
                                             totalAmount: totalAmount,
-                                            onPaymentMethodChanged: (v) {
-                                              if (v == null) return;
-                                              setState(
-                                                () => _paymentMethod = v,
-                                              );
+                                            onChanged: (method, status, paid) {
+                                              _paymentMethod = method;
+                                              _paymentStatus = status;
+                                              _paidAmount = paid;
                                             },
-                                            onPaymentStatusChanged: (v) {
-                                              if (v == null) return;
-                                              setState(() {
-                                                _paymentStatus = v;
-                                                if (v == 'complete') {
-                                                  _paidAmount = totalAmount;
-                                                }
-                                              });
-                                            },
-                                            onPaidAmountChanged: (d) =>
-                                                setState(
-                                              () => _paidAmount = d,
-                                            ),
                                           ),
                                           const SizedBox(
                                             height: AppSpacing.lg,
@@ -261,6 +244,14 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   }
 
   Future<void> _generateBill() async {
+    final uid = Supabase.instance.client.auth.currentUser?.id;
+    if (uid == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error: You must be logged in.')),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
     final draft = context.read<BillDraftBloc>().state;
     final draftLines = draft.lines;
@@ -485,6 +476,71 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   }
 }
 
+class _PaymentSection extends StatefulWidget {
+  const _PaymentSection({
+    required this.totalAmount,
+    required this.onChanged,
+  });
+
+  final double totalAmount;
+  final void Function(String method, String status, double paid) onChanged;
+
+  @override
+  State<_PaymentSection> createState() => _PaymentSectionState();
+}
+
+class _PaymentSectionState extends State<_PaymentSection> {
+  String _method = 'cash';
+  String _status = 'complete';
+  late double _paid;
+
+  @override
+  void initState() {
+    super.initState();
+    _paid = widget.totalAmount;
+  }
+
+  @override
+  void didUpdateWidget(_PaymentSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.totalAmount != widget.totalAmount && _status == 'complete') {
+      _paid = widget.totalAmount;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onChanged(_method, _status, _paid);
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BillGenerationPaymentSection(
+      paymentMethod: _method,
+      paymentStatus: _status,
+      paidAmount: _paid,
+      totalAmount: widget.totalAmount,
+      onPaymentMethodChanged: (v) {
+        if (v == null) return;
+        setState(() => _method = v);
+        widget.onChanged(_method, _status, _paid);
+      },
+      onPaymentStatusChanged: (v) {
+        if (v == null) return;
+        setState(() {
+          _status = v;
+          if (v == 'complete') {
+            _paid = widget.totalAmount;
+          }
+        });
+        widget.onChanged(_method, _status, _paid);
+      },
+      onPaidAmountChanged: (d) {
+        setState(() => _paid = d);
+        widget.onChanged(_method, _status, _paid);
+      },
+    );
+  }
+}
+
 class _BillHeader extends StatelessWidget {
   const _BillHeader({
     required this.lineCount,
@@ -564,7 +620,7 @@ class _SubmittingIndicator extends StatelessWidget {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
               ),
@@ -573,18 +629,18 @@ class _SubmittingIndicator extends StatelessWidget {
             Container(
               width: 150,
               height: 24,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.all(Radius.circular(4)),
               ),
             ),
             const SizedBox(height: AppSpacing.sm),
             Container(
               width: 200,
               height: 16,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: Colors.white,
-                borderRadius: BorderRadius.circular(4),
+                borderRadius: BorderRadius.all(Radius.circular(4)),
               ),
             ),
           ],

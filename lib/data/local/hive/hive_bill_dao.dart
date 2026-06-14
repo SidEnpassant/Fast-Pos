@@ -28,7 +28,18 @@ class HiveBillDao {
     String? clientId,
     String syncStatus = 'synced',
   }) async {
-    final m = {
+    await _box.put(
+      bill.id,
+      _toMap(bill, clientId: clientId, syncStatus: syncStatus),
+    );
+  }
+
+  Map<String, dynamic> _toMap(
+    Bill bill, {
+    String? clientId,
+    String syncStatus = 'synced',
+  }) {
+    return {
       'id': bill.id,
       'user_id': bill.userId,
       'business_name': bill.businessName,
@@ -58,7 +69,6 @@ class HiveBillDao {
       if (clientId != null) 'client_id': clientId,
       'sync_status': syncStatus,
     };
-    await _box.put(bill.id, m);
   }
 
   Bill? findById(String userId, String billId) {
@@ -100,8 +110,20 @@ class HiveBillDao {
     List<Bill> remotes,
     Bill Function(Bill remote, Bill local) merge,
   ) async {
+    final batch = <String, Map>{};
     for (final remote in remotes) {
-      await mergeFromRemote(remote, merge);
+      final existing = _box.get(remote.id);
+      if (existing == null) {
+        batch[remote.id] = _toMap(remote);
+      } else {
+        final local = BillMapper.fromSupabaseRow(
+          Map<String, dynamic>.from(existing),
+        );
+        batch[remote.id] = _toMap(merge(remote, local));
+      }
+    }
+    if (batch.isNotEmpty) {
+      await _box.putAll(batch);
     }
   }
 }

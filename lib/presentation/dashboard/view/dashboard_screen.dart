@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inventopos/core/router/app_shell_navigation.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
+import 'package:inventopos/core/router/app_shell_navigation.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
@@ -17,16 +18,15 @@ import 'package:inventopos/presentation/core/bloc/connectivity_state.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_event.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_ai_bootstrap.dart';
 import 'package:inventopos/presentation/dashboard/widgets/dashboard_needs_attention.dart';
 import 'package:inventopos/presentation/dashboard/widgets/dashboard_payment_health.dart';
 import 'package:inventopos/presentation/dashboard/widgets/dashboard_pulse_strip.dart';
+import 'package:inventopos/presentation/dashboard/widgets/dashboard_skeleton.dart';
 import 'package:inventopos/presentation/dashboard/widgets/dashboard_top_sellers.dart';
-import 'package:inventopos/presentation/dashboard/widgets/dashboard_ai_bootstrap.dart';
 import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dart';
 import 'package:inventopos/presentation/day_operations/widgets/dashboard_opening_snapshot.dart';
 import 'package:inventopos/presentation/insights/widgets/dashboard_ai_briefing_card.dart';
-import 'package:inventopos/presentation/dashboard/widgets/dashboard_skeleton.dart';
-import 'package:intl/intl.dart';
 import 'package:inventopos/presentation/inventory_automation/widgets/dashboard_reorder_alerts.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -325,78 +325,6 @@ String _greetingForHour(int hour) {
   return 'Good evening';
 }
 
-class _Header extends StatelessWidget {
-  const _Header({required this.state});
-
-  final DashboardHubState state;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final hour = DateTime.now().hour;
-    final business = state.profiles?.isNotEmpty == true
-        ? state.profiles!.first.businessName ?? 'Your business'
-        : 'Your business';
-
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 8),
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  _greetingForHour(hour),
-                  style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-                Text(
-                  business,
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                Text(
-                  DateFormat('EEEE, d MMMM').format(DateTime.now()),
-                  style: theme.textTheme.labelLarge?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          BlocBuilder<ConnectivityBloc, ConnectivityState>(
-            builder: (context, conn) {
-              return AppSyncStatusChip(
-                isOnline: conn.isOnline,
-                pendingCount: conn.pendingSyncCount,
-              );
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.person_2_outlined),
-            tooltip: 'Profile',
-            onPressed: () => context.push('/app/profile'),
-          ),
-          IconButton(
-            icon: Badge(
-              label: state.notificationCount > 0
-                  ? Text('${state.notificationCount}')
-                  : null,
-              child: const Icon(Icons.notifications_outlined),
-            ),
-            onPressed: () => context.push('/app/notifications'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _KpiGrid extends StatelessWidget {
   const _KpiGrid({required this.state});
 
@@ -572,9 +500,7 @@ class _RecentBills extends StatelessWidget {
       );
     }
 
-    final sorted = List<Bill>.from(bills)
-      ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    final recent = sorted.take(6).toList();
+    final recent = bills.take(6).toList();
 
     return AppSectionCard(
       title: 'Recent bills',

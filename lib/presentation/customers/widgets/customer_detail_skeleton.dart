@@ -11,8 +11,8 @@ class CustomerDetailSkeleton extends StatelessWidget {
     return AppShimmer(
       child: ListView(
         padding: const EdgeInsets.all(AppSpacing.md),
-        children: [
-          const Card(
+        children: const [
+          Card(
             child: Padding(
               padding: EdgeInsets.all(AppSpacing.md),
               child: Row(
@@ -31,18 +31,18 @@ class CustomerDetailSkeleton extends StatelessWidget {
               ),
             ),
           ),
-          const SizedBox(height: 12),
-          const Row(
+          SizedBox(height: 12),
+          Row(
             children: [
               Expanded(child: AppMetricCardSkeleton()),
               SizedBox(width: 12),
               Expanded(child: AppMetricCardSkeleton()),
             ],
           ),
-          const SizedBox(height: 12),
-          const AppSkeletonText(width: 100, height: 20),
-          const SizedBox(height: 12),
-          const AppSkeletonList(itemCount: 5),
+          SizedBox(height: 12),
+          AppSkeletonText(width: 100, height: 20),
+          SizedBox(height: 12),
+          AppSkeletonList(itemCount: 5),
         ],
       ),
     );

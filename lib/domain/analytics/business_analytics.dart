@@ -1,8 +1,8 @@
+import 'package:intl/intl.dart';
 import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/entities/product.dart';
-import 'package:intl/intl.dart';
 
 /// Month-over-month change for a metric.
 class MonthTrend {

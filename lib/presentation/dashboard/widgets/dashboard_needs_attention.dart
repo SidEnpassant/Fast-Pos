@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
-import 'package:intl/intl.dart';
 
 /// Actionable alerts: dues, stock, sync, offline.
 class DashboardNeedsAttention extends StatelessWidget {

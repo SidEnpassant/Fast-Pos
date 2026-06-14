@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/registration/registration_payload.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_glass_card.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_scaffold.dart';
@@ -11,7 +12,6 @@ import 'package:inventopos/presentation/auth/widgets/auth_step_progress_bar.dart
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/bloc/register_event.dart';
 import 'package:inventopos/presentation/register/bloc/register_state.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/register/widgets/register_step_fields.dart';
 
 class RegisterScreen extends StatefulWidget {

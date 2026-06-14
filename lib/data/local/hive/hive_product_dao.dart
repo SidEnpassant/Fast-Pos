@@ -32,8 +32,47 @@ class HiveProductDao {
   }
 
   Future<void> putAll(List<Product> products) async {
+    if (products.isEmpty) return;
+    final productEntries = <String, Map>{};
     for (final p in products) {
-      await put(p);
+      productEntries[p.id] = ProductMapper.toHiveMap(p);
+    }
+    await _box.putAll(productEntries);
+    await _rebuildAllTokens(products);
+  }
+
+  Future<void> _rebuildAllTokens(List<Product> products) async {
+    final allTokenEntries = <String, Map>{};
+    final allKeysToDelete = <dynamic>[];
+
+    for (final p in products) {
+      final prefix = '${p.userId}:${p.id}:';
+      final toDelete = _tokens.keys
+          .where((k) => k.toString().startsWith(prefix))
+          .toList();
+      allKeysToDelete.addAll(toDelete);
+
+      for (final token in InvertedIndexBuilder.tokenize(p.name)) {
+        allTokenEntries['$prefix$token'] = {
+          'user_id': p.userId,
+          'product_id': p.id,
+          'token': token
+        };
+      }
+      if (p.barcode != null && p.barcode!.isNotEmpty) {
+        allTokenEntries['$prefix${p.barcode}'] = {
+          'user_id': p.userId,
+          'product_id': p.id,
+          'token': p.barcode
+        };
+      }
+    }
+
+    if (allKeysToDelete.isNotEmpty) {
+      await _tokens.deleteAll(allKeysToDelete);
+    }
+    if (allTokenEntries.isNotEmpty) {
+      await _tokens.putAll(allTokenEntries);
     }
   }
 

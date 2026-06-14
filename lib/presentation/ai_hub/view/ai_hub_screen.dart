@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/ai_hub/bloc/ai_hub_bloc.dart';
 import 'package:inventopos/presentation/ai_hub/bloc/ai_hub_event.dart';
@@ -11,9 +12,6 @@ import 'package:inventopos/presentation/insights/bloc/business_insights_ai_bloc.
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_event.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_state.dart';
 import 'package:inventopos/presentation/insights/widgets/ai_brief_markdown_view.dart';
-
-import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
-import 'package:intl/intl.dart';
 
 class AiHubScreen extends StatefulWidget {
   const AiHubScreen({super.key});

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
-import 'package:intl/intl.dart';
 
 /// Horizontal today-at-a-glance metrics below KPIs.
 class DashboardPulseStrip extends StatelessWidget {

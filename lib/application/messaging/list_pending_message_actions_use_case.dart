@@ -1,7 +1,7 @@
+import 'package:inventopos/application/messaging/build_message_use_cases.dart';
 import 'package:inventopos/domain/ai/entities/ai_preferences.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
-import 'package:inventopos/application/messaging/build_message_use_cases.dart';
 
 class ListPendingMessageActionsUseCase {
   ListPendingMessageActionsUseCase({

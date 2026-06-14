@@ -1,6 +1,7 @@
 import 'dart:async';
-import 'package:flutter/foundation.dart';
+
 import 'package:bloc/bloc.dart';
+import 'package:flutter/foundation.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
 import 'package:inventopos/domain/billing/bill_revenue.dart';
@@ -8,7 +9,6 @@ import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/entities/product.dart';
-import 'package:inventopos/domain/entities/user_profile.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
@@ -236,13 +236,21 @@ class DashboardHubBloc extends Bloc<DashboardHubEvent, DashboardHubState> {
 
   void _requestRecompute() {
     _debounce?.cancel();
-    if (_pendingImmediateRecompute) {
+    if (_pendingImmediateRecompute &&
+        _gotBills &&
+        _gotProducts &&
+        _gotExpenses &&
+        _gotCustomers) {
       _pendingImmediateRecompute = false;
-      if (!isClosed) add(const DashboardHubRecomputeRequested());
+      if (!isClosed) {
+        add(const DashboardHubRecomputeRequested());
+      }
       return;
     }
     _debounce = Timer(const Duration(milliseconds: 300), () {
-      if (!isClosed) add(const DashboardHubRecomputeRequested());
+      if (!isClosed) {
+        add(const DashboardHubRecomputeRequested());
+      }
     });
   }
 
@@ -456,8 +464,11 @@ _MetricOutputs _computeDashboardMetrics(_MetricInputs input) {
   for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
     final phone = b.customerPhone.trim();
     final name = b.customerName.trim();
-    if (phone.isNotEmpty) custKeys.add(phone);
-    else if (name.isNotEmpty) custKeys.add(name.toLowerCase());
+    if (phone.isNotEmpty) {
+      custKeys.add(phone);
+    } else if (name.isNotEmpty) {
+      custKeys.add(name.toLowerCase());
+    }
   }
 
   var attention = 0;

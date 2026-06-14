@@ -1,8 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inventopos/core/notifications/notification_background_poll.dart';
 import 'package:inventopos/app/local_notifications_holder.dart';
+import 'package:inventopos/core/notifications/notification_background_poll.dart';
 import 'package:inventopos/core/router/app_router.dart';
 import 'package:inventopos/data/local/hive/local_store.dart';
 import 'package:inventopos/supabase_config.dart';

@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
-import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/entities/customer.dart';
 import 'package:inventopos/domain/entities/expense.dart';

@@ -14,12 +14,12 @@ class DashboardSkeleton extends StatelessWidget {
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
-        SliverToBoxAdapter(
+        const SliverToBoxAdapter(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 8),
             child: Row(
               children: [
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -32,7 +32,7 @@ class DashboardSkeleton extends StatelessWidget {
                   ),
                 ),
                 AppSkeletonCircle(size: 40),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 AppSkeletonCircle(size: 40),
               ],
             ),

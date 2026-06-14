@@ -1,17 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
-import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
 import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
-import 'package:inventopos/domain/entities/bill.dart';
-import 'package:inventopos/domain/entities/user_profile.dart';
-import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
-import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_state.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_state.dart';
-import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/messaging/widgets/message_action_tile.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 

@@ -2,15 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
-import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_chart.dart';
-import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_table.dart';
+import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/domain/analytics/business_analytics.dart';
 import 'package:inventopos/domain/billing/bill_revenue.dart';
 import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_chart.dart';
+import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_table.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_stats_card.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_trend_chip.dart';
-import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 
 class AnalyticsRevenueContent extends StatelessWidget {
   const AnalyticsRevenueContent({super.key, required this.state});

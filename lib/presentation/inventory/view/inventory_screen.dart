@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/widgets/m3/app_barcode_scan_sheet.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_filter_chip_bar.dart';
@@ -14,7 +15,6 @@ import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_event.dart';
 import 'package:inventopos/presentation/inventory/bloc/inventory_state.dart';
 import 'package:inventopos/presentation/inventory/widgets/inventory_skeleton.dart';
-import 'package:intl/intl.dart';
 import 'package:inventopos/presentation/inventory/widgets/product_list_tile.dart';
 
 class InventoryScreen extends StatefulWidget {

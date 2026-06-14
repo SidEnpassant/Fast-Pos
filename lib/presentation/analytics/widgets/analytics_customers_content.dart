@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/domain/analytics/customer_analytics.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_shimmer_placeholder.dart';
-import 'package:intl/intl.dart';
 
 class AnalyticsCustomersContent extends StatelessWidget {
   const AnalyticsCustomersContent({

@@ -9,7 +9,9 @@ import 'package:inventopos/presentation/core/bloc/connectivity_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
-  ConnectivityBloc(this._sync, this._replayAi) : super(const ConnectivityState()) {
+  ConnectivityBloc(this._sync, this._replayAi)
+      : _connectivity = Connectivity(),
+        super(const ConnectivityState()) {
     on<ConnectivityStarted>(_onStarted);
     on<ConnectivityStatusChanged>(_onStatusChanged);
     on<ConnectivityPendingCountChanged>(_onPendingChanged);
@@ -17,6 +19,7 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
 
   final SyncRepository _sync;
   final ReplayOfflineAiQueueUseCase _replayAi;
+  final Connectivity _connectivity;
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
   StreamSubscription<int>? _pendingSub;
 
@@ -26,13 +29,11 @@ class ConnectivityBloc extends Bloc<ConnectivityEvent, ConnectivityState> {
   ) async {
     await _connectivitySub?.cancel();
     await _pendingSub?.cancel();
-    _connectivitySub = null;
-    _pendingSub = null;
 
     final online = await _sync.isOnline();
     emit(state.copyWith(isOnline: online));
 
-    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+    _connectivitySub = _connectivity.onConnectivityChanged.listen((results) {
       final online = !results.contains(ConnectivityResult.none);
       add(ConnectivityStatusChanged(isOnline: online));
       if (online) {

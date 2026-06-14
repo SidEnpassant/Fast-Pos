@@ -1,10 +1,10 @@
 import 'package:inventopos/domain/ai/entities/ai_preferences.dart';
 import 'package:inventopos/domain/automation/policies/automation_policy.dart';
-import 'package:inventopos/domain/messaging/repositories/outbound_messaging_port.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/messaging/entities/message_channel.dart';
 import 'package:inventopos/domain/messaging/entities/message_template_id.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
+import 'package:inventopos/domain/messaging/repositories/outbound_messaging_port.dart';
 import 'package:inventopos/domain/messaging/services/message_template_renderer.dart';
 
 class BuildPartialPaymentMessageUseCase {

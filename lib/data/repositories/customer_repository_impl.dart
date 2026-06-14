@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
@@ -15,6 +16,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
   final SupabaseClient _client;
   final _uuid = const Uuid();
   final Map<String, Future<void>> _pullInFlight = {};
+  DateTime? _lastPullAt;
 
   Box<Map> get _box => Hive.box<Map>(HiveBoxes.customers);
 
@@ -36,6 +38,11 @@ class CustomerRepositoryImpl implements CustomerRepository {
   }
 
   Future<void> _pull(String userId) async {
+    if (_lastPullAt != null &&
+        DateTime.now().difference(_lastPullAt!) < const Duration(seconds: 30)) {
+      return;
+    }
+
     final inFlight = _pullInFlight[userId];
     if (inFlight != null) return inFlight;
 
@@ -43,6 +50,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
     _pullInFlight[userId] = future;
     try {
       await future;
+      _lastPullAt = DateTime.now();
     } finally {
       if (identical(_pullInFlight[userId], future)) {
         _pullInFlight.remove(userId);
@@ -52,13 +60,40 @@ class CustomerRepositoryImpl implements CustomerRepository {
 
   Future<void> _pullOnce(String userId) async {
     try {
-      final rows =
-          await _client.from('customers').select().eq('user_id', userId);
+      final cursor = _getCursor(userId);
+      final rows = await _client
+          .from('customers')
+          .select()
+          .eq('user_id', userId)
+          .gt('updated_at', cursor)
+          .order('updated_at');
+
+      String? latest = cursor;
       for (final raw in rows as List) {
         final m = Map<String, dynamic>.from(raw as Map);
         await _box.put(m['id'], m);
+        final updatedAt = m['updated_at'] as String;
+        if (latest == null || updatedAt.compareTo(latest) > 0) {
+          latest = updatedAt;
+        }
       }
-    } catch (_) {}
+      if (latest != cursor) {
+        await _setCursor(userId, latest!);
+      }
+    } catch (e) {
+      if (kDebugMode) debugPrint('CustomerRepo._pullOnce failed: $e');
+    }
+  }
+
+  String _getCursor(String userId) {
+    final b = Hive.box<Map>(HiveBoxes.syncCursors);
+    return b.get('customers:$userId')?['last_updated'] as String? ??
+        '1970-01-01T00:00:00Z';
+  }
+
+  Future<void> _setCursor(String userId, String cursor) async {
+    final b = Hive.box<Map>(HiveBoxes.syncCursors);
+    await b.put('customers:$userId', {'last_updated': cursor});
   }
 
   @override
@@ -98,7 +133,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
     };
     try {
       await _client.from('customers').insert(row);
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('CustomerRepo.createCustomer failed: $e');
+    }
     await _box.put(id, row);
     return _fromMap(row);
   }
@@ -116,7 +153,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
     };
     try {
       await _client.from('customers').update(row).eq('id', customer.id);
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('CustomerRepo.updateCustomer failed: $e');
+    }
     await _box.put(customer.id, row);
     return customer;
   }
@@ -137,7 +176,9 @@ class CustomerRepositoryImpl implements CustomerRepository {
         'amount': amount,
         'note': note,
       });
-    } catch (_) {}
+    } catch (e) {
+      if (kDebugMode) debugPrint('CustomerRepo.recordLedgerEntry failed: $e');
+    }
     if (type == 'debit') {
       final c = _box.get(customerId);
       if (c != null) {

@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
-import 'package:inventopos/core/widgets/m3/app_date_section_header.dart';
-import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
-import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
-import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/billing/replace_signed_bill_use_case.dart';
 import 'package:inventopos/core/utils/date_picker_utils.dart';
-import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/core/widgets/m3/app_date_section_header.dart';
+import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
+import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_bloc.dart';
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_event.dart';
@@ -88,7 +87,7 @@ class _CompleteTransactionsScreenState
       builder: (_) =>  Center(
         child: Card(
           child: Padding(
-            padding: EdgeInsets.all(24),
+            padding: const EdgeInsets.all(24),
             child: AppShimmer(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -96,12 +95,12 @@ class _CompleteTransactionsScreenState
                   Container(
                     width: 48,
                     height: 48,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),
                   ),
-                  SizedBox(height: 16),
+                  const SizedBox(height: 16),
                   Container(
                     width: 100,
                     height: 16,

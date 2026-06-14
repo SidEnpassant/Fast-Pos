@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/design/app_radii.dart';
+import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_glass_card.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_scaffold.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_event.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_state.dart';
 import 'package:inventopos/presentation/auth_login/widgets/login_credentials_fields.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/presentation/auth_login/widgets/login_register_prompt.dart';
 
 class LoginScreen extends StatefulWidget {
