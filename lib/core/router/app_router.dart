@@ -192,7 +192,7 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
                   Container(
                     width: 100,
                     height: 100,
-                    decoration: BoxDecoration(
+                    decoration: const BoxDecoration(
                       color: Colors.white,
                       shape: BoxShape.circle,
                     ),

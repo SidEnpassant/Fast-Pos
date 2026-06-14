@@ -201,7 +201,13 @@ class _PulseSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocBuilder<DashboardHubBloc, DashboardHubState>(
-      buildWhen: (p, c) => p.bills != c.bills,
+      buildWhen: (p, c) =>
+          p.billsToday != c.billsToday ||
+          p.avgBillValueToday != c.avgBillValueToday ||
+          p.revenueTodayVsYesterdayPercent != c.revenueTodayVsYesterdayPercent ||
+          p.activeCustomersThisMonth != c.activeCustomersThisMonth ||
+          p.pendingCollectionAmount != c.pendingCollectionAmount ||
+          p.partialBillsCount != c.partialBillsCount,
       builder: (context, state) => DashboardPulseStrip(state: state),
     );
   }
