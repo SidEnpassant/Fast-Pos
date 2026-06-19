@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/entities/expense.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
@@ -67,13 +68,11 @@ class _ExpenseEditorPageState extends State<ExpenseEditorPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.expense == null ? 'Add expense' : 'Edit expense'),
-        actions: [
-          TextButton(onPressed: _save, child: const Text('Save')),
-        ],
-      ),
+    return AppScreenScaffold(
+      title: widget.expense == null ? 'Add expense' : 'Edit expense',
+      actions: [
+        TextButton(onPressed: _save, child: const Text('Save')),
+      ],
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -108,19 +107,26 @@ class _ExpenseEditorPageState extends State<ExpenseEditorPage> {
             ),
           ),
           const SizedBox(height: 12),
-          ListTile(
-            title: const Text('Date'),
-            subtitle: Text(DateFormat.yMMMd().format(_date)),
-            trailing: const Icon(Icons.calendar_today),
-            onTap: () async {
-              final picked = await showDatePicker(
-                context: context,
-                initialDate: _date,
-                firstDate: DateTime(2020),
-                lastDate: DateTime.now(),
-              );
-              if (picked != null) setState(() => _date = picked);
-            },
+          Material(
+            color: theme.colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(12),
+            child: ListTile(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              title: const Text('Date'),
+              subtitle: Text(DateFormat.yMMMd().format(_date)),
+              trailing: const Icon(Icons.calendar_today),
+              onTap: () async {
+                final picked = await showDatePicker(
+                  context: context,
+                  initialDate: _date,
+                  firstDate: DateTime(2020),
+                  lastDate: DateTime.now(),
+                );
+                if (picked != null) setState(() => _date = picked);
+              },
+            ),
           ),
           const SizedBox(height: 12),
           TextField(
@@ -132,7 +138,13 @@ class _ExpenseEditorPageState extends State<ExpenseEditorPage> {
             maxLines: 2,
           ),
           const SizedBox(height: 24),
-          FilledButton(onPressed: _save, child: const Text('Save expense')),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+            ),
+            onPressed: _save,
+            child: const Text('Save expense'),
+          ),
         ],
       ),
     );

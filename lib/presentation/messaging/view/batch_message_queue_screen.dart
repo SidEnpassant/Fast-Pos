@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
 import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
+import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
@@ -51,10 +53,8 @@ class _BatchMessageQueueScreenState extends State<BatchMessageQueueScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Message Queue'),
-      ),
+    return AppScreenScaffold(
+      title: 'Message Queue',
       body: BlocBuilder<MessagingAutomationBloc, MessagingAutomationState>(
         builder: (context, state) {
           if (state.queueLoading) {
@@ -63,17 +63,21 @@ class _BatchMessageQueueScreenState extends State<BatchMessageQueueScreen> {
 
           final actions = state.queue;
           if (actions.isEmpty) {
-            return const Center(
-              child: Text('No pending messages for today.'),
+            return const AppEmptyState(
+              icon: Icons.mark_chat_read_outlined,
+              title: 'No pending messages',
+              message: 'All daily messages have been sent.',
             );
           }
 
-          return ListView.separated(
+          return ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: actions.length,
-            separatorBuilder: (_, __) => const Divider(),
             itemBuilder: (context, index) {
-              return MessageActionTile(message: actions[index]);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: MessageActionTile(message: actions[index]),
+              );
             },
           );
         },

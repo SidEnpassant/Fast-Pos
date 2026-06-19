@@ -33,8 +33,8 @@ class PendingTransactionBillCard extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       child: Material(
-        color: theme.colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppRadii.lg),
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppRadii.md),
         child: Padding(
           padding: const EdgeInsets.all(AppSpacing.md),
           child: Column(
@@ -43,15 +43,12 @@ class PendingTransactionBillCard extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Container(
-                    padding: const EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      color: Colors.orange.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadii.md),
-                    ),
+                  CircleAvatar(
+                    backgroundColor: theme.colorScheme.primaryContainer,
                     child: Icon(
-                      Icons.pending_actions,
-                      color: Colors.orange.shade800,
+                      Icons.receipt_long,
+                      size: 20,
+                      color: theme.colorScheme.onPrimaryContainer,
                     ),
                   ),
                   const SizedBox(width: 12),

@@ -30,18 +30,26 @@ class CompleteTransactionBillCard extends StatelessWidget {
           vertical: AppSpacing.xs,
         ),
         child: Material(
-          color: theme.colorScheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppRadii.lg),
+          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(AppRadii.md),
           child: Theme(
             data: theme.copyWith(dividerColor: Colors.transparent),
             child: ExpansionTile(
               tilePadding: const EdgeInsets.symmetric(horizontal: 16),
               childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadii.lg),
+                borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               collapsedShape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadii.lg),
+                borderRadius: BorderRadius.circular(AppRadii.md),
+              ),
+              leading: CircleAvatar(
+                backgroundColor: theme.colorScheme.primaryContainer,
+                child: Icon(
+                  Icons.receipt_long,
+                  size: 20,
+                  color: theme.colorScheme.onPrimaryContainer,
+                ),
               ),
               title: Text(
                 bill.customerName,

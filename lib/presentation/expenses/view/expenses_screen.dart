@@ -173,13 +173,35 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                               child:
                                   const Icon(Icons.delete, color: Colors.white),
                             ),
-                            child: Card(
-                              margin: const EdgeInsets.only(bottom: 8),
-                              child: ListTile(
-                                title: Text(e.category),
-                                subtitle: Text(
-                                  DateFormat.yMMMd().format(e.expenseDate),
-                                ),
+                            child: Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: Material(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+                                borderRadius: BorderRadius.circular(12),
+                                child: ListTile(
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  leading: CircleAvatar(
+                                    backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                                    child: Icon(
+                                      Icons.receipt_long,
+                                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    e.category,
+                                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                  subtitle: Text(
+                                    DateFormat.yMMMd().format(e.expenseDate),
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                                  ),
                                 trailing: Text(
                                   '₹${e.amount.toStringAsFixed(2)}',
                                   style: const TextStyle(
@@ -195,6 +217,7 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                                 ),
                               ),
                             ),
+                           )
                           );
                         },
                       ),

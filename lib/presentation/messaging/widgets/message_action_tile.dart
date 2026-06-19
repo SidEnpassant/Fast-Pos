@@ -20,21 +20,39 @@ class MessageActionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return RepaintBoundary(
-      child: ListTile(
-        leading: CircleAvatar(
-          backgroundColor: _colorFor(message.channel).withValues(alpha: 0.1),
-          child: Icon(_iconFor(message.channel),
-              color: _colorFor(message.channel)),
+      child: Material(
+        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(12), // AppRadii.md equivalent
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          leading: CircleAvatar(
+            backgroundColor: theme.colorScheme.primaryContainer,
+            child: Icon(
+              _iconFor(message.channel),
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          title: Text(
+            message.recipientName ?? message.phone,
+            style: theme.textTheme.titleSmall?.copyWith(
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          subtitle: Text(
+            message.body,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: theme.colorScheme.onSurfaceVariant,
+            ),
+          ),
+          trailing: trailing ?? const Icon(Icons.chevron_right),
+          onTap: () => _openPreview(context),
         ),
-        title: Text(message.recipientName ?? message.phone),
-        subtitle: Text(
-          message.body,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
-        trailing: trailing ?? const Icon(Icons.chevron_right),
-        onTap: () => _openPreview(context),
       ),
     );
   }
