@@ -1,0 +1,452 @@
+# Fast POS — Production-Grade MSME Feature Expansion
+
+## Goal
+
+Add **8 high-impact, real-world features** that Indian MSME retailers genuinely need daily — features that showcase senior-level engineering: clean architecture, SOLID, Bloc-only state, 60fps UI, offline-first, and production hardening. No gimmicky AI — pure business utility.
+
+---
+
+## Summary of New Features
+
+| # | Feature | Why It Matters |
+|---|---------|----------------|
+| 1 | **GST Invoice & Tax Engine** | Legal compliance — every registered MSME *must* file GST; current bills have zero tax support |
+| 2 | **Multi-Unit / UOM Inventory** | Real shops sell in pieces, kg, litre, dozen, box — current system only tracks integer `stockQuantity` |
+| 3 | **Purchase Orders & Supplier Management** | Shops restock from suppliers — there's no way to track inward stock, purchase cost, or supplier info |
+| 4 | **Cash Register / Day Book (Khata)** | Every shopkeeper maintains a daily cash book — cash in, cash out, opening/closing balance |
+| 5 | **Customer Loyalty & Rewards Program** | Entity has `loyaltyPoints` field but no rules, no earning/redemption — implement a full tier system |
+| 6 | **Stock Audit & Physical Count** | Actual stock often differs from system — provide variance reconciliation with history |
+| 7 | **Returns & Credit Notes** | Shops handle returns daily — zero support currently; must reverse stock + generate credit note |
+
+---
+
+## User Review Required
+
+> [!IMPORTANT]
+> **Feature scope**: These are 7 large features. I recommend implementing them in **3 phases** (see below). Please confirm if you want all 7 or a subset.
+
+> [!IMPORTANT]
+> **Supabase schema changes**: Features 1–7 all require new tables and migrations. Confirm you're okay with new migrations being added to `supabase/migrations/`.
+
+---
+
+## Open Questions
+
+> [!IMPORTANT]
+> 1. **GST rates**: Should we support item-level GST (5%, 12%, 18%, 28%) or only a single business-wide rate?
+> 2. **Loyalty program**: Fixed points-per-rupee or tier-based (Silver/Gold/Platinum)?
+> 3. **Phasing**: Do you want me to build all 7, or pick a phase to start with?
+
+---
+
+## Phased Rollout
+
+### Phase 1 — Core Business (Features 1, 2, 7)
+GST invoicing, multi-unit inventory, returns & credit notes. These are **table-stakes** for any real POS.
+
+### Phase 2 — Operations (Features 3, 4, 6)
+Purchase orders, day book, stock audit. These cover the **restock and reconciliation** cycle.
+
+### Phase 3 — Growth (Feature 5)
+Loyalty program. This is the **customer retention** layer.
+
+---
+
+## Proposed Changes
+
+### Conventions (apply to ALL features)
+
+Every new feature follows the existing project conventions exactly:
+
+- **Domain**: Entity (Equatable), repository interface (abstract class), pure domain logic — no Flutter imports
+- **Application**: Use case classes — single `call()` method, injected via constructor
+- **Data**: Supabase implementation of repository interface + Hive offline DAO where needed
+- **Presentation**: `bloc/` (sealed events, Equatable states, `Bloc` not `Cubit`), `view/` (pages), `widgets/` (extracted composable widgets)
+- **DI**: Wire in `app_providers.dart` via `RepositoryProvider`
+- **Routing**: Register in `app_router.dart` with `GoRoute` + Bloc providers
+- **UI**: Use existing M3 design system (`AppSpacing`, `AppRadii`, `AppTheme`, `AppMetricCard`, `AppSectionCard`, `AppScreenScaffold`, `AppStatusChip`), Poppins font, `surfaceContainerLow` cards, `colorScheme.primary` accents
+- **Performance**: `const` constructors everywhere, `RepaintBoundary` on heavy widgets, `AutomaticKeepAliveClientMixin` on tab contents, `ListView.builder` with `itemExtent` for fixed-height rows, isolate-based computation for lists >500 items
+
+---
+
+### Feature 1: GST Invoice & Tax Engine
+
+Enables legally compliant GST invoices with CGST/SGST/IGST breakdowns per line item. Adds HSN codes to products and GST configuration to business profile.
+
+#### [NEW] `lib/domain/tax/gst_config.dart`
+- `GstConfig` value object: `businessGstin`, `stateCode`, `isComposition`, `defaultGstSlab` (0, 5, 12, 18, 28)
+- `GstLineResult` value object: `taxableValue`, `cgstRate`, `cgstAmount`, `sgstRate`, `sgstAmount`, `igstRate`, `igstAmount`
+- Pure function `GstCalculator.computeLine({price, qty, gstPercent, isInterState})` → `GstLineResult`
+- Pure function `GstCalculator.computeInvoiceSummary(List<GstLineResult>)` → totals
+
+#### [MODIFY] [product.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/entities/product.dart)
+- Add `String? hsnCode` and `double gstPercent = 0` fields
+- Update `props` list
+
+#### [MODIFY] [user_profile.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/entities/user_profile.dart)
+- Add `String? gstin`, `String? stateCode`, `bool isCompositionDealer = false`
+- Update `props` list
+
+#### [MODIFY] [bill.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/entities/bill.dart)
+- Add `double taxAmount = 0`, `String? invoiceType` (`tax_invoice` / `bill_of_supply`)
+- Add to `BillLineItem`: `double? gstPercent`, `String? hsnCode`, `double taxAmount = 0`
+
+#### [NEW] `lib/application/tax/compute_gst_for_bill_use_case.dart`
+- Takes `List<BillDraftLine>` + `GstConfig` → returns `GstInvoiceSummary` (total taxable, total tax, per-slab breakdown)
+
+#### [MODIFY] [submit_bill_use_case.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/application/billing/submit_bill_use_case.dart)
+- Invoke `ComputeGstForBillUseCase` if GST is configured → embed tax breakdown in bill JSON + PDF
+
+#### [NEW] `lib/presentation/tax_settings/` — `bloc/`, `view/`, `widgets/`
+- `TaxSettingsBloc` — events: `TaxSettingsStarted`, `TaxSettingsGstinUpdated`, `TaxSettingsSlabChanged`, `TaxSettingsSaved`
+- `TaxSettingsScreen` — M3 form: GSTIN field, state code dropdown, composition toggle, default slab selector
+- Route: `/app/tax-settings` (from Account → Tools)
+
+#### [MODIFY] `lib/data/billing/bill_pdf_generator.dart`
+- Add GST table section to PDF: HSN, Taxable Value, CGST, SGST/IGST columns
+- Add GSTIN header, invoice number
+- Composition dealers get "Bill of Supply" header
+
+#### [NEW] `supabase/migrations/20260616000000_gst_tax_engine.sql`
+- `ALTER TABLE products ADD COLUMN hsn_code text, gst_percent numeric DEFAULT 0`
+- `ALTER TABLE profiles ADD COLUMN gstin text, state_code text, is_composition boolean DEFAULT false`
+- `ALTER TABLE bills ADD COLUMN tax_amount numeric DEFAULT 0, invoice_type text DEFAULT 'tax_invoice'`
+
+---
+
+### Feature 2: Multi-Unit / UOM Inventory
+
+Products can be sold in different units (kg, litre, dozen, box, piece). Replaces integer-only stock with decimal stock + configurable UOM.
+
+#### [NEW] `lib/domain/inventory/unit_of_measure.dart`
+- `UnitOfMeasure` enum: `piece`, `kg`, `gram`, `litre`, `ml`, `dozen`, `box`, `meter`, `pack`
+- `UomConverter` — pure conversion logic: `convert(from, to, value)` for intra-group (kg↔gram, litre↔ml)
+- Extension `UnitOfMeasureX` with `symbol`, `pluralLabel`, `decimalPlaces`, `isDecimalUnit`
+
+#### [MODIFY] [product.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/entities/product.dart)
+- Change `int stockQuantity` → `double stockQuantity`
+- Add `String uom = 'piece'` (stored as string for DB compatibility, parsed via enum)
+- Add `double? conversionFactor` (e.g., 1 box = 12 pieces)
+- Adjust `isLowStock` to use double comparison with epsilon
+
+#### [MODIFY] [bill_draft_line.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/billing/bill_draft_line.dart)
+- Change quantity type from `int` to `double`
+- Add `String uom`
+
+#### [MODIFY] [product_repository.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/repositories/product_repository.dart)
+- `decrementStockLocal` quantity param: `int` → `double`
+
+#### [MODIFY] `lib/presentation/inventory/view/product_editor_page.dart`
+- Add UOM dropdown (M3 `DropdownMenu`) and conversion factor field
+- Quantity field accepts decimal for weight/volume UOMs
+
+#### [MODIFY] `lib/presentation/billing/widgets/` — line item quantity input
+- Show UOM label next to quantity (e.g., "2.5 kg")
+- Decimal keyboard for weight/volume units, integer keyboard for piece/dozen
+
+#### [NEW] `supabase/migrations/20260616000001_multi_unit_uom.sql`
+- `ALTER TABLE products ADD COLUMN uom text DEFAULT 'piece', conversion_factor numeric`
+- `ALTER TABLE products ALTER COLUMN stock_quantity TYPE numeric` (int → numeric for decimal)
+
+---
+
+### Feature 3: Purchase Orders & Supplier Management
+
+Track where products come from, create purchase orders, receive stock with cost tracking.
+
+#### [NEW] `lib/domain/entities/supplier.dart`
+- `Supplier` entity: `id`, `userId`, `name`, `phone`, `email`, `gstin`, `address`, `updatedAt`
+
+#### [NEW] `lib/domain/entities/purchase_order.dart`
+- `PurchaseOrder` entity: `id`, `userId`, `supplierId`, `supplierName`, `status` (draft/ordered/received/cancelled), `orderDate`, `receivedDate`, `totalAmount`, `notes`, `lineItems`
+- `PurchaseOrderLine`: `productId`, `productName`, `orderedQty`, `receivedQty`, `unitCost`, `uom`
+
+#### [NEW] `lib/domain/repositories/supplier_repository.dart`
+- `watchSuppliersForUser`, `createSupplier`, `updateSupplier`, `deleteSupplier`, `searchSuppliers`
+
+#### [NEW] `lib/domain/repositories/purchase_order_repository.dart`
+- `watchPurchaseOrdersForUser`, `createPurchaseOrder`, `updatePurchaseOrder`, `receivePurchaseOrder`, `deletePurchaseOrder`
+
+#### [NEW] `lib/application/purchasing/create_purchase_order_use_case.dart`
+#### [NEW] `lib/application/purchasing/receive_purchase_order_use_case.dart`
+- On receive: increment stock for each line, update product `costPrice` (weighted average), update supplier link
+
+#### [NEW] `lib/data/repositories/supplier_repository_impl.dart`
+#### [NEW] `lib/data/repositories/purchase_order_repository_impl.dart`
+
+#### [NEW] `lib/presentation/suppliers/` — `bloc/`, `view/`, `widgets/`
+- `SuppliersBloc` — CRUD + search, stream-based
+- `SuppliersScreen` — M3 list with search bar, FAB to add
+- `SupplierEditorPage` — name, phone, GSTIN, address form
+- Route: `/suppliers`, `/suppliers/editor`
+
+#### [NEW] `lib/presentation/purchase_orders/` — `bloc/`, `view/`, `widgets/`
+- `PurchaseOrderBloc` — events: `Started`, `Created`, `Updated`, `Received`, `Deleted`
+- `PurchaseOrderListScreen` — filter by status chips, list with status indicators
+- `PurchaseOrderEditorPage` — supplier picker, line items with product picker, quantities
+- `PurchaseOrderReceivePage` — enter received quantities per line, shortages highlighted
+- Routes: `/purchase-orders`, `/purchase-orders/new`, `/purchase-orders/:id`, `/purchase-orders/:id/receive`
+
+#### [NEW] `supabase/migrations/20260616000002_suppliers_purchase_orders.sql`
+- `suppliers` table with RLS
+- `purchase_orders` table: `supplier_id`, `status`, `order_date`, `received_date`, `total_amount`, `notes`, line items as JSONB
+- `purchase_order_lines` table (normalized): `po_id`, `product_id`, `ordered_qty`, `received_qty`, `unit_cost`
+- RPC `receive_purchase_order` — atomically increments stock + records stock ledger entries (inward)
+- RLS policies: user-scoped
+
+---
+
+### Feature 4: Cash Register / Day Book (Khata)
+
+A daily cash register showing all cash inflows (sales, payments received) and outflows (expenses, supplier payments) with opening/closing balance.
+
+#### [NEW] `lib/domain/entities/cash_entry.dart`
+- `CashEntry` entity: `id`, `userId`, `entryDate`, `type` (sale_cash/payment_received/expense/supplier_payment/adjustment), `amount`, `referenceId`, `referenceType`, `note`, `createdAt`
+- `DayBookSummary` value object: `date`, `openingBalance`, `cashIn`, `cashOut`, `closingBalance`, `entries`
+
+#### [NEW] `lib/domain/daybook/day_book_calculator.dart`
+- Pure functions: `computeDayBook(entries, openingBalance)` → `DayBookSummary`
+- `computeRunningBalance(entries)` → list with running total
+- `computeMonthlyRollup(entries)` → month totals
+
+#### [NEW] `lib/domain/repositories/cash_register_repository.dart`
+- `watchEntriesForDate`, `watchEntriesForRange`, `createEntry`, `updateEntry`, `deleteEntry`, `getOpeningBalance`
+
+#### [NEW] `lib/application/daybook/compute_day_book_use_case.dart`
+#### [NEW] `lib/application/daybook/record_cash_entry_use_case.dart`
+- Automatically records `sale_cash` entries on bill submit (if payment method = cash)
+
+#### [NEW] `lib/data/repositories/cash_register_repository_impl.dart`
+
+#### [MODIFY] [submit_bill_use_case.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/application/billing/submit_bill_use_case.dart)
+- After bill creation, if `paymentMethod == 'cash'` → auto-record `sale_cash` cash entry
+
+#### [NEW] `lib/presentation/daybook/` — `bloc/`, `view/`, `widgets/`
+- `DayBookBloc` — events: `DayBookDateSelected`, `DayBookEntryAdded`, `DayBookEntryDeleted`, `DayBookRefreshed`
+- `DayBookScreen` — date picker header, opening/closing balance M3 cards, scrollable entry list grouped by type, summary footer bar
+- `CashEntryEditorSheet` — bottom sheet for manual entry (type, amount, note)
+- `DayBookSummaryCard` — reusable widget showing cash in/out/net
+- Route: `/daybook`
+
+#### [NEW] `supabase/migrations/20260616000003_cash_register.sql`
+- `cash_register` table: `id`, `user_id`, `entry_date`, `type`, `amount`, `reference_id`, `reference_type`, `note`, `created_at`
+- Index on `(user_id, entry_date)`
+- RLS: user-scoped
+- `daily_opening_balance` view or RPC that sums all prior entries
+
+---
+
+### Feature 5: Customer Loyalty & Rewards Program
+
+Configurable loyalty system: earn X points per ₹Y spent → redeem points as discount.
+
+#### [NEW] `lib/domain/loyalty/loyalty_config.dart`
+- `LoyaltyConfig` value object: `isEnabled`, `pointsPerRupee` (e.g., 1 point per ₹100), `redemptionRate` (e.g., 1 point = ₹1), `tiers` list
+- `LoyaltyTier`: `name`, `minPoints`, `multiplier`, `perks` (e.g., Silver: 1x, Gold: 1.5x, Platinum: 2x)
+- Pure function `LoyaltyEngine.computeEarned(billAmount, tierMultiplier, config)` → points earned
+- Pure function `LoyaltyEngine.computeRedemptionDiscount(pointsToRedeem, config)` → discount amount
+- Pure function `LoyaltyEngine.currentTier(totalPoints, tiers)` → `LoyaltyTier`
+
+#### [NEW] `lib/domain/repositories/loyalty_repository.dart`
+- `getLoyaltyConfig`, `saveLoyaltyConfig`, `addPoints`, `redeemPoints`, `getPointsHistory`
+
+#### [NEW] `lib/application/loyalty/earn_loyalty_points_use_case.dart`
+- Called post-bill-submit: compute earned points → update customer `loyaltyPoints`
+
+#### [NEW] `lib/application/loyalty/redeem_loyalty_points_use_case.dart`
+- Validate balance → deduct points → apply discount to bill
+
+#### [MODIFY] [customer.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/domain/entities/customer.dart)
+- Add `int lifetimePoints = 0` (total earned, for tier calculation — existing `loyaltyPoints` is current balance)
+
+#### [MODIFY] `lib/presentation/checkout/` — checkout flow
+- Add "Redeem Points" toggle in checkout UI — shows available points, discount preview, confirm
+
+#### [NEW] `lib/presentation/loyalty/` — `bloc/`, `view/`, `widgets/`
+- `LoyaltySettingsBloc` — configure program
+- `LoyaltySettingsScreen` — enable toggle, points rate, tiers editor
+- `CustomerLoyaltyCard` widget — tier badge, points balance, progress to next tier (used in customer detail)
+- Route: `/loyalty-settings`
+
+#### [MODIFY] `lib/presentation/customers/view/customer_detail_screen.dart`
+- Add `CustomerLoyaltyCard` section showing tier, balance, points history
+
+#### [NEW] `supabase/migrations/20260616000004_loyalty_program.sql`
+- `loyalty_config` table: `user_id` (PK), `enabled`, `points_per_rupee`, `redemption_rate`, `tiers` JSONB
+- `loyalty_transactions` table: `id`, `user_id`, `customer_id`, `type` (earn/redeem), `points`, `bill_id`, `created_at`
+- `ALTER TABLE customers ADD COLUMN lifetime_points int DEFAULT 0`
+- RLS: user-scoped
+
+---
+
+### Feature 6: Stock Audit & Physical Count
+
+Let the shopkeeper do a physical stock count and reconcile with system stock.
+
+#### [NEW] `lib/domain/entities/stock_audit.dart`
+- `StockAudit` entity: `id`, `userId`, `auditDate`, `status` (in_progress/completed/cancelled), `createdAt`, `completedAt`, `notes`
+- `StockAuditLine`: `productId`, `productName`, `systemQty`, `physicalQty`, `variance`, `varianceValue`, `note`
+
+#### [NEW] `lib/domain/stock_audit/variance_calculator.dart`
+- Pure: `computeVariance(systemQty, physicalQty)` → `variance`, `variancePercent`
+- Pure: `computeAuditSummary(lines)` → `totalVariance`, `positiveVariance`, `negativeVariance`, `totalValueImpact`
+
+#### [NEW] `lib/domain/repositories/stock_audit_repository.dart`
+- `createAudit`, `updateAuditLine`, `completeAudit`, `getAuditHistory`, `getAuditById`
+
+#### [NEW] `lib/application/stock_audit/start_stock_audit_use_case.dart`
+- Creates audit with all active products pre-loaded at current system quantities
+
+#### [NEW] `lib/application/stock_audit/complete_stock_audit_use_case.dart`
+- On complete: adjust stock quantities to match physical count → record stock ledger entries (type: `audit_adjustment`)
+
+#### [NEW] `lib/data/repositories/stock_audit_repository_impl.dart`
+
+#### [NEW] `lib/presentation/stock_audit/` — `bloc/`, `view/`, `widgets/`
+- `StockAuditBloc` — events: `AuditStarted`, `AuditLineUpdated`, `AuditCompleted`, `AuditCancelled`, `AuditHistoryLoaded`
+- `StockAuditListScreen` — history of past audits with status chips
+- `StockAuditScreen` — live audit: product list with system qty (read-only) + physical qty input, variance column (red for negative, green for positive), search/filter, summary card at top
+- `AuditVarianceCard` — shows total surplus/shortage with value impact
+- `AuditProductRow` — optimized `ListTile` alternative with inline editing
+- Routes: `/stock-audit`, `/stock-audit/new`, `/stock-audit/:id`
+
+#### [NEW] `supabase/migrations/20260616000005_stock_audit.sql`
+- `stock_audits` table: `id`, `user_id`, `audit_date`, `status`, `notes`, `created_at`, `completed_at`
+- `stock_audit_lines` table: `id`, `audit_id`, `product_id`, `system_qty`, `physical_qty`, `variance`, `note`
+- RPC `complete_stock_audit` — atomically updates all product stock quantities + creates stock ledger entries
+- RLS: user-scoped
+
+---
+
+### Feature 7: Returns & Credit Notes
+
+Handle product returns, reverse stock, and issue credit notes linked to original bills.
+
+#### [NEW] `lib/domain/entities/credit_note.dart`
+- `CreditNote` entity: `id`, `userId`, `originalBillId`, `creditNoteNumber`, `customerId`, `customerName`, `returnDate`, `totalRefundAmount`, `refundMethod` (cash/credit/adjustment), `status` (draft/issued/applied), `lineItems`, `reason`, `createdAt`
+- `CreditNoteLine`: `productId`, `productName`, `quantity`, `unitPrice`, `lineTotal`, `gstAmount`
+
+#### [NEW] `lib/domain/returns/return_policy.dart`
+- Pure: `validateReturn(originalBill, returnLines)` → `ReturnValidation` (success or list of errors — e.g., can't return more than purchased)
+- `computeRefund(returnLines, includeGst)` → total refund amount
+
+#### [NEW] `lib/domain/repositories/credit_note_repository.dart`
+- `createCreditNote`, `watchCreditNotesForUser`, `getCreditNoteById`, `getCreditNotesForBill`, `getCreditNotesForCustomer`
+
+#### [NEW] `lib/application/returns/process_return_use_case.dart`
+- Validate → create credit note → increment stock (reverse stock ledger) → adjust customer credit balance if refund method = `credit`
+
+#### [NEW] `lib/application/returns/generate_credit_note_pdf_use_case.dart`
+- Generate PDF credit note matching invoice style (with "CREDIT NOTE" header)
+
+#### [NEW] `lib/data/repositories/credit_note_repository_impl.dart`
+
+#### [NEW] `lib/presentation/returns/` — `bloc/`, `view/`, `widgets/`
+- `ReturnBloc` — events: `ReturnStarted` (loads original bill), `ReturnLineToggled`, `ReturnQuantityChanged`, `ReturnReasonSet`, `ReturnSubmitted`
+- `ReturnScreen` — select items from original bill, set return quantities, reason dropdown, refund method picker
+- `CreditNoteListScreen` — all credit notes with status chips, search, date filter
+- `CreditNoteDetailScreen` — view credit note details, PDF, share
+- Routes: `/returns/new?billId=X`, `/credit-notes`, `/credit-notes/:id`
+
+#### [MODIFY] `lib/presentation/transactions/` — bill detail actions
+- Add "Return Items" button on completed bill cards → navigates to return flow
+
+#### [NEW] `supabase/migrations/20260616000006_returns_credit_notes.sql`
+- `credit_notes` table: `id`, `user_id`, `original_bill_id`, `credit_note_number`, `customer_id`, `return_date`, `total_refund`, `refund_method`, `status`, `reason`, `created_at`, line items JSONB
+- `credit_note_lines` table (normalized): `cn_id`, `product_id`, `quantity`, `unit_price`, `line_total`, `gst_amount`
+- RPC `process_return` — atomically: create credit note + increment stock + stock ledger (type: `return`) + update customer credit balance
+- Sequential `credit_note_number` RPC (like bill numbers)
+- RLS: user-scoped
+
+---
+
+### Cross-Cutting Changes
+
+#### [MODIFY] [app_providers.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/app/app_providers.dart)
+- Register all new repository implementations and use cases
+
+#### [MODIFY] [app_router.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/core/router/app_router.dart)
+- Add all new routes with appropriate Bloc providers
+- Add `needsAuth` entries for new protected paths: `/daybook`, `/suppliers`, `/purchase-orders`, `/stock-audit`, `/returns`, `/credit-notes`, `/loyalty-settings`, `/app/tax-settings`
+
+#### [MODIFY] [quick_actions_grid.dart](file:///c:/Users/bgame/Desktop/projects/Fast-Pos/lib/presentation/dashboard/widgets/quick_actions_grid.dart) — Dashboard Navigation Hub
+
+The current Quick Actions grid has empty space (Manage group has only 3 of 6 slots filled). All new features get tiles here so users discover them immediately.
+
+**Updated layout (3-column grid per group):**
+
+**Sell group** (row 1 = existing, row 2 = new):
+| Existing | Existing | Existing |
+|----------|----------|----------|
+| New bill | Pending | Messages |
+| Sales | **Returns** 🆕 | **Credit Notes** 🆕 |
+
+- **Returns** — `Icons.assignment_return_outlined`, color `Colors.red.shade400`, route `/returns/new`
+- **Credit Notes** — `Icons.note_alt_outlined`, color `Colors.amber.shade700`, route `/credit-notes`
+
+**Manage group** (row 1 = existing, row 2 = new):
+| Existing | Existing | Existing |
+|----------|----------|----------|
+| Inventory | Customers | Expenses |
+| **Day Book** 🆕 | **Suppliers** 🆕 | **Stock Audit** 🆕 |
+
+- **Day Book** — `Icons.menu_book_outlined`, color `Colors.cyan.shade700`, route `/daybook`
+- **Suppliers** — `Icons.local_shipping_outlined`, color `Colors.purple`, route `/suppliers`
+- **Stock Audit** — `Icons.fact_check_outlined`, color `Colors.lime.shade800`, route `/stock-audit`
+
+**Grow group** (row 1 = existing, row 2 = add remaining):
+| Existing | Existing | Existing |
+|----------|----------|----------|
+| Smart AI | Analytics | Import CSV |
+| Printer | **Purchase Orders** 🆕 | **Loyalty** 🆕 |
+
+- **Purchase Orders** — `Icons.shopping_cart_checkout_outlined`, color `Colors.pink`, route `/purchase-orders`
+- **Loyalty** — `Icons.loyalty_outlined`, color `Colors.amber`, route `/loyalty-settings`
+
+This fills all 6 slots per group (18 total tiles) — no empty space, fully balanced grid.
+
+#### [MODIFY] `lib/presentation/account/view/my_account.dart`
+- Add "Tax Settings", "Loyalty Program" entries under Tools section
+
+#### [MODIFY] `lib/core/router/app_shell_navigation.dart`
+- Register deep-link query handlers for new sections
+
+---
+
+## Performance Guidelines (apply to all new code)
+
+| Concern | Approach |
+|---------|----------|
+| **60fps lists** | `ListView.builder` + `itemExtent` for fixed-height rows; `RepaintBoundary` around complex cards |
+| **Heavy computation** | Domain pure functions run in `compute()` isolate for >200 items (existing `core/isolate/` pattern) |
+| **Bloc efficiency** | `Equatable` states with shallow equality; `transformEvents` with `debounce` for search inputs; `distinct()` on streams |
+| **Widget rebuilds** | Extract `const` stateless widgets; use `BlocSelector` for fine-grained rebuilds instead of `BlocBuilder` on entire state |
+| **Responsive** | Use existing `AppBreakpoints` — 1-column on phone, 2-column grid on tablet for forms |
+| **Offline** | Hive cache for suppliers, purchase orders, cash entries; sync outbox pattern matching existing `OfflineFirstBillsRepository` |
+| **Memory** | Dispose all stream subscriptions in `close()`; use `addPostFrameCallback` for deferred work |
+
+---
+
+## Verification Plan
+
+### Automated Tests
+```bash
+flutter test
+```
+
+New test files:
+- `test/domain/tax/gst_calculator_test.dart` — tax computation edge cases
+- `test/domain/inventory/uom_converter_test.dart` — unit conversions
+- `test/domain/daybook/day_book_calculator_test.dart` — running balance, month rollup
+- `test/domain/loyalty/loyalty_engine_test.dart` — points earning, redemption, tier logic
+- `test/domain/stock_audit/variance_calculator_test.dart` — variance math
+- `test/domain/returns/return_policy_test.dart` — validation rules
+- `test/presentation/<feature>/bloc/*_test.dart` — Bloc tests with `bloc_test` + `mocktail` for each new feature
+
+### Manual Verification
+- Run `flutter analyze` — zero new warnings
+- Run `dart format lib test` — clean
+- Launch on Android emulator, test each screen for visual correctness
+- Verify all new screens use `AppScreenScaffold`, `AppSectionCard`, `AppMetricCard` patterns
+- Verify responsive layout on narrow (360px) and tablet (768px) widths
+- Test offline mode: create entries → go offline → verify Hive cache → reconnect → verify sync

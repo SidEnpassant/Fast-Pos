@@ -30,6 +30,7 @@ class OfflineFirstBillsRepository implements BillsRepository {
   final _uuid = const Uuid();
 
   Stream<List<Bill>>? _sharedWatchStream;
+  StreamSubscription<List<Bill>>? _sharedWatchSub;
   String? _sharedWatchUserId;
   List<Bill>? _cachedBills;
 
@@ -43,7 +44,7 @@ class OfflineFirstBillsRepository implements BillsRepository {
       return const Stream.empty();
     }
 
-    if (_sharedWatchUserId != uid) {
+    if (_sharedWatchUserId != uid || _sharedWatchStream == null) {
       _clearSharedWatchStream();
       _sharedWatchUserId = uid;
       _cachedBills = _local.listForUser(uid);
@@ -51,12 +52,17 @@ class OfflineFirstBillsRepository implements BillsRepository {
         _cachedBills = bills;
         return bills;
       }).asBroadcastStream();
+      
+      // Keep the broadcast stream alive so it doesn't terminate when screens are popped
+      _sharedWatchSub = _sharedWatchStream!.listen((_) {}, onError: (_) {});
     }
 
     return replayStream(_sharedWatchStream!, _cachedBills);
   }
 
   void _clearSharedWatchStream() {
+    _sharedWatchSub?.cancel();
+    _sharedWatchSub = null;
     _sharedWatchStream = null;
     _sharedWatchUserId = null;
     _cachedBills = null;

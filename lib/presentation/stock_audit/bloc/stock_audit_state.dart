@@ -19,13 +19,15 @@ class StockAuditState extends Equatable {
     StockAuditViewState? status,
     List<StockAudit>? audits,
     StockAudit? activeAudit,
+    bool clearActiveAudit = false,
     String? errorMessage,
+    bool clearErrorMessage = false,
   }) {
     return StockAuditState(
       status: status ?? this.status,
       audits: audits ?? this.audits,
-      activeAudit: activeAudit ?? this.activeAudit,
-      errorMessage: errorMessage ?? this.errorMessage,
+      activeAudit: clearActiveAudit ? null : (activeAudit ?? this.activeAudit),
+      errorMessage: clearErrorMessage ? null : (errorMessage ?? this.errorMessage),
     );
   }
 

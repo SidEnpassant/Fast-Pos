@@ -42,6 +42,7 @@ class IncompleteTransactionsViewState extends Equatable {
 
   @override
   List<Object?> get props => [
+        bills,
         searchQuery,
         selectedDate,
         isSearching,

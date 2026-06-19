@@ -42,3 +42,14 @@ final class IncompleteSearchModeToggled extends IncompleteTransactionsEvent {
 final class IncompleteRecomputeRequested extends IncompleteTransactionsEvent {
   const IncompleteRecomputeRequested();
 }
+
+final class IncompletePaymentOptimisticallyUpdated extends IncompleteTransactionsEvent {
+  const IncompletePaymentOptimisticallyUpdated(this.billId, this.newPaidAmount, this.newPaymentStatus);
+
+  final String billId;
+  final double newPaidAmount;
+  final String newPaymentStatus;
+
+  @override
+  List<Object?> get props => [billId, newPaidAmount, newPaymentStatus];
+}

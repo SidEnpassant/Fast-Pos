@@ -17,6 +17,7 @@ import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_bloc.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_bloc.dart';
+import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_event.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_state.dart';
 import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
 import 'package:inventopos/presentation/transactions/widgets/pending_transaction_bill_card.dart';
@@ -274,9 +275,20 @@ class _UpdatePaymentDialogState extends State<_UpdatePaymentDialog> {
     setState(() => _isUpdating = true);
 
     final newPaid = widget.bill.paidAmount + amount;
+    final status = newPaid >= widget.bill.totalAmount ? 'complete' : 'partial';
+
+    // Optimistic UI update so the user doesn't wait for the PDF sync!
+    widget.scaffoldContext.read<IncompleteTransactionsBloc>().add(
+          IncompletePaymentOptimisticallyUpdated(
+            widget.billId,
+            newPaid,
+            status,
+          ),
+        );
+
     UpdateBillPaymentResult result;
     try {
-      result = await context.read<UpdateBillPaymentUseCase>().call(
+      result = await widget.scaffoldContext.read<UpdateBillPaymentUseCase>().call(
             billId: widget.billId,
             newPaidAmount: newPaid,
             totalAmount: widget.bill.totalAmount,

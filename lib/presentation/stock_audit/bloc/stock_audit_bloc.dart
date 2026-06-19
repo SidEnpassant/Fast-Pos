@@ -75,6 +75,7 @@ class StockAuditBloc extends Bloc<StockAuditEvent, StockAuditState> {
       status: StockAuditViewState.success,
       audits: event.audits,
       activeAudit: activeAudit,
+      clearActiveAudit: activeAudit == null,
     ));
   }
 
@@ -112,14 +113,16 @@ class StockAuditBloc extends Bloc<StockAuditEvent, StockAuditState> {
       variance: varianceResult.variance,
     );
 
-    await _stockAuditRepository.updateAuditLine(updatedLine);
-    
-    // Manually update activeAudit in state for immediate UI feedback if needed, 
-    // although watchAudits should eventually trigger an update.
+    // Optimistic Update: Update UI instantly
     final updatedLines = state.activeAudit!.lines.map((l) => l.productId == event.productId ? updatedLine : l).toList();
     emit(state.copyWith(
       activeAudit: state.activeAudit!.copyWith(lines: updatedLines),
     ));
+
+    // Fire and forget: Sync with database in background
+    unawaited(_stockAuditRepository.updateAuditLine(updatedLine).catchError((e) {
+      // Silently handle or log error, UI will eventually sync from watchAudits
+    }));
   }
 
   Future<void> _onCompleteAudit(

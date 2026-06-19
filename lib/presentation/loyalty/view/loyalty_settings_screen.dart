@@ -8,6 +8,7 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/loyalty/bloc/loyalty_bloc.dart';
 import 'package:inventopos/presentation/loyalty/bloc/loyalty_event.dart';
 import 'package:inventopos/presentation/loyalty/bloc/loyalty_state.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 
 class LoyaltySettingsScreen extends StatefulWidget {
   const LoyaltySettingsScreen({super.key});
@@ -53,6 +54,9 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
+    
     return BlocConsumer<LoyaltyBloc, LoyaltyState>(
       listener: (context, state) {
         if (state.status == LoyaltyStatus.success) {
@@ -64,122 +68,427 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
         }
       },
       builder: (context, state) {
+        final isLoading = state.status == LoyaltyStatus.loading && state.config.pointsPerCurrencyUnit == 1.0;
+        
         return AppScreenScaffold(
           title: 'Loyalty Program',
-          body: state.status == LoyaltyStatus.loading && state.config.pointsPerCurrencyUnit == 1.0
+          body: isLoading
               ? const Center(child: CircularProgressIndicator())
-              : SingleChildScrollView(
-                  padding: const EdgeInsets.all(AppSpacing.md),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        AppSectionCard(
-                          title: 'General Settings',
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              SwitchListTile(
-                                title: const Text('Enable Loyalty Program'),
-                                subtitle: const Text('Allow customers to earn and redeem points'),
-                                value: _isEnabled,
-                                onChanged: (value) {
-                                  setState(() {
-                                    _isEnabled = value;
-                                  });
-                                },
+              : CustomScrollView(
+                  slivers: [
+                    SliverToBoxAdapter(
+                      child: Padding(
+                        padding: const EdgeInsets.all(AppSpacing.md),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // 1. Enable Toggle Banner
+                            _buildEnableBanner(theme, scheme).animate().fadeIn().slideX(begin: -0.1),
+                            
+                            const SizedBox(height: AppSpacing.lg),
+                            
+                            if (_isEnabled) ...[
+                              // 2. Analytics Mock Row
+                              _buildAnalyticsRow(theme).animate().fadeIn(delay: 200.ms),
+                              const SizedBox(height: AppSpacing.lg),
+                              
+                              // 3. Customer Preview Card
+                              Text(
+                                'Customer Card Preview',
+                                style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                              ).animate().fadeIn(delay: 300.ms),
+                              const SizedBox(height: AppSpacing.sm),
+                              _buildCustomerCardPreview(theme).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
+                              
+                              const SizedBox(height: AppSpacing.xl),
+                              
+                              // 4. Configuration Form
+                              Form(
+                                key: _formKey,
+                                child: Column(
+                                  children: [
+                                    _buildConfigSection(theme).animate().fadeIn(delay: 500.ms),
+                                    const SizedBox(height: AppSpacing.xl),
+                                    _buildTierSection(theme).animate().fadeIn(delay: 600.ms),
+                                  ],
+                                ),
                               ),
+                              
+                              const SizedBox(height: AppSpacing.xl),
+                              
+                              // 5. Save Button
+                              SizedBox(
+                                width: double.infinity,
+                                height: 56,
+                                child: FilledButton(
+                                  onPressed: state.status == LoyaltyStatus.loading
+                                      ? null
+                                      : () {
+                                          if (_formKey.currentState!.validate()) {
+                                            final userId = context.read<AuthRepository>().currentSession?.userId;
+                                            if (userId != null) {
+                                              final config = LoyaltyConfig(
+                                                isEnabled: _isEnabled,
+                                                pointsPerCurrencyUnit: double.parse(_pointsPerCurrencyController.text),
+                                                currencyUnitPerPoint: double.parse(_currencyPerPointController.text),
+                                                minPointsToRedeem: int.parse(_minPointsController.text),
+                                              );
+                                              context.read<LoyaltyBloc>().add(SaveLoyaltyConfig(userId, config));
+                                            }
+                                          }
+                                        },
+                                  style: FilledButton.styleFrom(
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                                  ),
+                                  child: state.status == LoyaltyStatus.loading
+                                      ? const SizedBox(
+                                          height: 24,
+                                          width: 24,
+                                          child: CircularProgressIndicator(strokeWidth: 3, color: Colors.white),
+                                        )
+                                      : const Text('Save Configuration', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ),
+                              ).animate().fadeIn(delay: 700.ms).slideY(begin: 0.1),
+                              const SizedBox(height: 40),
                             ],
-                          ),
+                          ],
                         ),
-                        if (_isEnabled) ...[
-                          const SizedBox(height: AppSpacing.md),
-                          AppSectionCard(
-                            title: 'Points Configuration',
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                TextFormField(
-                                  controller: _pointsPerCurrencyController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Points earned per currency unit spent',
-                                    helperText: 'e.g., 1 point per \$1',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) return 'Required';
-                                    if (double.tryParse(value) == null) return 'Invalid number';
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                TextFormField(
-                                  controller: _currencyPerPointController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Currency value per point',
-                                    helperText: 'e.g., \$0.10 per point (10 points = \$1)',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) return 'Required';
-                                    if (double.tryParse(value) == null) return 'Invalid number';
-                                    return null;
-                                  },
-                                ),
-                                const SizedBox(height: AppSpacing.md),
-                                TextFormField(
-                                  controller: _minPointsController,
-                                  decoration: const InputDecoration(
-                                    labelText: 'Minimum points to redeem',
-                                    helperText: 'Customers must have at least this many points',
-                                  ),
-                                  keyboardType: TextInputType.number,
-                                  validator: (value) {
-                                    if (value == null || value.isEmpty) return 'Required';
-                                    if (int.tryParse(value) == null) return 'Invalid number';
-                                    return null;
-                                  },
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: AppSpacing.xl),
-                        SizedBox(
-                          width: double.infinity,
-                          child: FilledButton(
-                            onPressed: state.status == LoyaltyStatus.loading
-                                ? null
-                                : () {
-                                    if (_formKey.currentState!.validate()) {
-                                      final userId = context.read<AuthRepository>().currentSession?.userId;
-                                      if (userId != null) {
-                                        final config = LoyaltyConfig(
-                                          isEnabled: _isEnabled,
-                                          pointsPerCurrencyUnit: double.parse(_pointsPerCurrencyController.text),
-                                          currencyUnitPerPoint: double.parse(_currencyPerPointController.text),
-                                          minPointsToRedeem: int.parse(_minPointsController.text),
-                                        );
-                                        context.read<LoyaltyBloc>().add(SaveLoyaltyConfig(userId, config));
-                                      }
-                                    }
-                                  },
-                            child: state.status == LoyaltyStatus.loading
-                                ? const SizedBox(
-                                    height: 20,
-                                    width: 20,
-                                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                                  )
-                                : const Text('Save Settings'),
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
+                  ],
                 ),
         );
       },
+    );
+  }
+
+  Widget _buildEnableBanner(ThemeData theme, ColorScheme scheme) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: _isEnabled ? scheme.primaryContainer : scheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: _isEnabled ? scheme.primary.withOpacity(0.5) : Colors.transparent,
+          width: 2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: _isEnabled ? scheme.primary : scheme.outlineVariant,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              Icons.stars,
+              color: _isEnabled ? scheme.onPrimary : scheme.surfaceContainerHigh,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Loyalty Program',
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                    color: _isEnabled ? scheme.onPrimaryContainer : scheme.onSurface,
+                  ),
+                ),
+                Text(
+                  _isEnabled ? 'Active and running' : 'Disabled',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: _isEnabled ? scheme.primary : scheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _isEnabled,
+            activeColor: scheme.primary,
+            onChanged: (val) => setState(() => _isEnabled = val),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnalyticsRow(ThemeData theme) {
+    return Row(
+      children: [
+        Expanded(
+          child: _buildMetricCard(
+            theme,
+            title: 'Points Issued',
+            value: '45,200',
+            icon: Icons.auto_awesome,
+            color: Colors.amber.shade700,
+          ),
+        ),
+        const SizedBox(width: 16),
+        Expanded(
+          child: _buildMetricCard(
+            theme,
+            title: 'Points Redeemed',
+            value: '12,500',
+            icon: Icons.card_giftcard,
+            color: Colors.green.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMetricCard(ThemeData theme, {required String title, required String value, required IconData icon, required Color color}) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(icon, size: 16, color: color),
+              const SizedBox(width: 8),
+              Text(
+                title,
+                style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            value,
+            style: theme.textTheme.headlineSmall?.copyWith(fontWeight: FontWeight.bold, color: color),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCustomerCardPreview(ThemeData theme) {
+    return Container(
+      width: double.infinity,
+      height: 200,
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: LinearGradient(
+          colors: [
+            Colors.amber.shade300,
+            Colors.amber.shade700,
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.amber.withOpacity(0.3),
+            blurRadius: 15,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.storefront, color: Colors.white, size: 28),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Your Store Name',
+                    style: theme.textTheme.titleLarge?.copyWith(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  'GOLD TIER',
+                  style: theme.textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: FontWeight.bold, letterSpacing: 1),
+                ),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Avinash Kumar',
+                    style: theme.textTheme.titleMedium?.copyWith(color: Colors.white.withOpacity(0.9)),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Customer since 2024',
+                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '1,240',
+                    style: theme.textTheme.headlineMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w900),
+                  ),
+                  Text(
+                    'Points Available',
+                    style: theme.textTheme.labelMedium?.copyWith(color: Colors.white.withOpacity(0.9)),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildConfigSection(ThemeData theme) {
+    return AppSectionCard(
+      title: 'Earning & Redemption Rules',
+      child: Column(
+        children: [
+          _buildPremiumTextField(
+            controller: _pointsPerCurrencyController,
+            label: 'Points earned per ₹1 spent',
+            icon: Icons.add_circle_outline,
+            theme: theme,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _buildPremiumTextField(
+            controller: _currencyPerPointController,
+            label: '₹ Value per 1 Point',
+            icon: Icons.currency_rupee,
+            theme: theme,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          _buildPremiumTextField(
+            controller: _minPointsController,
+            label: 'Minimum Points to Redeem',
+            icon: Icons.lock_outline,
+            theme: theme,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    required ThemeData theme,
+  }) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(icon, color: theme.colorScheme.primary),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: theme.colorScheme.outlineVariant),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: BorderSide(color: theme.colorScheme.primary, width: 2),
+        ),
+        filled: true,
+        fillColor: theme.colorScheme.surfaceContainerLowest,
+      ),
+      validator: (value) {
+        if (value == null || value.isEmpty) return 'Required';
+        if (double.tryParse(value) == null) return 'Invalid number';
+        return null;
+      },
+    );
+  }
+  
+  Widget _buildTierSection(ThemeData theme) {
+    return AppSectionCard(
+      title: 'Membership Tiers',
+      child: Column(
+        children: [
+          _buildTierRow('Bronze', '0 points', '1x Earning', Colors.brown.shade400, theme),
+          const SizedBox(height: 12),
+          _buildTierRow('Silver', '1,000 points', '1.2x Earning', Colors.blueGrey.shade300, theme),
+          const SizedBox(height: 12),
+          _buildTierRow('Gold', '5,000 points', '1.5x Earning', Colors.amber.shade600, theme),
+          const SizedBox(height: 16),
+          OutlinedButton.icon(
+            onPressed: () {
+               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Custom Tiers coming soon!')));
+            },
+            icon: const Icon(Icons.add),
+            label: const Text('Add Custom Tier'),
+            style: OutlinedButton.styleFrom(
+              minimumSize: const Size(double.infinity, 48),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTierRow(String name, String req, String multiplier, Color color, ThemeData theme) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.05),
+        border: Border.all(color: color.withOpacity(0.3)),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Icon(Icons.shield, color: color, size: 24),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(name, style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
+                Text(req, style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text(multiplier, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),
+          ),
+        ],
+      ),
     );
   }
 }

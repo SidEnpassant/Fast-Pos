@@ -22,6 +22,7 @@ class IncompleteTransactionsBloc
     on<IncompleteSelectedDateChanged>(_onSelectedDateChanged);
     on<IncompleteSearchModeToggled>(_onSearchModeToggled);
     on<IncompleteRecomputeRequested>(_onRecompute);
+    on<IncompletePaymentOptimisticallyUpdated>(_onPaymentOptimisticallyUpdated);
 
     _sub = _observeBills().listen(
       (bills) => add(IncompleteBillsReceived(bills)),
@@ -91,6 +92,43 @@ class IncompleteTransactionsBloc
     } else {
       emit(state.copyWith(isSearching: true));
     }
+    _requestRecompute();
+  }
+
+  void _onPaymentOptimisticallyUpdated(
+    IncompletePaymentOptimisticallyUpdated event,
+    Emitter<IncompleteTransactionsViewState> emit,
+  ) {
+    final updatedBills = state.bills.map((b) {
+      if (b.id == event.billId) {
+        return Bill(
+          id: b.id,
+          userId: b.userId,
+          businessName: b.businessName,
+          customerName: b.customerName,
+          customerPhone: b.customerPhone,
+          totalAmount: b.totalAmount,
+          paidAmount: event.newPaidAmount,
+          paymentMethod: b.paymentMethod,
+          paymentStatus: event.newPaymentStatus,
+          createdAt: b.createdAt,
+          lastUpdated: DateTime.now(),
+          signedBillUrl: b.signedBillUrl,
+          lastSignedBillUpdate: b.lastSignedBillUpdate,
+          pdfUrl: b.pdfUrl,
+          pdfUpdatedAt: b.pdfUpdatedAt,
+          displayBillNumber: b.displayBillNumber,
+          customerId: b.customerId,
+          lineItems: b.lineItems,
+          taxAmount: b.taxAmount,
+          invoiceType: b.invoiceType,
+        );
+      }
+      return b;
+    }).toList();
+
+    emit(state.copyWith(bills: updatedBills));
+    _pendingImmediateRecompute = true;
     _requestRecompute();
   }
 
