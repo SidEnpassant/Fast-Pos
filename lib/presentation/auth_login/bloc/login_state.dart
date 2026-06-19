@@ -4,6 +4,7 @@ class LoginState extends Equatable {
   const LoginState({
     this.obscurePassword = true,
     this.isSubmitting = false,
+    this.isGoogleSigningIn = false,
     this.emailError,
     this.passwordError,
     this.errorMessage,
@@ -11,6 +12,7 @@ class LoginState extends Equatable {
 
   final bool obscurePassword;
   final bool isSubmitting;
+  final bool isGoogleSigningIn;
   final String? emailError;
   final String? passwordError;
   final String? errorMessage;
@@ -18,6 +20,7 @@ class LoginState extends Equatable {
   LoginState copyWith({
     bool? obscurePassword,
     bool? isSubmitting,
+    bool? isGoogleSigningIn,
     String? emailError,
     String? passwordError,
     String? errorMessage,
@@ -28,6 +31,7 @@ class LoginState extends Equatable {
     return LoginState(
       obscurePassword: obscurePassword ?? this.obscurePassword,
       isSubmitting: isSubmitting ?? this.isSubmitting,
+      isGoogleSigningIn: isGoogleSigningIn ?? this.isGoogleSigningIn,
       emailError: clearEmailError ? null : (emailError ?? this.emailError),
       passwordError:
           clearPasswordError ? null : (passwordError ?? this.passwordError),
@@ -37,6 +41,12 @@ class LoginState extends Equatable {
   }
 
   @override
-  List<Object?> get props =>
-      [obscurePassword, isSubmitting, emailError, passwordError, errorMessage];
+  List<Object?> get props => [
+        obscurePassword,
+        isSubmitting,
+        isGoogleSigningIn,
+        emailError,
+        passwordError,
+        errorMessage,
+      ];
 }

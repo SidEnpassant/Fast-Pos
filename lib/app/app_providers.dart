@@ -428,6 +428,18 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     RepositoryProvider<ComputeGstForBillUseCase>(
       create: (_) => const ComputeGstForBillUseCase(),
     ),
+    RepositoryProvider<EarnLoyaltyPointsUseCase>(
+      create: (c) => EarnLoyaltyPointsUseCase(
+        c.read<LoyaltyRepository>(),
+        c.read<CustomerRepository>(),
+      ),
+    ),
+    RepositoryProvider<RedeemLoyaltyPointsUseCase>(
+      create: (c) => RedeemLoyaltyPointsUseCase(
+        c.read<LoyaltyRepository>(),
+        c.read<CustomerRepository>(),
+      ),
+    ),
     RepositoryProvider<SubmitBillUseCase>(
       create: (c) => SubmitBillUseCase(
         c.read<BillsRepository>(),
@@ -442,6 +454,8 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
         c.read<UpdateProductVelocityUseCase>(),
         c.read<ComputeGstForBillUseCase>(),
         c.read<RecordCashEntryUseCase>(),
+        c.read<EarnLoyaltyPointsUseCase>(),
+        c.read<RedeemLoyaltyPointsUseCase>(),
       ),
     ),
     RepositoryProvider<StartStockAuditUseCase>(
@@ -453,18 +467,6 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     RepositoryProvider<CompleteStockAuditUseCase>(
       create: (c) => CompleteStockAuditUseCase(
         c.read<StockAuditRepository>(),
-      ),
-    ),
-    RepositoryProvider<EarnLoyaltyPointsUseCase>(
-      create: (c) => EarnLoyaltyPointsUseCase(
-        c.read<LoyaltyRepository>(),
-        c.read<CustomerRepository>(),
-      ),
-    ),
-    RepositoryProvider<RedeemLoyaltyPointsUseCase>(
-      create: (c) => RedeemLoyaltyPointsUseCase(
-        c.read<LoyaltyRepository>(),
-        c.read<CustomerRepository>(),
       ),
     ),
   ];

@@ -228,7 +228,7 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         path: '/login',
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) => BlocProvider(
-          create: (ctx) => LoginBloc(ctx.read<SignInUseCase>()),
+          create: (ctx) => LoginBloc(ctx.read<SignInUseCase>(), ctx.read<AuthRepository>()),
           child: const LoginScreen(),
         ),
       ),

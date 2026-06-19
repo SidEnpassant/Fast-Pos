@@ -58,9 +58,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
       },
       builder: (context, state) {
-        final videoPeek = MediaQuery.sizeOf(context).height * 0.22;
         return AuthScaffold(
-          topContentSpacing: videoPeek,
           title: 'Welcome back',
           subtitle: 'Sign in to manage sales, stock, and bills',
           body: SingleChildScrollView(
@@ -97,6 +95,94 @@ class _LoginScreenState extends State<LoginScreen> {
                               child: Text('Sign in'),
                             )
                           : const Text('Sign in'),
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.25),
+                          ),
+                        ),
+                        Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 12),
+                          child: Text(
+                            'OR',
+                            style:
+                                Theme.of(context).textTheme.labelSmall?.copyWith(
+                                      color: const Color.fromARGB(137, 0, 0, 0),
+                                      letterSpacing: 1.2,
+                                    ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: const Color.fromARGB(255, 0, 0, 0).withValues(alpha: 0.25),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    ElevatedButton.icon(
+                      // onPressed: state.isGoogleSigningIn
+                      //     ? null
+                      //     : () => context
+                      //         .read<LoginBloc>()
+                      //         .add(const LoginGoogleSignInRequested()),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (_) => AlertDialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            title: const Row(
+                              children: [
+                                Icon(Icons.rocket_launch_rounded),
+                                SizedBox(width: 8),
+                                Text('Coming Soon'),
+                              ],
+                            ),
+                            content: const Text(
+                              'Google Sign-In is currently under development and will be available in an upcoming update.\n\nThank you for your patience!',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Got it'),
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        side: BorderSide(
+                          color: Colors.white.withValues(alpha: 0.3),
+                        ),
+                        foregroundColor: const Color.fromARGB(255, 0, 0, 0),
+                        padding: const EdgeInsets.symmetric(vertical: 6),
+                      ),
+                      icon: state.isGoogleSigningIn
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Image.asset(
+                              'assets/images/google_logo.png',
+                              width: 40,
+                              height: 40,
+                              errorBuilder: (_, __, ___) =>
+                                  const Icon(Icons.g_mobiledata, size: 22),
+                            ),
+                      label: Text(
+                        state.isGoogleSigningIn
+                            ? 'Signing in…'
+                            : 'Sign in with Google',
+                      ),
                     ),
                     const SizedBox(height: 8),
                     const LoginRegisterPrompt(),

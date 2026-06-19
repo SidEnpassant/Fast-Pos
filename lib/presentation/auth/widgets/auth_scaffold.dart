@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:inventopos/presentation/auth/widgets/auth_promo_video_background.dart';
 
-/// Auth screens shell: promo video + readable gradient + content.
+/// Auth screens shell: readable gradient + content.
 class AuthScaffold extends StatelessWidget {
   const AuthScaffold({
     super.key,
@@ -27,15 +26,14 @@ class AuthScaffold extends StatelessWidget {
       body: Stack(
         fit: StackFit.expand,
         children: [
-          const AuthPromoVideoBackground(),
-          DecoratedBox(
-            decoration: BoxDecoration(
+          Container(
+            decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
                 colors: [
-                  Colors.black.withValues(alpha: 0.45),
-                  Colors.black.withValues(alpha: 0.72),
+                  Color(0xFF242424),
+                  Color(0xFF000000),
                 ],
               ),
             ),

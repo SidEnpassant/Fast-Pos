@@ -2,17 +2,20 @@ import 'package:bloc/bloc.dart';
 import 'package:inventopos/application/auth/login_credentials_validator.dart';
 import 'package:inventopos/application/auth/sign_in_use_case.dart';
 import 'package:inventopos/domain/auth/auth_operation_failure.dart';
+import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_event.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_state.dart';
 
 class LoginBloc extends Bloc<LoginEvent, LoginState> {
-  LoginBloc(this._signIn) : super(const LoginState()) {
+  LoginBloc(this._signIn, this._authRepository) : super(const LoginState()) {
     on<LoginObscurePasswordToggled>(_onObscureToggled);
     on<LoginSubmitted>(_onSubmitted);
     on<LoginUiMessageConsumed>(_onMessageConsumed);
+    on<LoginGoogleSignInRequested>(_onGoogleSignIn);
   }
 
   final SignInUseCase _signIn;
+  final AuthRepository _authRepository;
 
   void _onObscureToggled(
     LoginObscurePasswordToggled event,
@@ -72,6 +75,28 @@ class LoginBloc extends Bloc<LoginEvent, LoginState> {
           errorMessage: e.toString(),
         ),
       );
+    }
+  }
+
+  Future<void> _onGoogleSignIn(
+    LoginGoogleSignInRequested event,
+    Emitter<LoginState> emit,
+  ) async {
+    emit(state.copyWith(isGoogleSigningIn: true, clearErrorMessage: true));
+
+    try {
+      await _authRepository.signInWithGoogle();
+      emit(state.copyWith(isGoogleSigningIn: false));
+    } on AuthOperationFailure catch (e) {
+      emit(state.copyWith(
+        isGoogleSigningIn: false,
+        errorMessage: e.message,
+      ));
+    } catch (e) {
+      emit(state.copyWith(
+        isGoogleSigningIn: false,
+        errorMessage: 'Google sign-in failed. Please try again.',
+      ));
     }
   }
 

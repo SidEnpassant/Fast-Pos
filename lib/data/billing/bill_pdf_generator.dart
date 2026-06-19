@@ -27,6 +27,7 @@ class BillPdfGenerator {
     required String paymentStatus,
     required double paidAmount,
     required double totalAmount,
+    List<Map<String, dynamic>>? discountBreakdown,
     DateTime? updatedAt,
   }) async {
     final businessName = merchant.businessName ?? '';
@@ -331,6 +332,28 @@ class BillPdfGenerator {
                       ),
                       pw.SizedBox(height: 4),
                     ],
+                    if (discountBreakdown != null)
+                      ...discountBreakdown.map((discount) {
+                        if (discount['type'] == 'loyalty') {
+                          return pw.Column(
+                            children: [
+                              pw.Row(
+                                mainAxisAlignment: pw.MainAxisAlignment.end,
+                                children: [
+                                  pw.Text(
+                                    'Loyalty Used (${discount['points_redeemed']} pts): ',
+                                  ),
+                                  pw.Text(
+                                    '- Rs. ${(discount['amount'] as num).toStringAsFixed(2)}',
+                                  ),
+                                ],
+                              ),
+                              pw.SizedBox(height: 4),
+                            ],
+                          );
+                        }
+                        return pw.SizedBox();
+                      }),
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.end,
                       children: [

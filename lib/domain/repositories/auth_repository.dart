@@ -11,6 +11,9 @@ abstract class AuthRepository {
     required String password,
   });
 
+  /// Native Google Sign-In → Supabase token exchange.
+  Future<void> signInWithGoogle();
+
   Future<void> signOut();
 
   Future<void> resetPasswordForEmail(String email);

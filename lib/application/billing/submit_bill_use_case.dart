@@ -5,6 +5,9 @@ import 'package:inventopos/application/daybook/record_cash_entry_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
 import 'package:inventopos/application/tax/compute_gst_for_bill_use_case.dart';
+import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/application/loyalty/earn_loyalty_points_use_case.dart';
+import 'package:inventopos/application/loyalty/redeem_loyalty_points_use_case.dart';
 import 'package:inventopos/core/performance/main_isolate.dart';
 import 'package:inventopos/data/billing/bill_pdf_generator.dart';
 import 'package:inventopos/data/security/bill_audit_service.dart';
@@ -30,6 +33,8 @@ class SubmitBillUseCase {
     this._updateVelocity,
     this._computeGst,
     this._recordCashEntry,
+    this._earnLoyaltyPoints,
+    this._redeemLoyaltyPoints,
   );
 
   final BillsRepository _bills;
@@ -44,6 +49,8 @@ class SubmitBillUseCase {
   final UpdateProductVelocityUseCase _updateVelocity;
   final ComputeGstForBillUseCase _computeGst;
   final RecordCashEntryUseCase _recordCashEntry;
+  final EarnLoyaltyPointsUseCase _earnLoyaltyPoints;
+  final RedeemLoyaltyPointsUseCase _redeemLoyaltyPoints;
 
   Future<BillSubmissionResult> call(BillSubmissionDraft draft) async {
     final validationError = await _validateDraft(draft.lines);
@@ -144,10 +151,12 @@ class SubmitBillUseCase {
       }
     }
 
+    String? resolvedCustomerId = draft.customerId;
+
     if (uid != null &&
         (draft.customerName.trim().isNotEmpty ||
             draft.customerPhone.trim().isNotEmpty)) {
-      await _upsertCustomer(
+      final upsertResult = await _upsertCustomer(
         UpsertCustomerFromBillInput(
           userId: uid,
           customerName: draft.customerName.trim(),
@@ -157,6 +166,40 @@ class SubmitBillUseCase {
           totalAmount: total,
           billId: billId,
         ),
+      );
+      resolvedCustomerId ??= upsertResult.customerId;
+    }
+
+    if (uid != null && resolvedCustomerId != null) {
+      // 1. Redeem points if requested
+      final loyaltyDiscountItem = draft.discountBreakdown?.where((d) => d['type'] == 'loyalty').firstOrNull;
+      if (loyaltyDiscountItem != null) {
+        final ptsRedeemed = (loyaltyDiscountItem['points_redeemed'] as num).toInt();
+        await _redeemLoyaltyPoints(
+          userId: uid,
+          customerId: resolvedCustomerId,
+          pointsToRedeem: ptsRedeemed,
+        );
+      }
+
+      // 2. Earn points for the remaining subtotal (we construct a pseudo-bill object to satisfy signature)
+      final dummyBillForLoyalty = Bill(
+        id: billId,
+        businessName: businessName,
+        customerName: draft.customerName.trim(),
+        customerPhone: draft.customerPhone.trim(),
+        totalAmount: total, // or draft.totalAmount? EarnLoyalty uses totalAmount, which has discount applied!
+        paidAmount: paid,
+        paymentStatus: draft.paymentStatus,
+        paymentMethod: draft.paymentMethod,
+        lineItems: const [],
+        createdAt: DateTime.now(),
+      );
+
+      await _earnLoyaltyPoints(
+        userId: uid,
+        customerId: resolvedCustomerId,
+        bill: dummyBillForLoyalty,
       );
     }
 
@@ -187,6 +230,7 @@ class SubmitBillUseCase {
       paymentStatus: draft.paymentStatus,
       paidAmount: paid,
       totalAmount: total,
+      discountBreakdown: draft.discountBreakdown,
       // We will need to pass gstSummary to the PDF generator later
     );
 

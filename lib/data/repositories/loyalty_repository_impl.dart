@@ -59,7 +59,7 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
   }
 
   @override
-  Future<void> updateCustomerPoints(String customerId, int pointsChange) async {
+  Future<void> updateCustomerPoints(String customerId, int pointsChange, {int lifetimePointsChange = 0}) async {
     final customerRaw = _customerBox.get(customerId);
     if (customerRaw == null) return;
 
@@ -67,13 +67,21 @@ class LoyaltyRepositoryImpl implements LoyaltyRepository {
     final currentPoints = (customerMap['loyalty_points'] as num?)?.toInt() ?? 0;
     final newPoints = currentPoints + pointsChange;
     
+    final currentLifetime = (customerMap['lifetime_points'] as num?)?.toInt() ?? 0;
+    final newLifetime = currentLifetime + lifetimePointsChange;
+
     customerMap['loyalty_points'] = newPoints;
+    customerMap['lifetime_points'] = newLifetime;
     customerMap['updated_at'] = DateTime.now().toUtc().toIso8601String();
 
     try {
       await _client
           .from('customers')
-          .update({'loyalty_points': newPoints, 'updated_at': customerMap['updated_at']})
+          .update({
+            'loyalty_points': newPoints,
+            'lifetime_points': newLifetime,
+            'updated_at': customerMap['updated_at']
+          })
           .eq('id', customerId);
     } catch (e) {
       if (kDebugMode) debugPrint('LoyaltyRepo.updateCustomerPoints failed: $e');

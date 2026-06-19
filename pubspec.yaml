@@ -43,7 +43,7 @@ dependencies:
   equatable: ^2.0.7
   image_picker: ^1.1.2
   pdf: ^3.11.1
-  google_sign_in: ^7.2.0
+  google_sign_in: ^6.2.1
   # the_apple_sign_in: ^1.1.1
   pinput: ^6.0.2
   email_otp: ^3.1.0
@@ -139,7 +139,6 @@ flutter:
     - assets/fonts/
     - assets/icon/app_icon.png
     - assets/icon/
-    - assets/video_asset/
     - shorebird.yaml
 
   # An image asset can refer to one or more resolution-specific "variants", see

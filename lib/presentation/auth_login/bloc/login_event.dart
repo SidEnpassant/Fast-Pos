@@ -27,3 +27,7 @@ final class LoginSubmitted extends LoginEvent {
 final class LoginUiMessageConsumed extends LoginEvent {
   const LoginUiMessageConsumed();
 }
+
+final class LoginGoogleSignInRequested extends LoginEvent {
+  const LoginGoogleSignInRequested();
+}

@@ -33,6 +33,7 @@ import 'package:inventopos/presentation/billing/widgets/bill_generation_sections
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
 import 'package:inventopos/presentation/checkout/bloc/checkout_bloc.dart';
 import 'package:inventopos/presentation/checkout/bloc/checkout_event.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_state.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
@@ -65,20 +66,38 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   void _onPhoneChanged() {
     final phone = _customerPhoneController.text.trim();
     if (phone.length == 10) {
-      final dashboardState = context.read<DashboardHubBloc>().state;
-      final bills = dashboardState.bills;
-      if (bills == null) return;
+      _resolveCustomerByPhone(phone);
+    } else {
+      context.read<CheckoutBloc>().add(
+            const CheckoutPointsUpdated(
+              points: 0,
+              currencyPerPoint: 0.0,
+            ),
+          );
+    }
+  }
 
-      // Find customer from phone if exists
-      final bill = bills.where((b) => b.customerPhone == phone).firstOrNull;
-      if (bill?.customerId != null) {
-        context.read<RepeatOrderBloc>().add(
-              RepeatOrderStarted(customerId: bill!.customerId!, bills: bills),
-            );
+  Future<void> _resolveCustomerByPhone(String phone) async {
+    final dashboardState = context.read<DashboardHubBloc>().state;
+    final bills = dashboardState.bills ?? [];
 
-        // Fetch customer loyalty points
-        _fetchCustomerLoyalty(bill.customerId!);
+    // Optional: trigger repeat order if past bill found
+    final bill = bills.where((b) => b.customerPhone == phone).firstOrNull;
+    if (bill?.customerId != null) {
+      context.read<RepeatOrderBloc>().add(
+            RepeatOrderStarted(customerId: bill!.customerId!, bills: bills),
+          );
+    }
+
+    try {
+      final uid = Supabase.instance.client.auth.currentUser?.id;
+      if (uid == null) return;
+      final customer = await context.read<CustomerRepository>().findByPhone(uid, phone);
+      if (customer != null && mounted) {
+        _fetchCustomerLoyalty(customer.id);
       }
+    } catch (e) {
+      debugPrint('Error finding customer by phone: $e');
     }
   }
 
@@ -169,104 +188,121 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
         BlocListener<BillSanityCheckBloc, BillSanityCheckState>(
           listener: (context, state) {
             if (state.result != null && !state.overridden) {
-              _showSanityWarning(state.result!.message);
+              final checkout = context.read<CheckoutBloc>().state;
+              _showSanityWarning(state.result!.message, checkout);
             }
           },
         ),
       ],
       child: BlocBuilder<BillDraftBloc, BillDraftState>(
         builder: (context, draft) {
-          final totalAmount = draft.subtotal;
-          final submitting = context.select<BillSubmissionBloc, bool>(
-            (bloc) => bloc.state is BillSubmissionLoading,
-          );
+          return BlocBuilder<CheckoutBloc, CheckoutState>(
+            builder: (context, checkout) {
+              final subtotal = draft.subtotal;
+              final totalDiscount = checkout.totalDiscount;
+              final totalAmount = (subtotal - totalDiscount).clamp(0.0, double.infinity);
+              
+              final submitting = context.select<BillSubmissionBloc, bool>(
+                (bloc) => bloc.state is BillSubmissionLoading,
+              );
 
-          return BlocConsumer<BillVoiceAssistBloc, BillVoiceAssistState>(
-            listenWhen: (previous, current) =>
-                current.isListening &&
-                current.transcript != previous.transcript,
-            listener: (context, state) {
-              if (state.transcript.isNotEmpty) {
-                _customerNameController.text = state.transcript;
-              }
-            },
-            builder: (context, voice) {
-              return Scaffold(
-                backgroundColor: theme.colorScheme.surfaceContainerLowest,
-                body: SafeArea(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _BillHeader(
-                        lineCount: draft.lines.length,
-                        totalAmount: totalAmount,
-                      ),
-                      Expanded(
-                        child: submitting
-                            ? const _SubmittingIndicator()
-                            : Form(
-                                key: _formKey,
-                                child: CustomScrollView(
-                                  slivers: [
-                                    SliverPadding(
-                                      padding: const EdgeInsets.all(
-                                        AppSpacing.md,
-                                      ),
-                                      sliver: SliverList(
-                                        delegate: SliverChildListDelegate([
-                                          BillGenerationCustomerSection(
-                                            nameController:
-                                                _customerNameController,
-                                            phoneController:
-                                                _customerPhoneController,
-                                            isListening: voice.isListening,
-                                            onMicPressed: () => context
-                                                .read<BillVoiceAssistBloc>()
-                                                .add(
-                                                  const BillVoiceAssistTogglePressed(),
+              return BlocConsumer<BillVoiceAssistBloc, BillVoiceAssistState>(
+                listenWhen: (previous, current) =>
+                    current.isListening &&
+                    current.transcript != previous.transcript,
+                listener: (context, state) {
+                  if (state.transcript.isNotEmpty) {
+                    _customerNameController.text = state.transcript;
+                  }
+                },
+                builder: (context, voice) {
+                  return Scaffold(
+                    backgroundColor: theme.colorScheme.surfaceContainerLowest,
+                    body: SafeArea(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          _BillHeader(
+                            lineCount: draft.lines.length,
+                            totalAmount: totalAmount,
+                          ),
+                          Expanded(
+                            child: submitting
+                                ? const _SubmittingIndicator()
+                                : Form(
+                                    key: _formKey,
+                                    child: CustomScrollView(
+                                      slivers: [
+                                        SliverPadding(
+                                          padding: const EdgeInsets.all(
+                                            AppSpacing.md,
+                                          ),
+                                          sliver: SliverList(
+                                            delegate: SliverChildListDelegate([
+                                              BillGenerationCustomerSection(
+                                                nameController:
+                                                    _customerNameController,
+                                                phoneController:
+                                                    _customerPhoneController,
+                                                isListening: voice.isListening,
+                                                onMicPressed: () => context
+                                                    .read<BillVoiceAssistBloc>()
+                                                    .add(
+                                                      const BillVoiceAssistTogglePressed(),
+                                                    ),
+                                              ),
+                                              const SizedBox(
+                                                height: AppSpacing.md,
+                                              ),
+                                              BillGenerationProductsSection(
+                                                lines: draft.lines,
+                                                totalAmount: subtotal,
+                                                onAddProduct:
+                                                    _showAddProductChooser,
+                                              ),
+                                              const SizedBox(
+                                                height: AppSpacing.md,
+                                              ),
+                                              if (checkout.availablePoints > 0)
+                                                _LoyaltyRedemptionCard(
+                                                  checkoutState: checkout,
+                                                  onToggle: (v) => context.read<CheckoutBloc>().add(
+                                                    CheckoutLoyaltyRedemptionToggled(v),
+                                                  ),
                                                 ),
+                                              if (checkout.availablePoints > 0)
+                                                const SizedBox(height: AppSpacing.md),
+                                              _PaymentSection(
+                                                totalAmount: totalAmount,
+                                                onChanged: (method, status, paid) {
+                                                  _paymentMethod = method;
+                                                  _paymentStatus = status;
+                                                  _paidAmount = paid;
+                                                },
+                                              ),
+                                              const SizedBox(
+                                                height: AppSpacing.lg,
+                                              ),
+                                              _GenerateBillButton(
+                                                enabled: draft.lines.isNotEmpty &&
+                                                    !submitting,
+                                                onPressed: () => _generateBill(checkout),
+                                              ),
+                                              const SizedBox(
+                                                height: AppSpacing.lg,
+                                              ),
+                                            ]),
                                           ),
-                                          const SizedBox(
-                                            height: AppSpacing.md,
-                                          ),
-                                          BillGenerationProductsSection(
-                                            lines: draft.lines,
-                                            totalAmount: totalAmount,
-                                            onAddProduct:
-                                                _showAddProductChooser,
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.md,
-                                          ),
-                                          _PaymentSection(
-                                            totalAmount: totalAmount,
-                                            onChanged: (method, status, paid) {
-                                              _paymentMethod = method;
-                                              _paymentStatus = status;
-                                              _paidAmount = paid;
-                                            },
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.lg,
-                                          ),
-                                          _GenerateBillButton(
-                                            enabled: draft.lines.isNotEmpty &&
-                                                !submitting,
-                                            onPressed: _generateBill,
-                                          ),
-                                          const SizedBox(
-                                            height: AppSpacing.lg,
-                                          ),
-                                        ]),
-                                      ),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ),
+                                  ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                ),
+                    ),
+                  );
+                },
               );
             },
           );
@@ -275,7 +311,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
     );
   }
 
-  Future<void> _generateBill() async {
+  Future<void> _generateBill(CheckoutState checkout) async {
     final uid = Supabase.instance.client.auth.currentUser?.id;
     if (uid == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -306,21 +342,40 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
       return;
     }
 
+    String? customerId;
+    final phone = _customerPhoneController.text.trim();
+    if (phone.length == 10) {
+      final bills = context.read<DashboardHubBloc>().state.bills ?? [];
+      customerId = bills.where((b) => b.customerPhone == phone).firstOrNull?.customerId;
+    }
+
+    final breakdown = <Map<String, dynamic>>[];
+    if (checkout.isLoyaltyRedemptionActive && checkout.loyaltyDiscount > 0) {
+      breakdown.add({
+        'type': 'loyalty',
+        'points_redeemed': checkout.availablePoints,
+        'amount': checkout.loyaltyDiscount,
+      });
+    }
+
     context.read<BillSubmissionBloc>().add(
           BillSubmissionRequested(
             BillSubmissionDraft(
               customerName: _customerNameController.text.trim(),
               customerPhone: _customerPhoneController.text.trim(),
+              customerId: customerId,
               lines: draftLines,
               paymentMethod: _paymentMethod,
               paymentStatus: _paymentStatus,
               paidAmount: _paidAmount,
+              discountTotal: checkout.totalDiscount,
+              discountBreakdown: breakdown.isEmpty ? null : breakdown,
             ),
           ),
         );
   }
 
-  void _showSanityWarning(String message) {
+  void _showSanityWarning(String message, CheckoutState checkout) {
     showDialog<void>(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -337,7 +392,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
               context
                   .read<BillSanityCheckBloc>()
                   .add(const BillSanityCheckOverrideConfirmed());
-              _generateBill();
+              _generateBill(checkout);
             },
             child: const Text('Proceed anyway'),
           ),
@@ -707,5 +762,71 @@ class _GenerateBillButton extends StatelessWidget {
     ).animate().fadeIn().slideY(
           delay: const Duration(milliseconds: 600),
         );
+  }
+}
+
+class _LoyaltyRedemptionCard extends StatelessWidget {
+  const _LoyaltyRedemptionCard({
+    required this.checkoutState,
+    required this.onToggle,
+  });
+
+  final CheckoutState checkoutState;
+  final ValueChanged<bool> onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final pts = checkoutState.availablePoints;
+    final discount = pts * checkoutState.currencyPerPoint;
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: checkoutState.isLoyaltyRedemptionActive
+            ? theme.colorScheme.primaryContainer
+            : theme.colorScheme.surfaceContainer,
+        borderRadius: BorderRadius.circular(AppRadii.lg),
+        border: Border.all(
+          color: checkoutState.isLoyaltyRedemptionActive
+              ? theme.colorScheme.primary
+              : theme.colorScheme.outlineVariant,
+        ),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            Icons.stars,
+            color: checkoutState.isLoyaltyRedemptionActive
+                ? theme.colorScheme.primary
+                : theme.colorScheme.onSurfaceVariant,
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Loyalty Program',
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '$pts pts available (-₹${discount.toStringAsFixed(2)})',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Switch(
+            value: checkoutState.isLoyaltyRedemptionActive,
+            onChanged: onToggle,
+          ),
+        ],
+      ),
+    );
   }
 }
