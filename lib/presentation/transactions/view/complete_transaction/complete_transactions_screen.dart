@@ -11,6 +11,7 @@ import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
+import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_bloc.dart';
 import 'package:inventopos/presentation/transactions/bloc/bill_actions/transaction_bill_actions_event.dart';
@@ -225,29 +226,32 @@ class _CompleteTransactionsScreenState
                       }
 
                       final dates = groupedTransactions.keys.toList();
+                      final flattenedItems = <dynamic>[];
+                      for (final date in dates) {
+                        flattenedItems.add(date);
+                        flattenedItems.addAll(groupedTransactions[date]!);
+                      }
 
                       return ListView.builder(
-                        itemCount: dates.length,
+                        itemCount: flattenedItems.length,
                         itemBuilder: (context, index) {
-                          final date = dates[index];
-                          final transactions = groupedTransactions[date]!;
-
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              AppDateSectionHeader(
-                                label: DateFormat('MMMM dd, yyyy')
-                                    .format(DateTime.parse(date)),
-                              ),
-                              ...transactions.map((bill) {
-                                return CompleteTransactionBillCard(
-                                  bill: bill,
-                                  onShowBill: () =>
-                                      openBillPdfForBill(context, bill),
-                                  onDelete: () => _deleteTransaction(bill.id),
-                                );
-                              }),
-                            ],
+                          final item = flattenedItems[index];
+                          
+                          if (item is String) {
+                            return AppDateSectionHeader(
+                              label: DateFormat('MMMM dd, yyyy')
+                                  .format(DateTime.parse(item)),
+                            );
+                          }
+                          
+                          final bill = item as Bill;
+                          return RepaintBoundary(
+                            child: CompleteTransactionBillCard(
+                              bill: bill,
+                              onShowBill: () =>
+                                  openBillPdfForBill(context, bill),
+                              onDelete: () => _deleteTransaction(bill.id),
+                            ),
                           );
                         },
                       );

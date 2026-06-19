@@ -46,96 +46,100 @@ class AnalyticsRevenueChart extends StatelessWidget {
           ),
         ),
         child: useBarChart
-            ? _BarChart(
-                months: recentMonths,
-                data: revenueData,
-                yMax: yMax,
-                primary: Theme.of(context).colorScheme.primary,
+            ? RepaintBoundary(
+                child: _BarChart(
+                  months: recentMonths,
+                  data: revenueData,
+                  yMax: yMax,
+                  primary: Theme.of(context).colorScheme.primary,
+                ),
               )
-            : LineChart(
-                LineChartData(
-                  minY: 0,
-                  maxY: yMax,
-                  gridData: FlGridData(
-                    show: true,
-                    drawVerticalLine: false,
-                    horizontalInterval: yInterval,
-                    getDrawingHorizontalLine: (value) => FlLine(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .outline
-                          .withValues(alpha: 0.2),
-                      strokeWidth: 1,
-                    ),
-                  ),
-                  titlesData: FlTitlesData(
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 48,
-                        interval: yInterval,
-                        getTitlesWidget: (value, meta) => Text(
-                          '₹${NumberFormat.compact().format(value)}',
-                          style: GoogleFonts.poppins(fontSize: 10),
-                        ),
-                      ),
-                    ),
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        reservedSize: 28,
-                        getTitlesWidget: (value, meta) {
-                          final i = value.toInt();
-                          if (i >= 0 && i < recentMonths.length) {
-                            return Padding(
-                              padding: const EdgeInsets.only(top: 6),
-                              child: Text(
-                                recentMonths[i].substring(0, 3),
-                                style: GoogleFonts.poppins(fontSize: 10),
-                              ),
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    rightTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                    topTitles: const AxisTitles(
-                      sideTitles: SideTitles(showTitles: false),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: false),
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: List.generate(
-                        revenueData.length,
-                        (i) => FlSpot(i.toDouble(), revenueData[i]),
-                      ),
-                      isCurved: true,
-                      color: Theme.of(context).colorScheme.primary,
-                      barWidth: 3,
-                      isStrokeCapRound: true,
-                      dotData: FlDotData(
-                        show: true,
-                        getDotPainter: (spot, percent, barData, index) =>
-                            FlDotCirclePainter(
-                          radius: 4,
-                          color: Theme.of(context).colorScheme.surface,
-                          strokeWidth: 2,
-                          strokeColor: Theme.of(context).colorScheme.primary,
-                        ),
-                      ),
-                      belowBarData: BarAreaData(
-                        show: true,
+            : RepaintBoundary(
+                child: LineChart(
+                  LineChartData(
+                    minY: 0,
+                    maxY: yMax,
+                    gridData: FlGridData(
+                      show: true,
+                      drawVerticalLine: false,
+                      horizontalInterval: yInterval,
+                      getDrawingHorizontalLine: (value) => FlLine(
                         color: Theme.of(context)
                             .colorScheme
-                            .primary
-                            .withValues(alpha: 0.12),
+                            .outline
+                            .withValues(alpha: 0.2),
+                        strokeWidth: 1,
                       ),
                     ),
-                  ],
+                    titlesData: FlTitlesData(
+                      leftTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 48,
+                          interval: yInterval,
+                          getTitlesWidget: (value, meta) => Text(
+                            '₹${NumberFormat.compact().format(value)}',
+                            style: GoogleFonts.poppins(fontSize: 10),
+                          ),
+                        ),
+                      ),
+                      bottomTitles: AxisTitles(
+                        sideTitles: SideTitles(
+                          showTitles: true,
+                          reservedSize: 28,
+                          getTitlesWidget: (value, meta) {
+                            final i = value.toInt();
+                            if (i >= 0 && i < recentMonths.length) {
+                              return Padding(
+                                padding: const EdgeInsets.only(top: 6),
+                                child: Text(
+                                  recentMonths[i].substring(0, 3),
+                                  style: GoogleFonts.poppins(fontSize: 10),
+                                ),
+                              );
+                            }
+                            return const Text('');
+                          },
+                        ),
+                      ),
+                      rightTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                      topTitles: const AxisTitles(
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
+                    ),
+                    borderData: FlBorderData(show: false),
+                    lineBarsData: [
+                      LineChartBarData(
+                        spots: List.generate(
+                          revenueData.length,
+                          (i) => FlSpot(i.toDouble(), revenueData[i]),
+                        ),
+                        isCurved: true,
+                        color: Theme.of(context).colorScheme.primary,
+                        barWidth: 3,
+                        isStrokeCapRound: true,
+                        dotData: FlDotData(
+                          show: true,
+                          getDotPainter: (spot, percent, barData, index) =>
+                              FlDotCirclePainter(
+                            radius: 4,
+                            color: Theme.of(context).colorScheme.surface,
+                            strokeWidth: 2,
+                            strokeColor: Theme.of(context).colorScheme.primary,
+                          ),
+                        ),
+                        belowBarData: BarAreaData(
+                          show: true,
+                          color: Theme.of(context)
+                              .colorScheme
+                              .primary
+                              .withValues(alpha: 0.12),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
       );

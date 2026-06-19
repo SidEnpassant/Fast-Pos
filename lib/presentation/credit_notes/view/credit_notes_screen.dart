@@ -5,7 +5,6 @@ import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
-import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/core/widgets/shimmer/specialized_skeletons.dart';
 import 'package:inventopos/domain/entities/credit_note.dart';
 import 'package:inventopos/presentation/credit_notes/bloc/credit_notes_bloc.dart';

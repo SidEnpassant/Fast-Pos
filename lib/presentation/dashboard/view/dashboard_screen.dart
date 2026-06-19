@@ -548,47 +548,49 @@ class _BillRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: Material(
-        color:
-            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-        borderRadius: BorderRadius.circular(AppRadii.md),
-        child: ListTile(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadii.md),
-          ),
-          leading: CircleAvatar(
-            backgroundColor: theme.colorScheme.primaryContainer,
-            child: Icon(
-              Icons.receipt_long,
-              size: 20,
-              color: theme.colorScheme.onPrimaryContainer,
+      child: RepaintBoundary(
+        child: Material(
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+          borderRadius: BorderRadius.circular(AppRadii.md),
+          child: ListTile(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadii.md),
             ),
-          ),
-          title: Text(
-            bill.customerName.trim().isEmpty ? 'Walk-in' : bill.customerName,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          subtitle: Text(
-            [
-              if (label != null) label,
-              DateFormat('d MMM, h:mm a')
-                  .format(BillRevenue.localCreatedDate(bill)),
-            ].join(' · '),
-          ),
-          trailing: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                fmt.format(amount),
-                style: const TextStyle(fontWeight: FontWeight.w600),
+            leading: CircleAvatar(
+              backgroundColor: theme.colorScheme.primaryContainer,
+              child: Icon(
+                Icons.receipt_long,
+                size: 20,
+                color: theme.colorScheme.onPrimaryContainer,
               ),
-              const SizedBox(height: 4),
-              AppStatusChip(label: bill.paymentStatus, color: statusColor),
-            ],
+            ),
+            title: Text(
+              bill.customerName.trim().isEmpty ? 'Walk-in' : bill.customerName,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+            subtitle: Text(
+              [
+                if (label != null) label,
+                DateFormat('d MMM, h:mm a')
+                    .format(BillRevenue.localCreatedDate(bill)),
+              ].join(' · '),
+            ),
+            trailing: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  fmt.format(amount),
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+                const SizedBox(height: 4),
+                AppStatusChip(label: bill.paymentStatus, color: statusColor),
+              ],
+            ),
+            onTap: () => context.push('/complete-transactions'),
           ),
-          onTap: () => context.push('/complete-transactions'),
         ),
       ),
     );

@@ -7,7 +7,6 @@ import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/domain/entities/stock_audit.dart';
 import 'package:inventopos/domain/repositories/stock_audit_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:uuid/uuid.dart';
 
 class StockAuditRepositoryImpl implements StockAuditRepository {
   StockAuditRepositoryImpl({SupabaseClient? client})
