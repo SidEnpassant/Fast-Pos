@@ -12,10 +12,10 @@ class QuickActionsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final duesBadge = state.partialBillsCount > 0
-        ? '${state.partialBillsCount}'
-        : null;
-    final stockBadge = state.lowStockCount > 0 ? '${state.lowStockCount}' : null;
+    final duesBadge =
+        state.partialBillsCount > 0 ? '${state.partialBillsCount}' : null;
+    final stockBadge =
+        state.lowStockCount > 0 ? '${state.lowStockCount}' : null;
 
     return AppSectionCard(
       title: 'Quick actions',
@@ -50,6 +50,12 @@ class QuickActionsGrid extends StatelessWidget {
                 color: Colors.green,
                 onTap: () => context.push('/complete-transactions'),
               ),
+              AppQuickActionTile(
+                label: 'Returns',
+                icon: Icons.assignment_return_outlined,
+                color: Colors.red.shade400,
+                onTap: () => context.push('/credit-notes'),
+              ),
             ],
           ),
           const SizedBox(height: 14),
@@ -74,6 +80,24 @@ class QuickActionsGrid extends StatelessWidget {
                 icon: Icons.receipt_long_outlined,
                 color: Colors.brown,
                 onTap: () => context.push('/expenses'),
+              ),
+              AppQuickActionTile(
+                label: 'Day Book',
+                icon: Icons.menu_book_outlined,
+                color: Colors.cyan.shade700,
+                onTap: () => context.push('/daybook'),
+              ),
+              AppQuickActionTile(
+                label: 'Suppliers',
+                icon: Icons.local_shipping_outlined,
+                color: Colors.purple,
+                onTap: () => context.push('/suppliers'),
+              ),
+              AppQuickActionTile(
+                label: 'Stock Audit',
+                icon: Icons.fact_check_outlined,
+                color: Colors.lime.shade800,
+                onTap: () => context.push('/stock-audit'),
               ),
             ],
           ),
@@ -104,6 +128,18 @@ class QuickActionsGrid extends StatelessWidget {
                 icon: Icons.print_outlined,
                 color: Colors.blue,
                 onTap: () => context.push('/printer-setup'),
+              ),
+              AppQuickActionTile(
+                label: 'Purchase Orders',
+                icon: Icons.shopping_cart_checkout_outlined,
+                color: Colors.pink,
+                onTap: () => context.push('/purchase-orders'),
+              ),
+              AppQuickActionTile(
+                label: 'Loyalty',
+                icon: Icons.loyalty_outlined,
+                color: Colors.amber,
+                onTap: () => context.push('/loyalty-settings'),
               ),
             ],
           ),

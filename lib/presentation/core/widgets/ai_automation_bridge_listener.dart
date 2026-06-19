@@ -21,7 +21,8 @@ class AiAutomationBridgeListener extends StatefulWidget {
       _AiAutomationBridgeListenerState();
 }
 
-class _AiAutomationBridgeListenerState extends State<AiAutomationBridgeListener> {
+class _AiAutomationBridgeListenerState
+    extends State<AiAutomationBridgeListener> {
   @override
   void initState() {
     super.initState();

@@ -40,8 +40,7 @@ class _NotificationBridgeListenerState
       listener: (context, state) async {
         final coordinator = context.read<NotificationSyncCoordinator>();
         if (state.status == AuthFlowStatus.authenticated) {
-          final uid =
-              context.read<AuthRepository>().currentSession?.userId;
+          final uid = context.read<AuthRepository>().currentSession?.userId;
           if (uid != null) await coordinator.start(uid);
         } else {
           await coordinator.stop();

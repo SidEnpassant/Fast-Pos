@@ -35,8 +35,7 @@ class RegenerateAndUploadBillPdfUseCase {
     }
 
     final paidAmount = paymentOverride?.paidAmount ?? bill.paidAmount;
-    final paymentStatus =
-        paymentOverride?.paymentStatus ?? bill.paymentStatus;
+    final paymentStatus = paymentOverride?.paymentStatus ?? bill.paymentStatus;
     final totalAmount = paymentOverride?.totalAmount ?? bill.totalAmount;
     final updatedAt =
         paymentOverride?.updatedAt ?? bill.lastUpdated ?? DateTime.now();

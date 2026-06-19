@@ -14,10 +14,8 @@ class AutomationJobRepositoryImpl implements AutomationJobPort {
   @override
   Future<List<AutomationJob>> listForUser(String userId) async {
     try {
-      final rows = await _client
-          .from('automation_jobs')
-          .select()
-          .eq('user_id', userId);
+      final rows =
+          await _client.from('automation_jobs').select().eq('user_id', userId);
       return (rows as List)
           .map((e) => _fromRow(Map<String, dynamic>.from(e as Map)))
           .toList();

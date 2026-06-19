@@ -11,7 +11,8 @@ abstract final class BillPdfUrlUtils {
     return url.substring(0, q);
   }
 
-  static String? storagePathFromPublicUrl(String url, {String bucket = 'bill_pdfs'}) {
+  static String? storagePathFromPublicUrl(String url,
+      {String bucket = 'bill_pdfs'}) {
     final clean = stripCacheBuster(url);
     final marker = '/$bucket/';
     final idx = clean.indexOf(marker);

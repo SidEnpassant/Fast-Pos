@@ -6,14 +6,33 @@ class BillLineItem extends Equatable {
     required this.productName,
     required this.quantity,
     required this.totalPrice,
+    this.productId,
+    this.gstPercent,
+    this.hsnCode,
+    this.taxAmount = 0.0,
+    this.uom = 'piece',
   });
 
   final String productName;
-  final int quantity;
+  final double quantity;
   final double totalPrice;
+  final String? productId;
+  final double? gstPercent;
+  final String? hsnCode;
+  final double taxAmount;
+  final String uom;
 
   @override
-  List<Object?> get props => [productName, quantity, totalPrice];
+  List<Object?> get props => [
+        productName,
+        quantity,
+        totalPrice,
+        productId,
+        gstPercent,
+        hsnCode,
+        taxAmount,
+        uom,
+      ];
 }
 
 /// Bill aggregate for lists, dashboard, and analytics.
@@ -37,6 +56,8 @@ class Bill extends Equatable {
     this.displayBillNumber,
     this.customerId,
     required this.lineItems,
+    this.taxAmount = 0.0,
+    this.invoiceType = 'tax_invoice',
   });
 
   final String id;
@@ -57,6 +78,8 @@ class Bill extends Equatable {
   final String? displayBillNumber;
   final String? customerId;
   final List<BillLineItem> lineItems;
+  final double taxAmount;
+  final String? invoiceType;
 
   @override
   List<Object?> get props => [
@@ -78,5 +101,7 @@ class Bill extends Equatable {
         displayBillNumber,
         customerId,
         lineItems,
+        taxAmount,
+        invoiceType,
       ];
 }

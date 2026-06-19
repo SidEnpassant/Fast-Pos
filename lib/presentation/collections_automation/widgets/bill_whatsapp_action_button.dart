@@ -28,9 +28,11 @@ class BillWhatsAppActionButton extends StatelessWidget {
   }
 
   Future<void> _openPreview(BuildContext context) async {
-    final prefs = await context.read<ObserveAiPreferencesUseCase>()(userId).first;
-    final profile =
-        await context.read<ProfileRepository>().fetchCurrentUserProfileSnapshot();
+    final prefs =
+        await context.read<ObserveAiPreferencesUseCase>()(userId).first;
+    final profile = await context
+        .read<ProfileRepository>()
+        .fetchCurrentUserProfileSnapshot();
     final shop = profile?.businessName ?? 'Shop';
     final message = context.read<BuildPartialPaymentMessageUseCase>()(
       bill: bill,

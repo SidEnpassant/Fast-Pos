@@ -13,6 +13,8 @@ class UserProfile extends Equatable {
     this.signatureUrl,
     this.lastBillNumber,
     this.createdAt,
+    this.stateCode,
+    this.isCompositionDealer = false,
   });
 
   final String? name;
@@ -25,6 +27,8 @@ class UserProfile extends Equatable {
   final String? signatureUrl;
   final int? lastBillNumber;
   final Object? createdAt;
+  final String? stateCode;
+  final bool isCompositionDealer;
 
   @override
   List<Object?> get props => [
@@ -38,5 +42,7 @@ class UserProfile extends Equatable {
         signatureUrl,
         lastBillNumber,
         createdAt,
+        stateCode,
+        isCompositionDealer,
       ];
 }

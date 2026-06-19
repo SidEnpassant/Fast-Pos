@@ -6,6 +6,7 @@ import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/responsive/app_breakpoints.dart';
 import 'package:inventopos/core/router/app_shell_navigation.dart';
+import 'package:inventopos/core/updates/shorebird_updater.dart';
 import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
@@ -28,7 +29,6 @@ import 'package:inventopos/presentation/dashboard/widgets/quick_actions_grid.dar
 import 'package:inventopos/presentation/day_operations/widgets/dashboard_opening_snapshot.dart';
 import 'package:inventopos/presentation/insights/widgets/dashboard_ai_briefing_card.dart';
 import 'package:inventopos/presentation/inventory_automation/widgets/dashboard_reorder_alerts.dart';
-import 'package:inventopos/core/updates/shorebird_updater.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -119,7 +119,8 @@ class _DashboardHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<DashboardHubBloc, DashboardHubState>(
       buildWhen: (p, c) =>
-          p.profiles != c.profiles || p.notificationCount != c.notificationCount,
+          p.profiles != c.profiles ||
+          p.notificationCount != c.notificationCount,
       builder: (context, state) {
         final theme = Theme.of(context);
         final hour = DateTime.now().hour;
@@ -215,7 +216,8 @@ class _PulseSection extends StatelessWidget {
       buildWhen: (p, c) =>
           p.billsToday != c.billsToday ||
           p.avgBillValueToday != c.avgBillValueToday ||
-          p.revenueTodayVsYesterdayPercent != c.revenueTodayVsYesterdayPercent ||
+          p.revenueTodayVsYesterdayPercent !=
+              c.revenueTodayVsYesterdayPercent ||
           p.activeCustomersThisMonth != c.activeCustomersThisMonth ||
           p.pendingCollectionAmount != c.pendingCollectionAmount ||
           p.partialBillsCount != c.partialBillsCount,
@@ -547,7 +549,8 @@ class _BillRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Material(
-        color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(AppRadii.md),
         child: ListTile(
           shape: RoundedRectangleBorder(

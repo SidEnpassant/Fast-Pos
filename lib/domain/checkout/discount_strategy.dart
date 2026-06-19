@@ -83,7 +83,7 @@ class FixedAmountDiscountStrategy implements DiscountStrategy {
 class TieredVolumeDiscountStrategy implements DiscountStrategy {
   TieredVolumeDiscountStrategy({required this.minQty, required this.percent});
 
-  final int minQty;
+  final double minQty;
   final double percent;
 
   @override
@@ -94,7 +94,7 @@ class TieredVolumeDiscountStrategy implements DiscountStrategy {
 
   @override
   DiscountedCart apply(DiscountedCart cart, DiscountContext ctx) {
-    final totalQty = cart.lines.fold<int>(0, (s, l) => s + l.quantity);
+    final totalQty = cart.lines.fold<double>(0.0, (s, l) => s + l.quantity);
     if (totalQty < minQty) return cart;
     return PercentageDiscountStrategy(percent).apply(cart, ctx);
   }

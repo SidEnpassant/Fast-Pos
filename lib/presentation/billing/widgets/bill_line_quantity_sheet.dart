@@ -5,6 +5,7 @@ import 'package:inventopos/application/billing/validate_bill_line_quantity.dart'
 import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
 import 'package:inventopos/domain/entities/product.dart';
+import 'package:inventopos/domain/inventory/unit_of_measure.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 
 /// Shared quantity sheet for scan flow and inventory picker.
@@ -15,8 +16,9 @@ Future<BillDraftLine?> showBillLineQuantitySheet(
   required double price,
   required List<BillDraftLine> existingLines,
   String? productId,
-  int initialQuantity = 1,
+  double initialQuantity = 1.0,
   int? editingIndex,
+  String uom = 'piece',
 }) {
   return showModalBottomSheet<BillDraftLine>(
     context: context,
@@ -29,6 +31,7 @@ Future<BillDraftLine?> showBillLineQuantitySheet(
       initialQuantity: initialQuantity,
       editingIndex: editingIndex,
       existingLines: existingLines,
+      uom: uom,
     ),
   );
 }
@@ -41,14 +44,16 @@ class _BillLineQuantitySheet extends StatefulWidget {
     this.productId,
     required this.initialQuantity,
     this.editingIndex,
+    required this.uom,
   });
 
   final String name;
   final double price;
   final String? productId;
-  final int initialQuantity;
+  final double initialQuantity;
   final int? editingIndex;
   final List<BillDraftLine> existingLines;
+  final String uom;
 
   @override
   State<_BillLineQuantitySheet> createState() => _BillLineQuantitySheetState();
@@ -56,14 +61,20 @@ class _BillLineQuantitySheet extends StatefulWidget {
 
 class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
   late final TextEditingController _controller;
-  int? _availableStock;
+  double? _availableStock;
   String? _error;
   bool _loading = true;
+  late final UnitOfMeasure _parsedUom;
 
   @override
   void initState() {
     super.initState();
-    _controller = TextEditingController(text: '${widget.initialQuantity}');
+    _parsedUom = UnitOfMeasureX.fromString(widget.uom);
+    _controller = TextEditingController(
+      text: _parsedUom.isDecimalUnit 
+          ? widget.initialQuantity.toString() 
+          : widget.initialQuantity.toInt().toString()
+    );
     _loadStock();
   }
 
@@ -84,7 +95,7 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
   }
 
   void _validate() {
-    final qty = int.tryParse(_controller.text.trim()) ?? 0;
+    final qty = double.tryParse(_controller.text.trim()) ?? 0.0;
     final result = ValidateBillLineQuantity.validate(
       quantity: qty,
       availableStock: _availableStock,
@@ -98,7 +109,7 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
   }
 
   void _submit() {
-    final qty = int.tryParse(_controller.text.trim()) ?? 0;
+    final qty = double.tryParse(_controller.text.trim()) ?? 0.0;
     final result = ValidateBillLineQuantity.validate(
       quantity: qty,
       availableStock: _availableStock,
@@ -115,12 +126,13 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
         price: widget.price,
         quantity: qty,
         productId: widget.productId,
+        uom: widget.uom,
       ),
     );
   }
 
-  void _setQty(int qty) {
-    _controller.text = '$qty';
+  void _setQty(double qty) {
+    _controller.text = _parsedUom.isDecimalUnit ? '$qty' : '${qty.toInt()}';
     _validate();
   }
 
@@ -135,7 +147,7 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
     final theme = Theme.of(context);
     final maxAvail = widget.productId != null && _availableStock != null
         ? ValidateBillLineQuantity.validate(
-            quantity: 1,
+            quantity: 1.0,
             availableStock: _availableStock,
             productId: widget.productId,
             existingLines: widget.existingLines,
@@ -156,7 +168,7 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
         children: [
           Text(widget.name, style: theme.textTheme.titleLarge),
           Text(
-            '₹${widget.price.toStringAsFixed(2)} each',
+            '₹${widget.price.toStringAsFixed(2)} per ${_parsedUom.symbol}',
             style: theme.textTheme.bodyMedium,
           ),
           if (_loading)
@@ -175,18 +187,24 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
           else ...[
             if (_availableStock != null)
               Text(
-                'In stock: $_availableStock',
+                'In stock: $_availableStock ${_parsedUom.pluralLabel}',
                 style: theme.textTheme.bodySmall,
               ),
             const SizedBox(height: 16),
             TextField(
               controller: _controller,
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+              keyboardType: TextInputType.numberWithOptions(
+                decimal: _parsedUom.isDecimalUnit,
+              ),
+              inputFormatters: [
+                if (!_parsedUom.isDecimalUnit)
+                  FilteringTextInputFormatter.digitsOnly,
+              ],
               decoration: InputDecoration(
                 labelText: 'Quantity',
                 errorText: _error,
                 border: const OutlineInputBorder(),
+                suffixText: _parsedUom.symbol,
               ),
               onChanged: (_) => _validate(),
             ),
@@ -198,14 +216,14 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
                   ActionChip(
                     label: const Text('+1'),
                     onPressed: () {
-                      final q = (int.tryParse(_controller.text) ?? 0) + 1;
+                      final q = (double.tryParse(_controller.text) ?? 0.0) + 1;
                       _setQty(q);
                     },
                   ),
                   ActionChip(
                     label: const Text('+5'),
                     onPressed: () {
-                      final q = (int.tryParse(_controller.text) ?? 0) + 5;
+                      final q = (double.tryParse(_controller.text) ?? 0.0) + 5;
                       _setQty(q);
                     },
                   ),
@@ -219,10 +237,11 @@ class _BillLineQuantitySheetState extends State<_BillLineQuantitySheet> {
             const SizedBox(height: 20),
             FilledButton(
               onPressed: _error == null &&
-                      (int.tryParse(_controller.text.trim()) ?? 0) >= 1
+                      (double.tryParse(_controller.text.trim()) ?? 0.0) > 0
                   ? _submit
                   : null,
-              child: Text(widget.editingIndex != null ? 'Update' : 'Add to bill'),
+              child:
+                  Text(widget.editingIndex != null ? 'Update' : 'Add to bill'),
             ),
           ],
         ],
@@ -237,7 +256,7 @@ Future<BillDraftLine?> showBillLineQuantitySheetForProduct(
   Product product, {
   required List<BillDraftLine> existingLines,
   int? editingIndex,
-  int initialQuantity = 1,
+  double initialQuantity = 1.0,
 }) =>
     showBillLineQuantitySheet(
       context,
@@ -247,4 +266,6 @@ Future<BillDraftLine?> showBillLineQuantitySheetForProduct(
       initialQuantity: initialQuantity,
       editingIndex: editingIndex,
       existingLines: existingLines,
+      uom: product.uom,
     );
+

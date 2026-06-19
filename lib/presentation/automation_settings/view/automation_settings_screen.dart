@@ -33,7 +33,9 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
     super.initState();
     final uid = context.read<AuthRepository>().currentSession?.userId;
     if (uid != null) {
-      context.read<AutomationSettingsBloc>().add(AutomationSettingsStarted(uid));
+      context
+          .read<AutomationSettingsBloc>()
+          .add(AutomationSettingsStarted(uid));
     }
   }
 
@@ -64,7 +66,8 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
           }
           final p = state.preferences;
           if (p == null) {
-            return const Center(child: Text('Sign in to configure automations'));
+            return const Center(
+                child: Text('Sign in to configure automations'));
           }
           final on = p.enabled;
           return ListView(
@@ -78,7 +81,8 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
               const SizedBox(height: AppSpacing.lg),
               SwitchListTile(
                 title: const Text('Enable Automations'),
-                subtitle: const Text('Required for briefs, alerts, and messages'),
+                subtitle:
+                    const Text('Required for briefs, alerts, and messages'),
                 value: p.enabled,
                 onChanged: (v) => context
                     .read<AutomationSettingsBloc>()
@@ -195,7 +199,8 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
                   value: p.language,
                   items: const [
                     DropdownMenuItem(value: 'en', child: Text('English')),
-                    DropdownMenuItem(value: 'hi', child: Text('Hindi / Hinglish')),
+                    DropdownMenuItem(
+                        value: 'hi', child: Text('Hindi / Hinglish')),
                   ],
                   onChanged: on
                       ? (v) {

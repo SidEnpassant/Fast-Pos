@@ -13,11 +13,11 @@ class UpdateProductVelocityUseCase {
     required String userId,
     required List<BillDraftLine> lines,
   }) async {
-    final qtyByProduct = <String, int>{};
+    final qtyByProduct = <String, double>{};
     for (final line in lines) {
       final id = line.productId;
       if (id == null || id.isEmpty) continue;
-      qtyByProduct[id] = (qtyByProduct[id] ?? 0) + line.quantity;
+      qtyByProduct[id] = (qtyByProduct[id] ?? 0.0) + line.quantity;
     }
     if (qtyByProduct.isEmpty) return;
 
@@ -29,7 +29,7 @@ class UpdateProductVelocityUseCase {
       if (product == null) continue;
       final next = VelocityCalculator.nextVelocity(
         previousVelocity: product.velocityEma,
-        qtySoldToday: entry.value.toDouble(),
+        qtySoldToday: entry.value,
       );
       await _products.updateProduct(
         Product(

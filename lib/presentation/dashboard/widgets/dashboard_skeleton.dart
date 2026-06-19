@@ -10,7 +10,7 @@ class DashboardSkeleton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final cross = AppBreakpoints.gridCrossAxisCount(context);
-    
+
     return CustomScrollView(
       physics: const NeverScrollableScrollPhysics(),
       slivers: [
@@ -71,9 +71,10 @@ class DashboardSkeleton extends StatelessWidget {
                   crossAxisSpacing: 12,
                   mainAxisSpacing: 12,
                   childAspectRatio: 1.12,
-                  children: List.generate(4, (_) => const AppMetricCardSkeleton()),
+                  children:
+                      List.generate(4, (_) => const AppMetricCardSkeleton()),
                 ),
-              
+
               const SizedBox(height: AppSpacing.md),
               // Pulse Strip Skeleton
               const AppShimmer(
@@ -87,7 +88,8 @@ class DashboardSkeleton extends StatelessWidget {
                 physics: const NeverScrollableScrollPhysics(),
                 mainAxisSpacing: 16,
                 crossAxisSpacing: 16,
-                children: List.generate(8, (_) => const AppSkeletonCircle(size: 56)),
+                children:
+                    List.generate(8, (_) => const AppSkeletonCircle(size: 56)),
               ),
               const SizedBox(height: AppSpacing.lg),
               // AI Briefing Skeleton

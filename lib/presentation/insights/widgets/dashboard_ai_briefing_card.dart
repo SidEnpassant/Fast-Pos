@@ -19,8 +19,8 @@ class DashboardAiBriefingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<BusinessInsightsAiBloc, BusinessInsightsAiState>(
       builder: (context, state) {
-        final hasBrief =
-            state.briefing != null && state.briefing!.markdown.trim().isNotEmpty;
+        final hasBrief = state.briefing != null &&
+            state.briefing!.markdown.trim().isNotEmpty;
 
         if (!hasBrief) {
           return _EmptyBriefCard(state: state);
@@ -75,19 +75,22 @@ class DashboardAiBriefingCard extends StatelessWidget {
                             Container(
                               height: 16,
                               width: double.infinity,
-                              decoration: const BoxDecoration(color: Colors.white),
+                              decoration:
+                                  const BoxDecoration(color: Colors.white),
                             ),
                             const SizedBox(height: 8),
                             Container(
                               height: 16,
                               width: double.infinity,
-                              decoration: const BoxDecoration(color: Colors.white),
+                              decoration:
+                                  const BoxDecoration(color: Colors.white),
                             ),
                             const SizedBox(height: 8),
                             Container(
                               height: 16,
                               width: 150,
-                              decoration: const BoxDecoration(color: Colors.white),
+                              decoration:
+                                  const BoxDecoration(color: Colors.white),
                             ),
                           ],
                         ),
@@ -300,8 +303,7 @@ class _LastUpdatedLabel extends StatelessWidget {
     } else if (diff.inHours < 24) {
       label = 'Generated at ${DateFormat('h:mm a').format(generatedAt)}';
     } else {
-      label =
-          'Generated ${DateFormat('d MMM, h:mm a').format(generatedAt)}';
+      label = 'Generated ${DateFormat('d MMM, h:mm a').format(generatedAt)}';
     }
 
     return Row(

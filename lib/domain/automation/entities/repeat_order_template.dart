@@ -22,7 +22,7 @@ class RepeatOrderItem extends Equatable {
 
   final String productName;
   final double lastPrice;
-  final int avgQuantity;
+  final double avgQuantity;
 
   @override
   List<Object?> get props => [productName, lastPrice, avgQuantity];

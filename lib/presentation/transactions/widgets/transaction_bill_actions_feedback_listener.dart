@@ -15,7 +15,8 @@ class TransactionBillActionsFeedbackListener extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocListener<TransactionBillActionsBloc, TransactionBillActionsState>(
+    return BlocListener<TransactionBillActionsBloc,
+        TransactionBillActionsState>(
       listenWhen: (p, c) =>
           p.phase == TransactionBillActionsPhase.busy &&
           (c.phase == TransactionBillActionsPhase.success ||

@@ -112,7 +112,8 @@ class PendingTransactionBillCard extends StatelessWidget {
                   if (remainingAmount > 0)
                     BillWhatsAppActionButton(
                       bill: bill,
-                      userId: Supabase.instance.client.auth.currentUser?.id ?? '',
+                      userId:
+                          Supabase.instance.client.auth.currentUser?.id ?? '',
                     ),
                   const SizedBox(width: 8),
                   Expanded(

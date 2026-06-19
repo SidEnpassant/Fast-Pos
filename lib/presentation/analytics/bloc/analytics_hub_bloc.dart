@@ -294,7 +294,8 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
             e.expenseDate.year == now.year && e.expenseDate.month == now.month)
         .fold(0.0, (s, e) => s + e.amount);
 
-    final lowStock = event.products.where((p) => p.isLowStock).take(10).toList();
+    final lowStock =
+        event.products.where((p) => p.isLowStock).take(10).toList();
 
     var selected = state.selectedMonth;
     if (insights.sortedMonths.isEmpty) {
@@ -336,7 +337,8 @@ class AnalyticsHubBloc extends Bloc<AnalyticsHubEvent, AnalyticsHubState> {
     emit(state.copyWith(showChart: !state.showChart));
   }
 
-  static _AnalyticsComputeOutput _computeInsights(_AnalyticsComputeInput input) {
+  static _AnalyticsComputeOutput _computeInsights(
+      _AnalyticsComputeInput input) {
     final monthlyRevenues = BusinessAnalytics.monthlyRevenueMap(input.bills);
     final monthlyTransactions =
         BusinessAnalytics.monthlyTransactionMap(input.bills);

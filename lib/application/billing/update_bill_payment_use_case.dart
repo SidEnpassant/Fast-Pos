@@ -33,8 +33,7 @@ class UpdateBillPaymentUseCase {
     required double newPaidAmount,
     required double totalAmount,
   }) async {
-    final paymentStatus =
-        newPaidAmount >= totalAmount ? 'complete' : 'partial';
+    final paymentStatus = newPaidAmount >= totalAmount ? 'complete' : 'partial';
     final updatedAt = DateTime.now();
 
     await _bills.updateBillPayment(

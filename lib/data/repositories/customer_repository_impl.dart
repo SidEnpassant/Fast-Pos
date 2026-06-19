@@ -129,6 +129,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       'phone': phone,
       'credit_balance': 0,
       'loyalty_points': 0,
+      'lifetime_points': 0,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
     try {
@@ -149,6 +150,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
       'phone': customer.phone,
       'credit_balance': customer.creditBalance,
       'loyalty_points': customer.loyaltyPoints,
+      'lifetime_points': customer.lifetimePoints,
       'updated_at': DateTime.now().toUtc().toIso8601String(),
     };
     try {
@@ -217,6 +219,7 @@ class CustomerRepositoryImpl implements CustomerRepository {
         phone: m['phone'] as String?,
         creditBalance: (m['credit_balance'] as num?)?.toDouble() ?? 0,
         loyaltyPoints: (m['loyalty_points'] as num?)?.toInt() ?? 0,
+        lifetimePoints: (m['lifetime_points'] as num?)?.toInt() ?? 0,
         updatedAt: DateTime.parse(m['updated_at'] as String),
       );
 }

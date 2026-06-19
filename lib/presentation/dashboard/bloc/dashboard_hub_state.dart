@@ -15,7 +15,7 @@ class DashboardTopProduct {
   });
 
   final String name;
-  final int unitsSold;
+  final double unitsSold;
   final double revenue;
 }
 
@@ -51,7 +51,8 @@ class DashboardHubState extends Equatable {
     this.inventoryRetailValue = 0,
     this.activeCustomersThisMonth = 0,
     this.profitMarginPercent,
-    this.monthPaymentMix = const PaymentMixSnapshot(complete: 0, partial: 0, pending: 0),
+    this.monthPaymentMix =
+        const PaymentMixSnapshot(complete: 0, partial: 0, pending: 0),
     this.topProductsThisMonth = const [],
     this.attentionItemCount = 0,
   });
@@ -143,7 +144,8 @@ class DashboardHubState extends Equatable {
       lowStockCount: lowStockCount ?? this.lowStockCount,
       monthExpenses: monthExpenses ?? this.monthExpenses,
       netProfitThisMonth: netProfitThisMonth ?? this.netProfitThisMonth,
-      totalCreditOutstanding: totalCreditOutstanding ?? this.totalCreditOutstanding,
+      totalCreditOutstanding:
+          totalCreditOutstanding ?? this.totalCreditOutstanding,
       topCreditCustomers: topCreditCustomers ?? this.topCreditCustomers,
       lowStockProducts: lowStockProducts ?? this.lowStockProducts,
       billsThisMonth: billsThisMonth ?? this.billsThisMonth,

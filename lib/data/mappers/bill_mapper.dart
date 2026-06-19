@@ -10,8 +10,13 @@ abstract final class BillMapper {
         .map(
           (e) => BillLineItem(
             productName: e['productName'] as String? ?? '',
-            quantity: e['quantity'] as int? ?? 0,
+            quantity: e['quantity'] as double? ?? 0.0,
             totalPrice: (e['totalPrice'] as num?)?.toDouble() ?? 0,
+            productId: e['productId'] as String?,
+            gstPercent: e['gstPercent'] as double?,
+            hsnCode: e['hsnCode'] as String?,
+            taxAmount: e['taxAmount'] as double? ?? 0.0,
+            uom: e['uom'] as String? ?? 'piece',
           ),
         )
         .toList();
@@ -36,6 +41,8 @@ abstract final class BillMapper {
           (r['display_bill_number'] as String?),
       customerId: m['customerId'] as String?,
       lineItems: lineItems,
+      taxAmount: (m['taxAmount'] as num?)?.toDouble() ?? 0.0,
+      invoiceType: m['invoiceType'] as String? ?? 'tax_invoice',
     );
   }
 }

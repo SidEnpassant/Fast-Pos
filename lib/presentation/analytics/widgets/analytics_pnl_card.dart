@@ -23,13 +23,11 @@ class AnalyticsPnLCard extends StatelessWidget {
         final expenses = snap.data ?? [];
         final monthExpenses = month == null
             ? 0.0
-            : expenses
-                .where((e) {
-                  final m =
-                      '${_monthShort(e.expenseDate.month)} ${e.expenseDate.year}';
-                  return m == month;
-                })
-                .fold<double>(0, (s, e) => s + e.amount);
+            : expenses.where((e) {
+                final m =
+                    '${_monthShort(e.expenseDate.month)} ${e.expenseDate.year}';
+                return m == month;
+              }).fold<double>(0, (s, e) => s + e.amount);
         final net = revenue - monthExpenses;
         final margin = revenue > 0 ? (net / revenue) * 100 : 0.0;
 
@@ -62,8 +60,18 @@ class AnalyticsPnLCard extends StatelessWidget {
 
   String _monthShort(int m) {
     const names = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return names[m - 1];
   }

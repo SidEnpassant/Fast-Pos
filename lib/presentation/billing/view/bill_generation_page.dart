@@ -11,6 +11,8 @@ import 'package:inventopos/domain/billing/bill_submission.dart';
 import 'package:inventopos/domain/entities/receipt_payload.dart';
 import 'package:inventopos/domain/entities/user_profile.dart';
 import 'package:inventopos/domain/messaging/entities/outbound_message.dart';
+import 'package:inventopos/domain/repositories/customer_repository.dart';
+import 'package:inventopos/domain/repositories/loyalty_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_bloc.dart';
 import 'package:inventopos/presentation/bill_sanity/bloc/bill_sanity_check_event.dart';
@@ -29,6 +31,8 @@ import 'package:inventopos/presentation/billing/bloc/repeat_order_bloc.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_add_product_chooser.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_generation_sections.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_submission_feedback_listener.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_bloc.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_event.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_event.dart';
@@ -61,15 +65,41 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
   void _onPhoneChanged() {
     final phone = _customerPhoneController.text.trim();
     if (phone.length == 10) {
-      final bills = context.read<DashboardHubBloc>().state.bills;
+      final dashboardState = context.read<DashboardHubBloc>().state;
+      final bills = dashboardState.bills;
       if (bills == null) return;
-      // Find customer ID from phone if exists
+
+      // Find customer from phone if exists
       final bill = bills.where((b) => b.customerPhone == phone).firstOrNull;
       if (bill?.customerId != null) {
         context.read<RepeatOrderBloc>().add(
               RepeatOrderStarted(customerId: bill!.customerId!, bills: bills),
             );
+
+        // Fetch customer loyalty points
+        _fetchCustomerLoyalty(bill.customerId!);
       }
+    }
+  }
+
+  Future<void> _fetchCustomerLoyalty(String customerId) async {
+    try {
+      final customer = await context.read<CustomerRepository>().findById(customerId);
+      if (customer != null && mounted) {
+        final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+        final loyaltyConfig = await context.read<LoyaltyRepository>().getLoyaltyConfig(uid);
+
+        if (loyaltyConfig.isEnabled && mounted) {
+          context.read<CheckoutBloc>().add(
+                CheckoutPointsUpdated(
+                  points: customer.loyaltyPoints,
+                  currencyPerPoint: loyaltyConfig.currencyUnitPerPoint,
+                ),
+              );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error fetching loyalty: $e');
     }
   }
 
@@ -92,10 +122,12 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
         BillSubmissionFeedbackListener(
           onSuccess: (listenerContext, submissionState) async {
             final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
-            
+
             // Capture dependencies before async gap
-            final prefsUseCase = listenerContext.read<ObserveAiPreferencesUseCase>();
-            final profileUseCase = listenerContext.read<ObserveProfileForCurrentUserUseCase>();
+            final prefsUseCase =
+                listenerContext.read<ObserveAiPreferencesUseCase>();
+            final profileUseCase =
+                listenerContext.read<ObserveProfileForCurrentUserUseCase>();
             final receiptBloc = listenerContext.read<ReceiptAutomationBloc>();
             final draftBloc = listenerContext.read<BillDraftBloc>();
 
@@ -105,12 +137,12 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
             if (profileStream != null) {
               profileList = await profileStream.first;
             }
-            
+
             String shopName = 'Our Shop';
             if (profileList != null && profileList.isNotEmpty) {
               shopName = profileList.first.businessName ?? 'Our Shop';
             }
-            
+
             if (listenerContext.mounted) {
               receiptBloc.add(
                 ReceiptAutomationSubmitted(
@@ -119,7 +151,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                   prefs: prefs,
                 ),
               );
-              
+
               draftBloc.add(const BillDraftCleared());
               _customerNameController.clear();
               _customerPhoneController.clear();

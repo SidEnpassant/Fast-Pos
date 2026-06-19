@@ -52,7 +52,8 @@ class RepeatOrderSuggestions extends StatelessWidget {
                         context.read<BillDraftBloc>().add(
                               BillDraftLineAdded(
                                 BillDraftLine(
-                                  productId: '', // We don't have ID here, using name as key or similar
+                                  productId:
+                                      '', // We don't have ID here, using name as key or similar
                                   name: item.productName,
                                   price: item.lastPrice,
                                   quantity: item.avgQuantity,

@@ -11,7 +11,7 @@ class ReorderAlert extends Equatable {
 
   final String productId;
   final String productName;
-  final int stockQuantity;
+  final double stockQuantity;
   final double velocityEma;
   final double daysRemaining;
 

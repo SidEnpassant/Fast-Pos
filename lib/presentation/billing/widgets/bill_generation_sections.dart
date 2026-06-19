@@ -11,6 +11,9 @@ import 'package:inventopos/presentation/billing/bloc/bill_draft_event.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_form_components.dart';
 import 'package:inventopos/presentation/billing/widgets/bill_line_quantity_sheet.dart';
 import 'package:inventopos/presentation/billing/widgets/repeat_order_suggestions.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_bloc.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_event.dart';
+import 'package:inventopos/presentation/checkout/bloc/checkout_state.dart';
 
 class BillGenerationCustomerSection extends StatelessWidget {
   const BillGenerationCustomerSection({
@@ -134,7 +137,8 @@ class BillGenerationProductsSection extends StatelessWidget {
                     .withValues(alpha: 0.3),
                 borderRadius: BorderRadius.circular(AppRadii.md),
                 border: Border.all(
-                  color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
+                  color:
+                      theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
                   style: BorderStyle.solid,
                 ),
               ),
@@ -185,8 +189,8 @@ class BillGenerationProductsSection extends StatelessWidget {
                 vertical: AppSpacing.sm,
               ),
               decoration: BoxDecoration(
-                color: theme.colorScheme.primaryContainer
-                    .withValues(alpha: 0.25),
+                color:
+                    theme.colorScheme.primaryContainer.withValues(alpha: 0.25),
                 borderRadius: BorderRadius.circular(AppRadii.md),
               ),
               child: Row(
@@ -237,64 +241,87 @@ class BillGenerationPaymentSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BillSectionCard(
-      title: 'Payment Details',
-      icon: Icons.payment_outlined,
-      child: Column(
-        children: [
-          BillGenerationDropdownField(
-            label: 'Payment Method',
-            value: paymentMethod,
-            items: const {
-              'cash': 'Cash Payment',
-              'upi': 'UPI Payment',
-            },
-            prefixIcon: Icons.payments,
-            onChanged: onPaymentMethodChanged,
-          ),
-          const SizedBox(height: AppSpacing.md),
-          BillGenerationDropdownField(
-            label: 'Payment Status',
-            value: paymentStatus,
-            items: const {
-              'complete': 'Fully Paid',
-              'partial': 'Partially Paid',
-            },
-            prefixIcon: Icons.check_circle,
-            onChanged: onPaymentStatusChanged,
-          ),
-          if (paymentStatus == 'partial') ...[
-            const SizedBox(height: AppSpacing.md),
-            TextFormField(
-              initialValue: paidAmount.toString(),
-              decoration: billGenerationInputDecoration(
-                'Paid Amount',
-                Icons.money,
+    return BlocBuilder<CheckoutBloc, CheckoutState>(
+      builder: (context, checkout) {
+        final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
+        final canRedeem = checkout.availablePoints > 0;
+
+        return BillSectionCard(
+          title: 'Payment Details',
+          icon: Icons.payment_outlined,
+          child: Column(
+            children: [
+              if (canRedeem) ...[
+                SwitchListTile(
+                  title: const Text('Redeem Loyalty Points'),
+                  subtitle: Text(
+                    'Available: ${checkout.availablePoints} points (${fmt.format(checkout.loyaltyDiscount)} discount)',
+                  ),
+                  value: checkout.isLoyaltyRedemptionActive,
+                  onChanged: (v) {
+                    context.read<CheckoutBloc>().add(
+                          CheckoutLoyaltyRedemptionToggled(v),
+                        );
+                  },
+                ),
+                const Divider(),
+                const SizedBox(height: AppSpacing.sm),
+              ],
+              BillGenerationDropdownField(
+                label: 'Payment Method',
+                value: paymentMethod,
+                items: const {
+                  'cash': 'Cash Payment',
+                  'upi': 'UPI Payment',
+                },
+                prefixIcon: Icons.payments,
+                onChanged: onPaymentMethodChanged,
               ),
-              keyboardType: TextInputType.number,
-              validator: (value) {
-                if (value?.isEmpty ?? true) {
-                  return 'Please enter paid amount';
-                }
-                final amount = double.tryParse(value!);
-                if (amount == null) {
-                  return 'Please enter valid amount';
-                }
-                if (amount <= 0) {
-                  return 'Amount must be greater than 0';
-                }
-                if (amount > totalAmount) {
-                  return 'Amount cannot be greater than total';
-                }
-                return null;
-              },
-              onChanged: (value) {
-                onPaidAmountChanged(double.tryParse(value) ?? 0);
-              },
-            ),
-          ],
-        ],
-      ),
+              const SizedBox(height: AppSpacing.md),
+              BillGenerationDropdownField(
+                label: 'Payment Status',
+                value: paymentStatus,
+                items: const {
+                  'complete': 'Fully Paid',
+                  'partial': 'Partially Paid',
+                },
+                prefixIcon: Icons.check_circle,
+                onChanged: onPaymentStatusChanged,
+              ),
+              if (paymentStatus == 'partial') ...[
+                const SizedBox(height: AppSpacing.md),
+                TextFormField(
+                  initialValue: paidAmount.toString(),
+                  decoration: billGenerationInputDecoration(
+                    'Paid Amount',
+                    Icons.money,
+                  ),
+                  keyboardType: TextInputType.number,
+                  validator: (value) {
+                    if (value?.isEmpty ?? true) {
+                      return 'Please enter paid amount';
+                    }
+                    final amount = double.tryParse(value!);
+                    if (amount == null) {
+                      return 'Please enter valid amount';
+                    }
+                    if (amount <= 0) {
+                      return 'Amount must be greater than 0';
+                    }
+                    if (amount > totalAmount) {
+                      return 'Amount cannot be greater than total';
+                    }
+                    return null;
+                  },
+                  onChanged: (value) {
+                    onPaidAmountChanged(double.tryParse(value) ?? 0);
+                  },
+                ),
+              ],
+            ],
+          ),
+        );
+      },
     ).animate().fadeIn().slideX(delay: const Duration(milliseconds: 400));
   }
 }
@@ -312,8 +339,7 @@ class _BillDraftLineTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final initial =
-        line.name.isNotEmpty ? line.name[0].toUpperCase() : '?';
+    final initial = line.name.isNotEmpty ? line.name[0].toUpperCase() : '?';
     final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
     return Padding(
@@ -338,8 +364,8 @@ class _BillDraftLineTile extends StatelessWidget {
           ],
         ),
         child: Material(
-          color: theme.colorScheme.surfaceContainerHighest
-              .withValues(alpha: 0.45),
+          color:
+              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
           borderRadius: BorderRadius.circular(AppRadii.md),
           child: ListTile(
             shape: RoundedRectangleBorder(

@@ -27,8 +27,7 @@ class BillSubmissionDraft extends Equatable {
   final double discountTotal;
 
   double get totalAmount {
-    final subtotal =
-        lines.fold<double>(0, (s, e) => s + e.price * e.quantity);
+    final subtotal = lines.fold<double>(0, (s, e) => s + e.price * e.quantity);
     return subtotal - discountTotal;
   }
 

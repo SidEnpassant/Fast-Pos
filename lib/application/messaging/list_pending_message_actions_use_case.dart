@@ -23,7 +23,8 @@ class ListPendingMessageActionsUseCase {
     // 1. Overdue partial bills (> 3 days)
     final overdue = bills.where((b) {
       if (b.paidAmount >= b.totalAmount) return false;
-      return b.createdAt.isBefore(DateTime.now().subtract(const Duration(days: 3)));
+      return b.createdAt
+          .isBefore(DateTime.now().subtract(const Duration(days: 3)));
     });
 
     for (final bill in overdue) {

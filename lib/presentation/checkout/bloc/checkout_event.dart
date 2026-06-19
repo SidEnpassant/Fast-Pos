@@ -20,3 +20,23 @@ final class CheckoutDiscountAdded extends CheckoutEvent {
 final class CheckoutDiscountsCleared extends CheckoutEvent {
   const CheckoutDiscountsCleared();
 }
+
+final class CheckoutLoyaltyRedemptionToggled extends CheckoutEvent {
+  const CheckoutLoyaltyRedemptionToggled(this.isActive);
+  final bool isActive;
+
+  @override
+  List<Object?> get props => [isActive];
+}
+
+final class CheckoutPointsUpdated extends CheckoutEvent {
+  const CheckoutPointsUpdated({
+    required this.points,
+    required this.currencyPerPoint,
+  });
+  final int points;
+  final double currencyPerPoint;
+
+  @override
+  List<Object?> get props => [points, currencyPerPoint];
+}

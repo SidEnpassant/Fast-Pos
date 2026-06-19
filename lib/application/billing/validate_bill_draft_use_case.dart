@@ -11,12 +11,13 @@ class ValidateBillDraftUseCase {
   Future<String?> call(List<BillDraftLine> lines) async {
     if (lines.isEmpty) return 'Add at least one product';
 
-    final stockByProduct = <String, int>{};
+    final stockByProduct = <String, double>{};
     for (final line in lines) {
       final pid = line.productId;
       if (pid == null || pid.isEmpty) continue;
 
-      stockByProduct[pid] ??= (await _products.findById(pid))?.stockQuantity ?? 0;
+      stockByProduct[pid] ??=
+          (await _products.findById(pid))?.stockQuantity ?? 0.0;
     }
 
     for (var i = 0; i < lines.length; i++) {
@@ -24,7 +25,7 @@ class ValidateBillDraftUseCase {
       final pid = line.productId;
       if (pid == null || pid.isEmpty) continue;
 
-      final stock = stockByProduct[pid] ?? 0;
+      final stock = stockByProduct[pid] ?? 0.0;
       final result = ValidateBillLineQuantity.validate(
         quantity: line.quantity,
         availableStock: stock,

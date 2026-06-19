@@ -22,23 +22,25 @@ class _SpyBillsRepo implements BillsRepository {
 
   @override
   Stream<List<Bill>> watchBillsForCurrentUser() => _stream;
-
-  @override
-  Future<String> createBill({
-    required String businessName,
-    required String customerName,
-    required String customerPhone,
-    required List<Map<String, dynamic>> productsJson,
-    required double totalAmount,
-    required double paidAmount,
-    required String paymentMethod,
-    required String paymentStatus,
-    String? clientId,
-    String? customerId,
-    List<Map<String, dynamic>>? discountBreakdown,
-    String? contentHash,
-  }) =>
-      throw UnimplementedError();
+@override
+Future<String> createBill({
+  required String businessName,
+  required String customerName,
+  required String customerPhone,
+  required List<Map<String, dynamic>> productsJson,
+  required double totalAmount,
+  required double paidAmount,
+  required String paymentMethod,
+  required String paymentStatus,
+  String? clientId,
+  String? customerId,
+  List<Map<String, dynamic>>? discountBreakdown,
+  String? contentHash,
+  double taxAmount = 0.0,
+  String invoiceType = 'tax_invoice',
+}) async {
+    throw UnimplementedError();
+  }
 
   @override
   Future<String> nextBillSequenceNumber() => throw UnimplementedError();

@@ -24,12 +24,10 @@ class AnalyticsRevenueContent extends StatelessWidget {
     final monthlyTransactions = state.monthlyTransactions;
     final selectedMonth = state.selectedMonth;
     final monthDate = BusinessAnalytics.parseMonthKey(selectedMonth);
-    final revenue = selectedMonth != null
-        ? (monthlyRevenues[selectedMonth] ?? 0)
-        : 0.0;
-    final txCount = selectedMonth != null
-        ? (monthlyTransactions[selectedMonth] ?? 0)
-        : 0;
+    final revenue =
+        selectedMonth != null ? (monthlyRevenues[selectedMonth] ?? 0) : 0.0;
+    final txCount =
+        selectedMonth != null ? (monthlyTransactions[selectedMonth] ?? 0) : 0;
     final avgTicket = txCount > 0 ? revenue / txCount : 0.0;
 
     MonthTrend? monthTrend;

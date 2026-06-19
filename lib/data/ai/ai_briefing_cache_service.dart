@@ -1,4 +1,3 @@
-
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/domain/ai/entities/ai_briefing.dart';

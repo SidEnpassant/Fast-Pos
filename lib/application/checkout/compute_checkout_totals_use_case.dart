@@ -7,8 +7,7 @@ class ComputeCheckoutTotalsUseCase {
     required List<DiscountStrategy> strategies,
     DiscountContext context = const DiscountContext(),
   }) {
-    final subtotal =
-        lines.fold<double>(0, (s, l) => s + l.price * l.quantity);
+    final subtotal = lines.fold<double>(0, (s, l) => s + l.price * l.quantity);
     var cart = DiscountedCart(
       lines: lines,
       subtotal: subtotal,

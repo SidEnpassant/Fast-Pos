@@ -11,7 +11,7 @@ class DeadStockAlert extends Equatable {
 
   final String productId;
   final String productName;
-  final int stockQuantity;
+  final double stockQuantity;
   final int daysSinceUpdate;
 
   @override

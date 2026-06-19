@@ -9,7 +9,8 @@ class FastPosShorebirdUpdater {
   static Future<void> checkForUpdates(BuildContext context) async {
     // Check whether Shorebird is available (it will be false during dev/debug builds)
     if (!_updater.isAvailable) {
-      debugPrint('Shorebird is not available in this build (likely a debug build).');
+      debugPrint(
+          'Shorebird is not available in this build (likely a debug build).');
       return;
     }
 
@@ -19,7 +20,7 @@ class FastPosShorebirdUpdater {
 
       if (status == UpdateStatus.outdated) {
         debugPrint('New Shorebird patch available! Downloading...');
-        
+
         // Download the new patch in the background
         await _updater.update();
         debugPrint('Patch downloaded successfully.');
@@ -28,7 +29,8 @@ class FastPosShorebirdUpdater {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('A new update was downloaded. Restart the app to apply.'),
+              content: const Text(
+                  'A new update was downloaded. Restart the app to apply.'),
               duration: const Duration(seconds: 10),
               behavior: SnackBarBehavior.floating,
               action: SnackBarAction(
@@ -37,7 +39,8 @@ class FastPosShorebirdUpdater {
                   ScaffoldMessenger.of(context).hideCurrentSnackBar();
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
-                      content: Text('Please close the app from your recent apps and open it again.'),
+                      content: Text(
+                          'Please close the app from your recent apps and open it again.'),
                       duration: Duration(seconds: 5),
                     ),
                   );

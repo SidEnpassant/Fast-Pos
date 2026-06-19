@@ -87,9 +87,8 @@ class _CustomersScreenState extends State<CustomersScreen> {
           ),
           Expanded(
             child: StreamBuilder<List<Customer>>(
-              stream: context
-                  .read<CustomerRepository>()
-                  .watchCustomersForUser(uid),
+              stream:
+                  context.read<CustomerRepository>().watchCustomersForUser(uid),
               builder: (context, snap) {
                 if (snap.connectionState == ConnectionState.waiting) {
                   return const AppSkeletonList(itemCount: 8);
@@ -163,8 +162,7 @@ class _CustomerCard extends StatelessWidget {
             child: Row(
               children: [
                 CircleAvatar(
-                  backgroundColor:
-                      theme.colorScheme.primaryContainer,
+                  backgroundColor: theme.colorScheme.primaryContainer,
                   foregroundColor: theme.colorScheme.onPrimaryContainer,
                   child: Text(initial),
                 ),

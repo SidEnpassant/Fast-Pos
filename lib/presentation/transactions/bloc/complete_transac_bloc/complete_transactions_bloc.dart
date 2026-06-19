@@ -111,10 +111,11 @@ class CompleteTransactionsBloc
     final filtered = arg.bills.where((b) {
       if (b.paymentStatus.toLowerCase().trim() != 'complete') return false;
 
-      final matchesQuery = b.customerName.toLowerCase().contains(arg.query.toLowerCase());
-      
+      final matchesQuery =
+          b.customerName.toLowerCase().contains(arg.query.toLowerCase());
+
       final isAfterStart = arg.start == null || b.createdAt.isAfter(arg.start!);
-      final isBeforeEnd = arg.end == null || 
+      final isBeforeEnd = arg.end == null ||
           b.createdAt.isBefore(arg.end!.add(const Duration(days: 1)));
 
       return matchesQuery && isAfterStart && isBeforeEnd;

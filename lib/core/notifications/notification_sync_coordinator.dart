@@ -31,9 +31,9 @@ class NotificationSyncCoordinator {
     await _local.requestPermissions();
 
     _sub = _repository.watchNotifications(userId).listen(
-      _onListUpdated,
-      onError: (_) {},
-    );
+          _onListUpdated,
+          onError: (_) {},
+        );
   }
 
   Future<void> stop() async {

@@ -69,7 +69,8 @@ class ExportRepositoryImpl {
 
   String _toCsv(List<List<dynamic>> rows) {
     return rows
-        .map((r) => r.map((c) => '"${c.toString().replaceAll('"', '""')}"').join(','))
+        .map((r) =>
+            r.map((c) => '"${c.toString().replaceAll('"', '""')}"').join(','))
         .join('\n');
   }
 

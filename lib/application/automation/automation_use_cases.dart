@@ -63,10 +63,8 @@ class BuildEodSummaryUseCase {
     final start = DateTime(today.year, today.month, today.day);
     final todayBills =
         bills.where((b) => !b.createdAt.isBefore(start)).toList();
-    final revenue =
-        todayBills.fold<double>(0, (s, b) => s + b.totalAmount);
-    final collected =
-        todayBills.fold<double>(0, (s, b) => s + b.paidAmount);
+    final revenue = todayBills.fold<double>(0, (s, b) => s + b.totalAmount);
+    final collected = todayBills.fold<double>(0, (s, b) => s + b.paidAmount);
     final pending = todayBills
         .where((b) => b.paidAmount < b.totalAmount)
         .fold<double>(0, (s, b) => s + (b.totalAmount - b.paidAmount));
@@ -89,14 +87,12 @@ class EvaluateExpenseSpikeUseCase {
               DateTime.now().subtract(const Duration(days: 7)),
             ))
         .fold<double>(0, (s, e) => s + e.amount);
-    final prior = sorted
-        .where((e) {
-          final d = e.expenseDate;
-          final now = DateTime.now();
-          return d.isBefore(now.subtract(const Duration(days: 7))) &&
-              d.isAfter(now.subtract(const Duration(days: 35)));
-        })
-        .fold<double>(0, (s, e) => s + e.amount);
+    final prior = sorted.where((e) {
+      final d = e.expenseDate;
+      final now = DateTime.now();
+      return d.isBefore(now.subtract(const Duration(days: 7))) &&
+          d.isAfter(now.subtract(const Duration(days: 35)));
+    }).fold<double>(0, (s, e) => s + e.amount);
     if (prior <= 0) return false;
     return recentWeek > prior * 1.5;
   }

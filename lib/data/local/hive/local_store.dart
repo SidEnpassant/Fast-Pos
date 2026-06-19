@@ -23,6 +23,12 @@ class LocalStore {
       Hive.openBox<Map>(HiveBoxes.aiPreferences),
       Hive.openBox<Map>(HiveBoxes.aiRequestQueue),
       Hive.openBox<Map>(HiveBoxes.aiBriefingCache),
+      Hive.openBox<Map>(HiveBoxes.suppliers),
+      Hive.openBox<Map>(HiveBoxes.purchaseOrders),
+      Hive.openBox<Map>(HiveBoxes.cashRegister),
+      Hive.openBox<Map>(HiveBoxes.loyaltyConfig),
+      Hive.openBox<Map>(HiveBoxes.stockAudits),
+      Hive.openBox<Map>(HiveBoxes.stockAuditLines),
     ]);
     _initialized = true;
   }

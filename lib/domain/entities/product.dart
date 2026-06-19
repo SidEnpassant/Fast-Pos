@@ -16,6 +16,10 @@ class Product extends Equatable {
     this.velocityEma = 0,
     required this.updatedAt,
     this.deletedAt,
+    this.hsnCode,
+    this.gstPercent = 0.0,
+    this.uom = 'piece',
+    this.conversionFactor,
   });
 
   final String id;
@@ -25,13 +29,17 @@ class Product extends Equatable {
   final String? barcode;
   final double price;
   final double? costPrice;
-  final int stockQuantity;
-  final int minStockThreshold;
+  final double stockQuantity;
+  final double minStockThreshold;
   final String? category;
   final bool isActive;
   final double velocityEma;
   final DateTime updatedAt;
   final DateTime? deletedAt;
+  final String? hsnCode;
+  final double gstPercent;
+  final String uom;
+  final double? conversionFactor;
 
   bool get isLowStock => stockQuantity <= minStockThreshold;
 
@@ -56,5 +64,9 @@ class Product extends Equatable {
         velocityEma,
         updatedAt,
         deletedAt,
+        hsnCode,
+        gstPercent,
+        uom,
+        conversionFactor,
       ];
 }

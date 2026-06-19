@@ -1,8 +1,10 @@
 import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
 import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
+import 'package:inventopos/application/daybook/record_cash_entry_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
+import 'package:inventopos/application/tax/compute_gst_for_bill_use_case.dart';
 import 'package:inventopos/core/performance/main_isolate.dart';
 import 'package:inventopos/data/billing/bill_pdf_generator.dart';
 import 'package:inventopos/data/security/bill_audit_service.dart';
@@ -11,6 +13,7 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
 import 'package:inventopos/domain/repositories/transactions_repository.dart';
+import 'package:inventopos/domain/tax/gst_config.dart';
 
 /// Persists bill, decrements stock, generates PDF, uploads to cloud.
 class SubmitBillUseCase {
@@ -25,6 +28,8 @@ class SubmitBillUseCase {
     this._decrementStock,
     this._uploadPdf,
     this._updateVelocity,
+    this._computeGst,
+    this._recordCashEntry,
   );
 
   final BillsRepository _bills;
@@ -37,6 +42,8 @@ class SubmitBillUseCase {
   final DecrementStockOnBillUseCase _decrementStock;
   final UploadBillPdfUseCase _uploadPdf;
   final UpdateProductVelocityUseCase _updateVelocity;
+  final ComputeGstForBillUseCase _computeGst;
+  final RecordCashEntryUseCase _recordCashEntry;
 
   Future<BillSubmissionResult> call(BillSubmissionDraft draft) async {
     final validationError = await _validateDraft(draft.lines);
@@ -50,14 +57,46 @@ class SubmitBillUseCase {
       throw StateError('Business name not found');
     }
 
-    final productsJson = draft.lines.map((e) => e.toProductsJson()).toList();
-    final total = draft.totalAmount;
-    final paid = draft.effectivePaidAmount;
+    // Compute GST if configured
+    final gstConfig = GstConfig(
+      businessGstin: merchant?.gstNumber,
+      stateCode: merchant?.stateCode,
+      isComposition: merchant?.isCompositionDealer ?? false,
+    );
+
+    // Assume intra-state for now unless we have customer state code
+    final gstSummary = _computeGst(
+      lines: draft.lines,
+      config: gstConfig,
+      isInterState: false,
+    );
+
+    // Embed tax breakdown into line items
+    final enrichedLines = <Map<String, dynamic>>[];
+    for (var i = 0; i < draft.lines.length; i++) {
+      final line = draft.lines[i];
+      final lineResult = gstSummary.lineResults[i];
+      final lineJson = line.toProductsJson();
+
+      if (lineResult.totalTaxAmount > 0) {
+        lineJson['tax_amount'] = lineResult.totalTaxAmount;
+        lineJson['cgst'] = lineResult.cgstAmount;
+        lineJson['sgst'] = lineResult.sgstAmount;
+        lineJson['igst'] = lineResult.igstAmount;
+      }
+      enrichedLines.add(lineJson);
+    }
+
+    final invoiceType = merchant?.isCompositionDealer == true
+        ? 'bill_of_supply'
+        : 'tax_invoice';
+    final total = draft.totalAmount + gstSummary.totalTaxAmount;
+    final paid = draft.paymentStatus == 'complete' ? total : draft.paidAmount;
 
     final auditPayload = {
       'customer': draft.customerName,
       'total': total,
-      'lines': productsJson,
+      'lines': enrichedLines,
       'payment_status': draft.paymentStatus,
     };
     final contentHash = BillAuditService.hashPayload(auditPayload);
@@ -66,7 +105,7 @@ class SubmitBillUseCase {
       businessName: businessName,
       customerName: draft.customerName.trim(),
       customerPhone: draft.customerPhone.trim(),
-      productsJson: productsJson,
+      productsJson: enrichedLines,
       totalAmount: total,
       paidAmount: paid,
       paymentMethod: draft.paymentMethod,
@@ -74,7 +113,14 @@ class SubmitBillUseCase {
       customerId: draft.customerId,
       discountBreakdown: draft.discountBreakdown,
       contentHash: contentHash,
+      // Need to add taxAmount and invoiceType to BillsRepository.createBill signature eventually
     );
+
+    // Update tax metadata locally (assuming createBill will be updated to take these, but for now we can patch)
+    await _bills.patchLocalBillMetadata(billId, {
+      'tax_amount': gstSummary.totalTaxAmount,
+      'invoice_type': invoiceType,
+    });
 
     final uid = _auth.currentSession?.userId;
     if (uid != null) {
@@ -84,6 +130,18 @@ class SubmitBillUseCase {
         userId: uid,
       );
       await _updateVelocity(userId: uid, lines: draft.lines);
+
+      // Record cash entry if payment method is cash
+      if (draft.paymentMethod == 'cash' && paid > 0) {
+        await _recordCashEntry(
+          userId: uid,
+          amount: paid,
+          type: 'in',
+          referenceId: billId,
+          referenceType: 'bill',
+          note: 'Payment for Bill #$billId',
+        );
+      }
     }
 
     if (uid != null &&
@@ -127,8 +185,9 @@ class SubmitBillUseCase {
       lines: draft.lines,
       paymentMethod: draft.paymentMethod,
       paymentStatus: draft.paymentStatus,
-      paidAmount: draft.paidAmount,
+      paidAmount: paid,
       totalAmount: total,
+      // We will need to pass gstSummary to the PDF generator later
     );
 
     try {

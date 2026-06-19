@@ -22,5 +22,6 @@ class AiInsight extends Equatable {
   bool get isUnread => readAt == null;
 
   @override
-  List<Object?> get props => [id, type, title, body, dedupKey, readAt, createdAt];
+  List<Object?> get props =>
+      [id, type, title, body, dedupKey, readAt, createdAt];
 }

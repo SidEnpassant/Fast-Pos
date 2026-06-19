@@ -8,9 +8,8 @@ Bill mergeBillSnapshots(Bill remote, Bill local) {
   final localPdfAt = local.pdfUpdatedAt;
   final preferLocalPdf = localPdfAt != null &&
       (remotePdfAt == null || !localPdfAt.isBefore(remotePdfAt));
-  final pdfUrl = preferLocalPdf
-      ? (localPdf ?? remotePdf)
-      : (remotePdf ?? localPdf);
+  final pdfUrl =
+      preferLocalPdf ? (localPdf ?? remotePdf) : (remotePdf ?? localPdf);
   final pdfUpdatedAt = preferLocalPdf ? localPdfAt : remotePdfAt;
 
   final remoteUpdated = remote.lastUpdated;

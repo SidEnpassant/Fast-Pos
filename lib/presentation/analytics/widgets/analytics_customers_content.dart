@@ -62,8 +62,7 @@ class AnalyticsCustomersContent extends StatelessWidget {
 
     final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
     final repeatRate = snapshot.activeThisMonth > 0
-        ? (snapshot.repeatCustomers / snapshot.activeThisMonth * 100)
-            .round()
+        ? (snapshot.repeatCustomers / snapshot.activeThisMonth * 100).round()
         : 0;
 
     return ListView(
@@ -116,8 +115,7 @@ class AnalyticsCustomersContent extends StatelessWidget {
               ),
               _StatRow(
                 label: 'Repeat buyers',
-                value:
-                    '${snapshot.repeatCustomers} ($repeatRate% of active)',
+                value: '${snapshot.repeatCustomers} ($repeatRate% of active)',
                 icon: Icons.repeat,
               ),
               _StatRow(
@@ -181,9 +179,8 @@ class AnalyticsCustomersContent extends StatelessWidget {
                   _CustomerRankTile(
                     entry: e,
                     amountLabel: fmt.format(e.outstandingCredit),
-                    subtitle: e.phone?.isNotEmpty == true
-                        ? e.phone!
-                        : 'Store credit',
+                    subtitle:
+                        e.phone?.isNotEmpty == true ? e.phone! : 'Store credit',
                     amountColor: Colors.orange,
                   ),
               ],

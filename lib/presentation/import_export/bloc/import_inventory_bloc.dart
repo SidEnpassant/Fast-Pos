@@ -54,7 +54,8 @@ class ImportInventoryStarted extends ImportInventoryEvent {
   List<Object?> get props => [userId, rows];
 }
 
-class ImportInventoryBloc extends Bloc<ImportInventoryEvent, ImportInventoryState> {
+class ImportInventoryBloc
+    extends Bloc<ImportInventoryEvent, ImportInventoryState> {
   ImportInventoryBloc(this._products) : super(const ImportInventoryState()) {
     on<ImportInventoryStarted>(_onStarted);
   }

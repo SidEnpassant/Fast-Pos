@@ -28,16 +28,25 @@ import 'package:inventopos/application/billing/upload_bill_pdf_use_case.dart';
 import 'package:inventopos/application/billing/validate_bill_draft_use_case.dart';
 import 'package:inventopos/application/checkout/compute_checkout_totals_use_case.dart';
 import 'package:inventopos/application/customers/upsert_customer_from_bill_use_case.dart';
+import 'package:inventopos/application/daybook/compute_day_book_use_case.dart';
+import 'package:inventopos/application/daybook/record_cash_entry_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/inventory/evaluate_reorder_alerts_use_case.dart';
 import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
+import 'package:inventopos/application/loyalty/earn_loyalty_points_use_case.dart';
+import 'package:inventopos/application/loyalty/redeem_loyalty_points_use_case.dart';
 import 'package:inventopos/application/messaging/build_message_use_cases.dart';
 import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
 import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
 import 'package:inventopos/application/profile/patch_account_profile_field_use_case.dart';
 import 'package:inventopos/application/profile/replace_account_signature_use_case.dart';
 import 'package:inventopos/application/registration/register_account_use_case.dart';
+import 'package:inventopos/application/returns/generate_credit_note_pdf_use_case.dart';
+import 'package:inventopos/application/returns/process_return_use_case.dart';
 import 'package:inventopos/application/security/authenticate_user_use_case.dart';
+import 'package:inventopos/application/stock_audit/complete_stock_audit_use_case.dart';
+import 'package:inventopos/application/stock_audit/start_stock_audit_use_case.dart';
+import 'package:inventopos/application/tax/compute_gst_for_bill_use_case.dart';
 import 'package:inventopos/core/notifications/local_notification_service.dart';
 import 'package:inventopos/core/notifications/notification_sync_coordinator.dart';
 import 'package:inventopos/data/ai/ai_insights_repository_impl.dart';
@@ -55,13 +64,20 @@ import 'package:inventopos/data/hardware/esc_pos_printer_repository_impl.dart';
 import 'package:inventopos/data/inventory/product_repository_impl.dart';
 import 'package:inventopos/data/messaging/outbound_messaging_adapter.dart';
 import 'package:inventopos/data/repositories/auth_repository_impl.dart';
+import 'package:inventopos/data/repositories/cash_register_repository_impl.dart';
+import 'package:inventopos/data/repositories/credit_note_repository_impl.dart';
 import 'package:inventopos/data/repositories/customer_repository_impl.dart';
 import 'package:inventopos/data/repositories/expense_repository_impl.dart';
+import 'package:inventopos/data/repositories/loyalty_repository_impl.dart';
 import 'package:inventopos/data/repositories/notifications_repository_impl.dart';
 import 'package:inventopos/data/repositories/offline_first_bills_repository.dart';
 import 'package:inventopos/data/repositories/profile_repository_impl.dart';
+import 'package:inventopos/data/repositories/purchase_order_repository_impl.dart';
 import 'package:inventopos/data/repositories/registration_repository_impl.dart';
+import 'package:inventopos/data/repositories/stock_audit_repository_impl.dart';
+import 'package:inventopos/data/repositories/supplier_repository_impl.dart';
 import 'package:inventopos/data/repositories/transactions_repository_impl.dart';
+import 'package:inventopos/data/returns/credit_note_pdf_generator.dart';
 import 'package:inventopos/data/sync/sync_coordinator.dart';
 import 'package:inventopos/data/sync/sync_repository_impl.dart';
 import 'package:inventopos/data/vision/text_recognition_repository_impl.dart';
@@ -73,20 +89,66 @@ import 'package:inventopos/domain/messaging/repositories/outbound_messaging_port
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/barcode_product_lookup_repository.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
+import 'package:inventopos/domain/repositories/cash_register_repository.dart';
+import 'package:inventopos/domain/repositories/credit_note_repository.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
+import 'package:inventopos/domain/repositories/loyalty_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/printer_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
+import 'package:inventopos/domain/repositories/purchase_order_repository.dart';
 import 'package:inventopos/domain/repositories/registration_repository.dart';
 import 'package:inventopos/domain/repositories/remote_pdf_download_repository.dart';
+import 'package:inventopos/domain/repositories/stock_audit_repository.dart';
+import 'package:inventopos/domain/repositories/supplier_repository.dart';
 import 'package:inventopos/domain/repositories/sync_repository.dart';
 import 'package:inventopos/domain/repositories/text_recognition_repository.dart';
 import 'package:inventopos/domain/repositories/transactions_repository.dart';
+
 /// Single composition root for repositories and application use cases.
 List<RepositoryProvider<dynamic>> appRepositoryProviders() {
   return [
+    RepositoryProvider<CashRegisterRepository>(
+      create: (_) => CashRegisterRepositoryImpl(),
+    ),
+    RepositoryProvider<LoyaltyRepository>(
+      create: (_) => LoyaltyRepositoryImpl(),
+    ),
+    RepositoryProvider<StockAuditRepository>(
+      create: (_) => StockAuditRepositoryImpl(),
+    ),
+    RepositoryProvider<RecordCashEntryUseCase>(
+      create: (c) => RecordCashEntryUseCase(c.read<CashRegisterRepository>()),
+    ),
+    RepositoryProvider<ComputeDayBookUseCase>(
+      create: (c) => ComputeDayBookUseCase(c.read<CashRegisterRepository>()),
+    ),
+
+    RepositoryProvider<SupplierRepository>(
+      create: (_) => SupplierRepositoryImpl(),
+    ),
+    RepositoryProvider<PurchaseOrderRepository>(
+      create: (_) => PurchaseOrderRepositoryImpl(),
+    ),
+    RepositoryProvider<CreditNoteRepository>(
+      create: (_) => CreditNoteRepositoryImpl(),
+    ),
+    RepositoryProvider<CreditNotePdfGenerator>(
+      create: (_) => CreditNotePdfGenerator(),
+    ),
+    RepositoryProvider<GenerateCreditNotePdfUseCase>(
+      create: (c) => GenerateCreditNotePdfUseCase(
+        c.read<ProfileRepository>(),
+        c.read<CreditNotePdfGenerator>(),
+      ),
+    ),
+    RepositoryProvider<ProcessReturnUseCase>(
+      create: (c) => ProcessReturnUseCase(
+        c.read<CreditNoteRepository>(),
+      ),
+    ),
     RepositoryProvider<AuthRepository>(
       create: (_) => AuthRepositoryImpl(),
     ),
@@ -97,7 +159,8 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
       create: (_) => SyncRepositoryImpl(),
     ),
     RepositoryProvider<BillsRepository>(
-      create: (c) => OfflineFirstBillsRepository(sync: c.read<SyncRepository>()),
+      create: (c) =>
+          OfflineFirstBillsRepository(sync: c.read<SyncRepository>()),
     ),
     RepositoryProvider<ProductRepository>(
       create: (_) => ProductRepositoryImpl(),
@@ -177,7 +240,8 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
       create: (_) => AuthenticateUserUseCase(),
     ),
     RepositoryProvider<UpsertCustomerFromBillUseCase>(
-      create: (c) => UpsertCustomerFromBillUseCase(c.read<CustomerRepository>()),
+      create: (c) =>
+          UpsertCustomerFromBillUseCase(c.read<CustomerRepository>()),
     ),
     RepositoryProvider<ResolveProductForBarcodeUseCase>(
       create: (c) =>
@@ -361,6 +425,9 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     RepositoryProvider<EvaluateReorderAlertsUseCase>(
       create: (c) => EvaluateReorderAlertsUseCase(c.read<ProductRepository>()),
     ),
+    RepositoryProvider<ComputeGstForBillUseCase>(
+      create: (_) => const ComputeGstForBillUseCase(),
+    ),
     RepositoryProvider<SubmitBillUseCase>(
       create: (c) => SubmitBillUseCase(
         c.read<BillsRepository>(),
@@ -373,6 +440,31 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
         c.read<DecrementStockOnBillUseCase>(),
         c.read<UploadBillPdfUseCase>(),
         c.read<UpdateProductVelocityUseCase>(),
+        c.read<ComputeGstForBillUseCase>(),
+        c.read<RecordCashEntryUseCase>(),
+      ),
+    ),
+    RepositoryProvider<StartStockAuditUseCase>(
+      create: (c) => StartStockAuditUseCase(
+        c.read<ProductRepository>(),
+        c.read<StockAuditRepository>(),
+      ),
+    ),
+    RepositoryProvider<CompleteStockAuditUseCase>(
+      create: (c) => CompleteStockAuditUseCase(
+        c.read<StockAuditRepository>(),
+      ),
+    ),
+    RepositoryProvider<EarnLoyaltyPointsUseCase>(
+      create: (c) => EarnLoyaltyPointsUseCase(
+        c.read<LoyaltyRepository>(),
+        c.read<CustomerRepository>(),
+      ),
+    ),
+    RepositoryProvider<RedeemLoyaltyPointsUseCase>(
+      create: (c) => RedeemLoyaltyPointsUseCase(
+        c.read<LoyaltyRepository>(),
+        c.read<CustomerRepository>(),
       ),
     ),
   ];

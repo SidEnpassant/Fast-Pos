@@ -12,10 +12,15 @@ import 'package:inventopos/application/automation/automation_use_cases.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/billing/resolve_product_for_barcode_use_case.dart';
 import 'package:inventopos/application/billing/submit_bill_use_case.dart';
+import 'package:inventopos/application/daybook/compute_day_book_use_case.dart';
+import 'package:inventopos/application/daybook/record_cash_entry_use_case.dart';
 import 'package:inventopos/application/profile/observe_profile_for_current_user_use_case.dart';
 import 'package:inventopos/application/profile/patch_account_profile_field_use_case.dart';
 import 'package:inventopos/application/profile/replace_account_signature_use_case.dart';
 import 'package:inventopos/application/registration/register_account_use_case.dart';
+import 'package:inventopos/application/returns/process_return_use_case.dart';
+import 'package:inventopos/application/stock_audit/complete_stock_audit_use_case.dart';
+import 'package:inventopos/application/stock_audit/start_stock_audit_use_case.dart';
 import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
 import 'package:inventopos/domain/billing/bill_draft_line.dart';
@@ -23,15 +28,23 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
+import 'package:inventopos/domain/repositories/loyalty_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
+import 'package:inventopos/domain/repositories/purchase_order_repository.dart';
+import 'package:inventopos/domain/repositories/stock_audit_repository.dart';
+import 'package:inventopos/domain/repositories/supplier_repository.dart';
 import 'package:inventopos/presentation/account/bloc/account_bloc.dart';
 import 'package:inventopos/presentation/account/view/my_account.dart';
 import 'package:inventopos/presentation/ai_hub/bloc/ai_hub_bloc.dart';
 import 'package:inventopos/presentation/ai_hub/view/ai_hub_screen.dart';
 import 'package:inventopos/presentation/analytics/bloc/analytics_hub_bloc.dart';
 import 'package:inventopos/presentation/analytics/view/analytics_suite_screen.dart';
+import 'package:inventopos/presentation/credit_notes/bloc/credit_notes_bloc.dart';
+import 'package:inventopos/presentation/credit_notes/bloc/credit_notes_event.dart';
+import 'package:inventopos/presentation/credit_notes/view/credit_notes_screen.dart';
+import 'package:inventopos/domain/repositories/credit_note_repository.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
 import 'package:inventopos/presentation/auth_login/bloc/login_bloc.dart';
@@ -53,6 +66,8 @@ import 'package:inventopos/presentation/customers/bloc/customer_detail_bloc.dart
 import 'package:inventopos/presentation/customers/view/customer_detail_screen.dart';
 import 'package:inventopos/presentation/customers/view/customers_screen.dart';
 import 'package:inventopos/presentation/dashboard/view/dashboard_screen.dart';
+import 'package:inventopos/presentation/daybook/bloc/daybook_bloc.dart';
+import 'package:inventopos/presentation/daybook/view/daybook_screen.dart';
 import 'package:inventopos/presentation/expenses/bloc/expenses_bloc.dart';
 import 'package:inventopos/presentation/expenses/view/expenses_screen.dart';
 import 'package:inventopos/presentation/forgot_password/bloc/forgot_password_bloc.dart';
@@ -61,19 +76,40 @@ import 'package:inventopos/presentation/import_export/view/import_export_page.da
 import 'package:inventopos/presentation/inventory/bloc/inventory_bloc.dart';
 import 'package:inventopos/presentation/inventory/view/inventory_screen.dart';
 import 'package:inventopos/presentation/inventory/view/product_editor_page.dart';
+import 'package:inventopos/presentation/loyalty/bloc/loyalty_bloc.dart';
+import 'package:inventopos/presentation/loyalty/bloc/loyalty_event.dart';
+import 'package:inventopos/presentation/loyalty/view/loyalty_settings_screen.dart';
 import 'package:inventopos/presentation/messaging/view/batch_message_queue_screen.dart';
 import 'package:inventopos/presentation/notifications/bloc/notifications_bloc.dart';
 import 'package:inventopos/presentation/notifications/view/notifications_screen.dart';
 import 'package:inventopos/presentation/printer_setup/view/printer_setup_page.dart';
+import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_bloc.dart';
+import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_event.dart';
+import 'package:inventopos/presentation/purchase_orders/view/purchase_order_editor_page.dart';
+import 'package:inventopos/presentation/purchase_orders/view/purchase_order_list_screen.dart';
+import 'package:inventopos/presentation/purchase_orders/view/purchase_order_receive_page.dart';
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/view/register_screen.dart';
 import 'package:inventopos/presentation/registration_success/bloc/registration_success_bloc.dart';
 import 'package:inventopos/presentation/registration_success/view/registration_success_screen.dart';
+import 'package:inventopos/presentation/returns/bloc/return_bloc.dart';
+import 'package:inventopos/presentation/returns/bloc/return_event.dart';
+import 'package:inventopos/presentation/returns/view/return_screen.dart';
 import 'package:inventopos/presentation/shell/view/shell_page.dart';
+import 'package:inventopos/presentation/stock_audit/bloc/stock_audit_bloc.dart';
+import 'package:inventopos/presentation/stock_audit/view/stock_audit_list_screen.dart';
+import 'package:inventopos/presentation/stock_audit/view/stock_audit_screen.dart';
+import 'package:inventopos/presentation/suppliers/bloc/suppliers_bloc.dart';
+import 'package:inventopos/presentation/suppliers/view/supplier_editor_page.dart';
+import 'package:inventopos/presentation/suppliers/view/suppliers_screen.dart';
+import 'package:inventopos/presentation/tax_settings/bloc/tax_settings_bloc.dart';
+import 'package:inventopos/presentation/tax_settings/bloc/tax_settings_event.dart';
+import 'package:inventopos/presentation/tax_settings/view/tax_settings_screen.dart';
 import 'package:inventopos/presentation/transactions/view/complete_transaction/complete_transactions_screen.dart';
 import 'package:inventopos/presentation/transactions/view/incomplete_transaction/incomplete_transactions_screen.dart';
 import 'package:speech_to_text/speech_to_text.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+
 
 
 /// Root navigator for full-screen routes that sit above the tab shell.
@@ -241,6 +277,147 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) => const IncompleteTransactionsScreen(),
       ),
+
+      GoRoute(
+        path: '/returns/new',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final billId = state.uri.queryParameters['billId'] ?? '';
+          return BlocProvider(
+            create: (ctx) => ReturnBloc(
+              ctx.read<BillsRepository>(),
+              ctx.read<ProcessReturnUseCase>(),
+              ctx.read<AuthRepository>(),
+            )..add(ReturnStarted(billId)),
+            child: const ReturnScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/credit-notes',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
+          return BlocProvider(
+            create: (ctx) => CreditNotesBloc(
+              ctx.read<CreditNoteRepository>(),
+            )..add(CreditNotesStarted(uid)),
+            child: const CreditNotesScreen(),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/suppliers',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => SuppliersBloc(ctx.read<SupplierRepository>())
+            ..add(SuppliersStarted(
+                Supabase.instance.client.auth.currentUser?.id ?? '')),
+          child: const SuppliersScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/suppliers/editor',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final extra = state.extra;
+          return BlocProvider(
+            create: (ctx) => SuppliersBloc(ctx.read<SupplierRepository>()),
+            child: SupplierEditorPage(supplierId: extra as String?),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/purchase-orders',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => PurchaseOrderBloc(ctx.read<PurchaseOrderRepository>())..add(PurchaseOrdersStarted(Supabase.instance.client.auth.currentUser?.id ?? '')),
+          child: const PurchaseOrderListScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/purchase-orders/editor',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final poId = state.extra as String?;
+          return BlocProvider(
+            create: (ctx) => PurchaseOrderBloc(ctx.read<PurchaseOrderRepository>()),
+            child: PurchaseOrderEditorPage(purchaseOrderId: poId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/purchase-orders/receive',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) {
+          final poId = state.extra as String;
+          return BlocProvider(
+            create: (ctx) => PurchaseOrderBloc(ctx.read<PurchaseOrderRepository>()),
+            child: PurchaseOrderReceivePage(purchaseOrderId: poId),
+          );
+        },
+      ),
+      GoRoute(
+        path: '/daybook',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => DayBookBloc(
+            computeDayBook: ctx.read<ComputeDayBookUseCase>(),
+            recordCashEntry: ctx.read<RecordCashEntryUseCase>(),
+            auth: ctx.read<AuthRepository>(),
+          )..add(DayBookStarted()),
+          child: const DayBookScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/loyalty-settings',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => LoyaltyBloc(
+            repository: ctx.read<LoyaltyRepository>(),
+          )..add(LoadLoyaltyConfig(Supabase.instance.client.auth.currentUser?.id ?? '')),
+          child: const LoyaltySettingsScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/stock-audit',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => StockAuditBloc(
+            stockAuditRepository: ctx.read<StockAuditRepository>(),
+            startStockAuditUseCase: ctx.read<StartStockAuditUseCase>(),
+            completeStockAuditUseCase: ctx.read<CompleteStockAuditUseCase>(),
+            authRepository: ctx.read<AuthRepository>(),
+          )..add( LoadStockAudits()),
+          child: const StockAuditListScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/stock-audit/live',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (context, state) => BlocProvider(
+          create: (ctx) => StockAuditBloc(
+            stockAuditRepository: ctx.read<StockAuditRepository>(),
+            startStockAuditUseCase: ctx.read<StartStockAuditUseCase>(),
+            completeStockAuditUseCase: ctx.read<CompleteStockAuditUseCase>(),
+            authRepository: ctx.read<AuthRepository>(),
+          )..add(LoadStockAudits()),
+          child: const StockAuditScreen(),
+        ),
+      ),
+      GoRoute(
+        path: '/app/tax-settings',
+        parentNavigatorKey: appRootNavigatorKey,
+        builder: (ctx, state) => BlocProvider(
+          create: (context) => TaxSettingsBloc(
+            observeProfile: context.read<ObserveProfileForCurrentUserUseCase>(),
+            profileRepository: context.read<ProfileRepository>(),
+            authRepository: context.read<AuthRepository>(),
+          )..add(const TaxSettingsStarted()),
+          child: const TaxSettingsScreen(),
+        ),
+      ),
+
       GoRoute(
         path: '/expenses',
         parentNavigatorKey: appRootNavigatorKey,

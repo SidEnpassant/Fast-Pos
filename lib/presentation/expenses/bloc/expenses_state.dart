@@ -17,8 +17,7 @@ class ExpensesState extends Equatable {
   final String? categoryFilter;
   final bool loading;
 
-  double get periodTotal =>
-      filtered.fold(0.0, (s, e) => s + e.amount);
+  double get periodTotal => filtered.fold(0.0, (s, e) => s + e.amount);
 
   int get periodCount => filtered.length;
 

@@ -15,6 +15,8 @@ abstract final class UserProfileMapper {
       signatureUrl: m['signatureUrl'] as String?,
       lastBillNumber: (m['lastBillNumber'] as num?)?.toInt(),
       createdAt: m['createdAt'],
+      stateCode: m['stateCode'] as String?,
+      isCompositionDealer: m['isCompositionDealer'] as bool? ?? false,
     );
   }
 
@@ -31,6 +33,8 @@ abstract final class UserProfileMapper {
       'signatureUrl': p.signatureUrl,
       'lastBillNumber': p.lastBillNumber,
       'createdAt': p.createdAt,
+      'stateCode': p.stateCode,
+      'isCompositionDealer': p.isCompositionDealer,
     };
   }
 }

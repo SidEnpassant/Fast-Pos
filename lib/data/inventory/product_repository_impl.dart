@@ -61,13 +61,14 @@ class ProductRepositoryImpl implements ProductRepository {
           .order('updated_at');
 
       final products = (rows as List)
-          .map((e) => ProductMapper.fromRow(Map<String, dynamic>.from(e as Map)))
+          .map(
+              (e) => ProductMapper.fromRow(Map<String, dynamic>.from(e as Map)))
           .toList();
 
       if (products.isNotEmpty) {
         await _local.putAll(products);
-        final latest =
-            rows.map((e) => e['updated_at'] as String).toList()..sort();
+        final latest = rows.map((e) => e['updated_at'] as String).toList()
+          ..sort();
         await _setCursor(userId, latest.last);
       }
     } catch (e) {
@@ -124,9 +125,13 @@ class ProductRepositoryImpl implements ProductRepository {
     String? barcode,
     required double price,
     double? costPrice,
-    required int stockQuantity,
-    required int minStockThreshold,
+    required double stockQuantity,
+    required double minStockThreshold,
     String? category,
+    String uom = 'piece',
+    double? conversionFactor,
+    String? hsnCode,
+    double gstPercent = 0.0,
   }) async {
     final id = _uuid.v4();
     final now = DateTime.now();
@@ -144,6 +149,10 @@ class ProductRepositoryImpl implements ProductRepository {
       'is_active': true,
       'velocity_ema': 0,
       'updated_at': now.toUtc().toIso8601String(),
+      'uom': uom,
+      'conversion_factor': conversionFactor,
+      'hsn_code': hsnCode,
+      'gst_percent': gstPercent,
     };
     try {
       await _client.from('products').insert(row);
@@ -205,7 +214,8 @@ class ProductRepositoryImpl implements ProductRepository {
   }
 
   @override
-  Future<void> bulkUpsertLocal(String userId, List<Map<String, dynamic>> rows) async {
+  Future<void> bulkUpsertLocal(
+      String userId, List<Map<String, dynamic>> rows) async {
     final products = rows.map((r) {
       return Product(
         id: r['id'] as String? ?? _uuid.v4(),
@@ -215,8 +225,8 @@ class ProductRepositoryImpl implements ProductRepository {
         barcode: r['barcode'] as String?,
         price: (r['price'] as num?)?.toDouble() ?? 0,
         costPrice: (r['cost_price'] as num?)?.toDouble(),
-        stockQuantity: (r['stock_quantity'] as num?)?.toInt() ?? 0,
-        minStockThreshold: (r['min_stock_threshold'] as num?)?.toInt() ?? 5,
+        stockQuantity: (r['stock_quantity'] as num?)?.toDouble() ?? 0,
+        minStockThreshold: (r['min_stock_threshold'] as num?)?.toDouble() ?? 5,
         category: r['category'] as String?,
         updatedAt: DateTime.now(),
       );
@@ -235,11 +245,11 @@ class ProductRepositoryImpl implements ProductRepository {
   @override
   Future<void> decrementStockLocal({
     required String productId,
-    required int quantity,
+    required double quantity,
   }) async {
     final p = _local.findById(productId);
     if (p == null) return;
-    final nextQty = (p.stockQuantity - quantity).clamp(0, 999999);
+    final nextQty = (p.stockQuantity - quantity).clamp(0.0, 999999.0);
     await _local.put(
       Product(
         id: p.id,

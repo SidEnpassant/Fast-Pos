@@ -102,7 +102,9 @@ abstract final class CustomerAnalytics {
     DateTime? reference,
   }) {
     final now = reference ?? DateTime.now();
-    if (bills.isEmpty && customers.isEmpty) return CustomerAnalyticsSnapshot.empty;
+    if (bills.isEmpty && customers.isEmpty) {
+      return CustomerAnalyticsSnapshot.empty;
+    }
 
     final byKey = <String, _MutableCustomerStats>{};
 
@@ -201,7 +203,8 @@ abstract final class CustomerAnalytics {
         .length;
     final pendingPartial = bills
         .where((b) => b.paymentStatus == 'partial')
-        .fold(0.0, (sum, b) => sum + (b.totalAmount - b.paidAmount).clamp(0, 1e12));
+        .fold(0.0,
+            (sum, b) => sum + (b.totalAmount - b.paidAmount).clamp(0, 1e12));
 
     return CustomerAnalyticsSnapshot(
       totalCustomers: byKey.length,

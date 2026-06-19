@@ -26,7 +26,8 @@ final class InventoryAutomationAlertsReceived extends InventoryAutomationEvent {
   List<Object?> get props => [alerts];
 }
 
-final class InventoryAutomationReorderDismissed extends InventoryAutomationEvent {
+final class InventoryAutomationReorderDismissed
+    extends InventoryAutomationEvent {
   const InventoryAutomationReorderDismissed(this.productId);
   final String productId;
 

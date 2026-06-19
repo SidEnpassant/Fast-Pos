@@ -8,6 +8,7 @@ class Customer extends Equatable {
     this.phone,
     this.creditBalance = 0,
     this.loyaltyPoints = 0,
+    this.lifetimePoints = 0,
     required this.updatedAt,
     this.syncStatus = 'synced',
   });
@@ -18,6 +19,7 @@ class Customer extends Equatable {
   final String? phone;
   final double creditBalance;
   final int loyaltyPoints;
+  final int lifetimePoints;
   final DateTime updatedAt;
   final String syncStatus;
 
@@ -29,7 +31,32 @@ class Customer extends Equatable {
         phone,
         creditBalance,
         loyaltyPoints,
+        lifetimePoints,
         updatedAt,
         syncStatus,
       ];
+
+  Customer copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? phone,
+    double? creditBalance,
+    int? loyaltyPoints,
+    int? lifetimePoints,
+    DateTime? updatedAt,
+    String? syncStatus,
+  }) {
+    return Customer(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      phone: phone ?? this.phone,
+      creditBalance: creditBalance ?? this.creditBalance,
+      loyaltyPoints: loyaltyPoints ?? this.loyaltyPoints,
+      lifetimePoints: lifetimePoints ?? this.lifetimePoints,
+      updatedAt: updatedAt ?? this.updatedAt,
+      syncStatus: syncStatus ?? this.syncStatus,
+    );
+  }
 }

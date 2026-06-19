@@ -43,12 +43,15 @@ Future<void> showAddBillProductDialog(
                             icon: const Icon(Icons.qr_code_scanner),
                             onPressed: () async {
                               Navigator.pop(dialogContext);
-                              final scannedName = await pickBarcodeProductName();
-                              if (scannedName != null && parentContext.mounted) {
+                              final scannedName =
+                                  await pickBarcodeProductName();
+                              if (scannedName != null &&
+                                  parentContext.mounted) {
                                 await showAddBillProductDialog(
                                   parentContext,
                                   draftBloc: draftBloc,
-                                  pickBarcodeProductName: pickBarcodeProductName,
+                                  pickBarcodeProductName:
+                                      pickBarcodeProductName,
                                   pickOcrCombinedText: pickOcrCombinedText,
                                   initialProductName: scannedName,
                                 );
@@ -64,7 +67,8 @@ Future<void> showAddBillProductDialog(
                                 await showAddBillProductDialog(
                                   parentContext,
                                   draftBloc: draftBloc,
-                                  pickBarcodeProductName: pickBarcodeProductName,
+                                  pickBarcodeProductName:
+                                      pickBarcodeProductName,
                                   pickOcrCombinedText: pickOcrCombinedText,
                                   initialProductName: recognized,
                                 );
@@ -151,7 +155,8 @@ Future<void> showAddBillProductDialog(
                 onPressed: () {
                   final name = nameController.text.trim();
                   final price = double.tryParse(priceController.text) ?? 0;
-                  final quantity = int.tryParse(quantityController.text) ?? 0;
+                  final quantity =
+                      double.tryParse(quantityController.text) ?? 0.0;
                   final comment = commentController.text.trim();
 
                   if (name.isNotEmpty && price > 0 && quantity > 0) {

@@ -84,7 +84,7 @@ class _CompleteTransactionsScreenState
     showDialog<void>(
       context: context,
       barrierDismissible: false,
-      builder: (_) =>  Center(
+      builder: (_) => Center(
         child: Card(
           child: Padding(
             padding: const EdgeInsets.all(24),
@@ -160,7 +160,13 @@ class _CompleteTransactionsScreenState
                       : null,
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/');
+                      }
+                    },
                   ),
                   actions: [
                     IconButton(
@@ -184,68 +190,66 @@ class _CompleteTransactionsScreenState
                   body: Builder(
                     builder: (context) {
                       final session =
-                                context.read<AuthRepository>().currentSession;
-                            if (session == null) {
-                              return Center(
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                        'Please login to view transactions'),
-                                    const SizedBox(height: 16),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        context.go('/login');
-                                      },
-                                      child: const Text('Go to Login'),
-                                    ),
-                                  ],
-                                ),
-                              );
-                            }
+                          context.read<AuthRepository>().currentSession;
+                      if (session == null) {
+                        return Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Text('Please login to view transactions'),
+                              const SizedBox(height: 16),
+                              ElevatedButton(
+                                onPressed: () {
+                                  context.go('/login');
+                                },
+                                child: const Text('Go to Login'),
+                              ),
+                            ],
+                          ),
+                        );
+                      }
 
-                            if (txState.loading) {
-                              return const AppSkeletonList(itemCount: 8);
-                            }
+                      if (txState.loading) {
+                        return const AppSkeletonList(itemCount: 8);
+                      }
 
-                            final groupedTransactions = txState.groupedTransactions;
+                      final groupedTransactions = txState.groupedTransactions;
 
-                            if (groupedTransactions.isEmpty) {
-                              return const AppEmptyState(
-                                icon: Icons.check_circle_outline,
-                                title: 'No completed transactions',
-                                message:
-                                    'Completed bills will appear here after full payment.',
-                              );
-                            }
+                      if (groupedTransactions.isEmpty) {
+                        return const AppEmptyState(
+                          icon: Icons.check_circle_outline,
+                          title: 'No completed transactions',
+                          message:
+                              'Completed bills will appear here after full payment.',
+                        );
+                      }
 
-                            final dates = groupedTransactions.keys.toList();
+                      final dates = groupedTransactions.keys.toList();
 
-                            return ListView.builder(
-                              itemCount: dates.length,
-                              itemBuilder: (context, index) {
-                                final date = dates[index];
-                                final transactions = groupedTransactions[date]!;
+                      return ListView.builder(
+                        itemCount: dates.length,
+                        itemBuilder: (context, index) {
+                          final date = dates[index];
+                          final transactions = groupedTransactions[date]!;
 
-                                return Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    AppDateSectionHeader(
-                                      label: DateFormat('MMMM dd, yyyy')
-                                          .format(DateTime.parse(date)),
-                                    ),
-                                    ...transactions.map((bill) {
-                                      return CompleteTransactionBillCard(
-                                        bill: bill,
-                                        onShowBill: () =>
-                                            openBillPdfForBill(context, bill),
-                                        onDelete: () =>
-                                            _deleteTransaction(bill.id),
-                                      );
-                                    }),
-                                  ],
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              AppDateSectionHeader(
+                                label: DateFormat('MMMM dd, yyyy')
+                                    .format(DateTime.parse(date)),
+                              ),
+                              ...transactions.map((bill) {
+                                return CompleteTransactionBillCard(
+                                  bill: bill,
+                                  onShowBill: () =>
+                                      openBillPdfForBill(context, bill),
+                                  onDelete: () => _deleteTransaction(bill.id),
                                 );
-                              },
+                              }),
+                            ],
+                          );
+                        },
                       );
                     },
                   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
@@ -120,6 +121,14 @@ class CompleteTransactionBillCard extends StatelessWidget {
                         icon: const Icon(Icons.picture_as_pdf_outlined),
                         label: const Text('Show Bill'),
                         onPressed: onShowBill,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        icon: const Icon(Icons.assignment_return_outlined),
+                        label: const Text('Return Items'),
+                        onPressed: () => context.push('/returns/new?billId=${bill.id}'),
                       ),
                     ),
                     const SizedBox(width: 8),

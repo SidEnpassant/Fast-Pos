@@ -64,7 +64,8 @@ class _BillInventoryPickerPageState extends State<BillInventoryPickerPage> {
             ),
           ),
           Expanded(
-            child: BlocBuilder<BillInventoryPickerBloc, BillInventoryPickerState>(
+            child:
+                BlocBuilder<BillInventoryPickerBloc, BillInventoryPickerState>(
               builder: (context, state) {
                 if (state.loading) {
                   return const AppSkeletonList(itemCount: 10);

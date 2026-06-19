@@ -64,9 +64,7 @@ class AccountEditableFieldTile extends StatelessWidget {
                         hasValue ? valueText : 'Tap to add',
                         style: theme.textTheme.bodyLarge?.copyWith(
                           fontWeight: FontWeight.w500,
-                          color: hasValue
-                              ? scheme.onSurface
-                              : scheme.outline,
+                          color: hasValue ? scheme.onSurface : scheme.outline,
                         ),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,

@@ -57,27 +57,27 @@ class ImportExportPage extends StatelessWidget {
                   icon: const Icon(Icons.upload_file),
                   label: const Text('Import inventory (CSV/XLSX)'),
                 ),
-          const SizedBox(height: 12),
-          OutlinedButton.icon(
-            onPressed: () async {
-              final path = await context
-                  .read<ExportRepositoryImpl>()
-                  .exportInventoryCsv(uid);
-              await Share.shareXFiles([XFile(path)]);
-            },
-            icon: const Icon(Icons.download),
-            label: const Text('Export inventory CSV'),
-          ),
-          OutlinedButton.icon(
-            onPressed: () async {
-              final path = await context
-                  .read<ExportRepositoryImpl>()
-                  .exportTransactionsCsv(uid);
-              await Share.shareXFiles([XFile(path)]);
-            },
-            icon: const Icon(Icons.receipt_long),
-            label: const Text('Export transactions CSV'),
-          ),
+                const SizedBox(height: 12),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final path = await context
+                        .read<ExportRepositoryImpl>()
+                        .exportInventoryCsv(uid);
+                    await Share.shareXFiles([XFile(path)]);
+                  },
+                  icon: const Icon(Icons.download),
+                  label: const Text('Export inventory CSV'),
+                ),
+                OutlinedButton.icon(
+                  onPressed: () async {
+                    final path = await context
+                        .read<ExportRepositoryImpl>()
+                        .exportTransactionsCsv(uid);
+                    await Share.shareXFiles([XFile(path)]);
+                  },
+                  icon: const Icon(Icons.receipt_long),
+                  label: const Text('Export transactions CSV'),
+                ),
               ],
             );
           },

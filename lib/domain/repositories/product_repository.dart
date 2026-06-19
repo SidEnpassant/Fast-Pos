@@ -16,9 +16,13 @@ abstract class ProductRepository {
     String? barcode,
     required double price,
     double? costPrice,
-    required int stockQuantity,
-    required int minStockThreshold,
+    required double stockQuantity,
+    required double minStockThreshold,
     String? category,
+    String uom = 'piece',
+    double? conversionFactor,
+    String? hsnCode,
+    double gstPercent = 0.0,
   });
 
   Future<Product> updateProduct(Product product);
@@ -32,6 +36,6 @@ abstract class ProductRepository {
   /// Decrements local Hive stock (offline path).
   Future<void> decrementStockLocal({
     required String productId,
-    required int quantity,
+    required double quantity,
   });
 }

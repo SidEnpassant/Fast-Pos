@@ -87,9 +87,7 @@ class AiBriefMarkdownView extends StatelessWidget {
       spans.add(
         TextSpan(
           text: chunk,
-          style: i.isOdd
-              ? style?.copyWith(fontWeight: FontWeight.w700)
-              : style,
+          style: i.isOdd ? style?.copyWith(fontWeight: FontWeight.w700) : style,
         ),
       );
     }

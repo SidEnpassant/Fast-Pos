@@ -425,9 +425,12 @@ _MetricOutputs _computeDashboardMetrics(_MetricInputs input) {
     ..sort((a, b) => b.creditBalance.compareTo(a.creditBalance));
 
   final avgBillToday = billsTodayCount > 0 ? revToday / billsTodayCount : 0.0;
-  final trend = revYesterday == 0 ? (revToday > 0 ? 100.0 : null) : ((revToday - revYesterday) / revYesterday) * 100;
+  final trend = revYesterday == 0
+      ? (revToday > 0 ? 100.0 : null)
+      : ((revToday - revYesterday) / revYesterday) * 100;
 
-  final pendingCol = partials.fold<double>(0, (s, b) => s + (b.totalAmount - b.paidAmount).clamp(0, double.infinity));
+  final pendingCol = partials.fold<double>(0,
+      (s, b) => s + (b.totalAmount - b.paidAmount).clamp(0, double.infinity));
 
   // Payment Mix
   var complete = 0;
@@ -435,27 +438,31 @@ _MetricOutputs _computeDashboardMetrics(_MetricInputs input) {
   var pending = 0;
   for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
     switch (b.paymentStatus.toLowerCase().trim()) {
-      case 'complete': complete++;
-      case 'partial': partial++;
-      default: pending++;
+      case 'complete':
+        complete++;
+      case 'partial':
+        partial++;
+      default:
+        pending++;
     }
   }
 
   // Top Products
-  final agg = <String, ({int units, double revenue})>{};
+  final agg = <String, ({double units, double revenue})>{};
   for (final b in bills.where((x) => BillRevenue.isSameCalendarMonth(x, now))) {
     for (final line in b.lineItems) {
       final name = line.productName.trim();
       if (name.isEmpty) continue;
       final cur = agg[name];
       agg[name] = (
-        units: (cur?.units ?? 0) + line.quantity,
-        revenue: (cur?.revenue ?? 0) + line.totalPrice,
+        units: (cur?.units ?? 0.0) + line.quantity,
+        revenue: (cur?.revenue ?? 0.0) + line.totalPrice,
       );
     }
   }
   final topProds = agg.entries
-      .map((e) => DashboardTopProduct(name: e.key, unitsSold: e.value.units, revenue: e.value.revenue))
+      .map((e) => DashboardTopProduct(
+          name: e.key, unitsSold: e.value.units, revenue: e.value.revenue))
       .toList()
     ..sort((a, b) => b.revenue.compareTo(a.revenue));
 
@@ -500,7 +507,8 @@ _MetricOutputs _computeDashboardMetrics(_MetricInputs input) {
     inventoryRetailValue: retailVal,
     activeCustomersThisMonth: custKeys.length,
     profitMarginPercent: margin,
-    monthPaymentMix: PaymentMixSnapshot(complete: complete, partial: partial, pending: pending),
+    monthPaymentMix: PaymentMixSnapshot(
+        complete: complete, partial: partial, pending: pending),
     topProductsThisMonth: topProds,
     attentionItemCount: attention,
   );

@@ -10,22 +10,22 @@ class BillLineQuantityValidation {
 
   final bool isValid;
   final String? errorMessage;
-  final int? maxAllowed;
+  final double? maxAllowed;
 }
 
 /// Validates integer quantity for a catalog or manual bill line.
 abstract final class ValidateBillLineQuantity {
   static BillLineQuantityValidation validate({
-    required int quantity,
-    int? availableStock,
+    required double quantity,
+    double? availableStock,
     String? productId,
     required List<BillDraftLine> existingLines,
     int? editingIndex,
   }) {
-    if (quantity < 1) {
+    if (quantity < 0.01) {
       return const BillLineQuantityValidation(
         isValid: false,
-        errorMessage: 'Quantity must be at least 1',
+        errorMessage: 'Quantity must be at least 0.01',
       );
     }
 
@@ -33,7 +33,7 @@ abstract final class ValidateBillLineQuantity {
       return const BillLineQuantityValidation(isValid: true, maxAllowed: null);
     }
 
-    var draftQty = 0;
+    var draftQty = 0.0;
     for (var i = 0; i < existingLines.length; i++) {
       if (editingIndex != null && i == editingIndex) continue;
       final line = existingLines[i];
@@ -49,7 +49,7 @@ abstract final class ValidateBillLineQuantity {
         errorMessage: maxAllowed <= 0
             ? 'No stock left for this product'
             : 'Only $maxAllowed available',
-        maxAllowed: maxAllowed.clamp(0, availableStock),
+        maxAllowed: maxAllowed.clamp(0.0, availableStock),
       );
     }
 

@@ -31,7 +31,8 @@ class BuildBriefingMetricsUseCase {
       'expenses_month': snapshot.expensesTrend.current,
       'profit_month': snapshot.profitTrend.current,
       'partial_bills': partialCount,
-      'low_stock_count': products.where((p) => p.isActive && p.isLowStock).length,
+      'low_stock_count':
+          products.where((p) => p.isActive && p.isLowStock).length,
       'out_of_stock_count':
           products.where((p) => p.isActive && p.stockQuantity <= 0).length,
     };

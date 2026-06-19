@@ -10,8 +10,7 @@ class BillSanityCheckState extends Equatable {
   final BillSanityResult? result;
   final bool overridden;
 
-  bool get canProceed =>
-      overridden || result == null || !result!.hasWarnings;
+  bool get canProceed => overridden || result == null || !result!.hasWarnings;
 
   BillSanityCheckState copyWith({
     BillSanityResult? result,

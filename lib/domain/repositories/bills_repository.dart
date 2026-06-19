@@ -19,6 +19,8 @@ abstract class BillsRepository {
     String? customerId,
     List<Map<String, dynamic>>? discountBreakdown,
     String? contentHash,
+    double taxAmount = 0.0,
+    String invoiceType = 'tax_invoice',
   });
 
   /// Server-side sequential display number (RPC).

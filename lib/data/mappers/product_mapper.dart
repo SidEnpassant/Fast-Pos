@@ -11,8 +11,8 @@ abstract final class ProductMapper {
       barcode: r['barcode'] as String?,
       price: (r['price'] as num?)?.toDouble() ?? 0,
       costPrice: (r['cost_price'] as num?)?.toDouble(),
-      stockQuantity: (r['stock_quantity'] as num?)?.toInt() ?? 0,
-      minStockThreshold: (r['min_stock_threshold'] as num?)?.toInt() ?? 5,
+      stockQuantity: (r['stock_quantity'] as num?)?.toDouble() ?? 0.0,
+      minStockThreshold: (r['min_stock_threshold'] as num?)?.toDouble() ?? 5.0,
       category: r['category'] as String?,
       isActive: r['is_active'] as bool? ?? true,
       velocityEma: (r['velocity_ema'] as num?)?.toDouble() ?? 0,
@@ -20,6 +20,10 @@ abstract final class ProductMapper {
       deletedAt: r['deleted_at'] != null
           ? SupabaseMappers.parseDate(r['deleted_at'])
           : null,
+      hsnCode: r['hsn_code'] as String?,
+      gstPercent: (r['gst_percent'] as num?)?.toDouble() ?? 0.0,
+      uom: r['uom'] as String? ?? 'piece',
+      conversionFactor: (r['conversion_factor'] as num?)?.toDouble(),
     );
   }
 
@@ -38,6 +42,10 @@ abstract final class ProductMapper {
         'velocity_ema': p.velocityEma,
         'updated_at': p.updatedAt.toUtc().toIso8601String(),
         'deleted_at': p.deletedAt?.toUtc().toIso8601String(),
+        if (p.hsnCode != null) 'hsn_code': p.hsnCode,
+        'gst_percent': p.gstPercent,
+        'uom': p.uom,
+        if (p.conversionFactor != null) 'conversion_factor': p.conversionFactor,
       };
 
   static Map<String, dynamic> toHiveMap(Product p) => toRow(p);

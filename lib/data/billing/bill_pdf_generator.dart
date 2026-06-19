@@ -36,6 +36,11 @@ class BillPdfGenerator {
     final signatureUrl = merchant.signatureUrl ?? '';
     final billRules = merchant.billRules ?? '';
 
+    final bool hasTax = lines.any((e) => e.taxAmount > 0);
+    final String invoiceHeader = merchant.isCompositionDealer
+        ? 'BILL OF SUPPLY'
+        : (hasTax ? 'TAX INVOICE' : 'INVOICE');
+
     Uint8List? signatureImage;
     if (signatureUrl.isNotEmpty) {
       try {
@@ -61,10 +66,20 @@ class BillPdfGenerator {
                 ),
               ),
               pw.SizedBox(height: 8),
+              pw.Center(
+                child: pw.Text(
+                  invoiceHeader,
+                  style: pw.TextStyle(
+                    fontSize: 14,
+                    fontWeight: pw.FontWeight.bold,
+                  ),
+                ),
+              ),
+              pw.SizedBox(height: 8),
               if (gstNumber.isNotEmpty) ...[
                 pw.Center(
                   child: pw.Text(
-                    'GST No: $gstNumber',
+                    'GSTIN: $gstNumber',
                     style: const pw.TextStyle(fontSize: 12),
                   ),
                 ),
@@ -117,92 +132,180 @@ class BillPdfGenerator {
               pw.SizedBox(height: 20),
               pw.Table(
                 border: pw.TableBorder.all(),
-                columnWidths: {
-                  0: const pw.FlexColumnWidth(4),
-                  1: const pw.FlexColumnWidth(2),
-                  2: const pw.FlexColumnWidth(1),
-                  3: const pw.FlexColumnWidth(2),
-                },
+                columnWidths: hasTax
+                    ? {
+                        0: const pw.FlexColumnWidth(3),
+                        1: const pw.FlexColumnWidth(1),
+                        2: const pw.FlexColumnWidth(1.5),
+                        3: const pw.FlexColumnWidth(1),
+                        4: const pw.FlexColumnWidth(1.5),
+                      }
+                    : {
+                        0: const pw.FlexColumnWidth(4),
+                        1: const pw.FlexColumnWidth(2),
+                        2: const pw.FlexColumnWidth(1),
+                        3: const pw.FlexColumnWidth(2),
+                      },
                 children: [
                   pw.TableRow(
                     decoration: const pw.BoxDecoration(
                       color: PdfColors.grey300,
                     ),
-                    children: [
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Product',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Price',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Qty',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                      pw.Padding(
-                        padding: const pw.EdgeInsets.all(8),
-                        child: pw.Text(
-                          'Total',
-                          style: pw.TextStyle(fontWeight: pw.FontWeight.bold),
-                        ),
-                      ),
-                    ],
+                    children: hasTax
+                        ? [
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Product',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('HSN',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Price',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Qty',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Total+Tax',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                          ]
+                        : [
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Product',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Price',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Qty',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                            pw.Padding(
+                              padding: const pw.EdgeInsets.all(8),
+                              child: pw.Text('Total',
+                                  style: pw.TextStyle(
+                                      fontWeight: pw.FontWeight.bold)),
+                            ),
+                          ],
                   ),
                   ...lines.expand((product) {
+                    final qtyStr = product.quantity % 1 == 0
+                        ? product.quantity.toInt().toString()
+                        : product.quantity.toStringAsFixed(2);
+                    final lineTotal =
+                        (product.price * product.quantity) + product.taxAmount;
+
                     return [
                       pw.TableRow(
-                        children: [
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(product.name),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(
-                              'Rs. ${product.price.toStringAsFixed(2)}',
-                            ),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text('${product.quantity}'),
-                          ),
-                          pw.Padding(
-                            padding: const pw.EdgeInsets.all(8),
-                            child: pw.Text(
-                              'Rs. ${(product.price * product.quantity).toStringAsFixed(2)}',
-                            ),
-                          ),
-                        ],
+                        children: hasTax
+                            ? [
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(product.name),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(product.hsnCode ?? ''),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(
+                                    'Rs. ${product.price.toStringAsFixed(2)}',
+                                  ),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text('$qtyStr ${product.uom}'),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(
+                                    'Rs. ${lineTotal.toStringAsFixed(2)}\n(${product.gstPercent ?? 0}%)',
+                                    style: const pw.TextStyle(fontSize: 10),
+                                  ),
+                                ),
+                              ]
+                            : [
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(product.name),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(
+                                    'Rs. ${product.price.toStringAsFixed(2)}',
+                                  ),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text('$qtyStr ${product.uom}'),
+                                ),
+                                pw.Padding(
+                                  padding: const pw.EdgeInsets.all(8),
+                                  child: pw.Text(
+                                    'Rs. ${(product.price * product.quantity).toStringAsFixed(2)}',
+                                  ),
+                                ),
+                              ],
                       ),
                       if (product.comment != null &&
                           product.comment!.isNotEmpty)
                         pw.TableRow(
-                          children: [
-                            pw.Padding(
-                              padding: const pw.EdgeInsets.all(8),
-                              child: pw.Text(
-                                'Comment: ${product.comment}',
-                                style: pw.TextStyle(
-                                  fontSize: 10,
-                                  fontStyle: pw.FontStyle.italic,
-                                ),
-                              ),
-                            ),
-                            pw.SizedBox(),
-                            pw.SizedBox(),
-                            pw.SizedBox(),
-                          ],
+                          children: hasTax
+                              ? [
+                                  pw.Padding(
+                                    padding: const pw.EdgeInsets.all(8),
+                                    child: pw.Text(
+                                      'Comment: ${product.comment}',
+                                      style: pw.TextStyle(
+                                        fontSize: 10,
+                                        fontStyle: pw.FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
+                                  pw.SizedBox(),
+                                  pw.SizedBox(),
+                                  pw.SizedBox(),
+                                  pw.SizedBox(),
+                                ]
+                              : [
+                                  pw.Padding(
+                                    padding: const pw.EdgeInsets.all(8),
+                                    child: pw.Text(
+                                      'Comment: ${product.comment}',
+                                      style: pw.TextStyle(
+                                        fontSize: 10,
+                                        fontStyle: pw.FontStyle.italic,
+                                      ),
+                                    ),
+                                  ),
+                                  pw.SizedBox(),
+                                  pw.SizedBox(),
+                                  pw.SizedBox(),
+                                ],
                         ),
                     ];
                   }),
@@ -214,6 +317,20 @@ class BillPdfGenerator {
                 child: pw.Column(
                   crossAxisAlignment: pw.CrossAxisAlignment.end,
                   children: [
+                    if (hasTax) ...[
+                      pw.Row(
+                        mainAxisAlignment: pw.MainAxisAlignment.end,
+                        children: [
+                          pw.Text(
+                            'Tax Amount: ',
+                          ),
+                          pw.Text(
+                            'Rs. ${lines.fold<double>(0, (p, c) => p + c.taxAmount).toStringAsFixed(2)}',
+                          ),
+                        ],
+                      ),
+                      pw.SizedBox(height: 4),
+                    ],
                     pw.Row(
                       mainAxisAlignment: pw.MainAxisAlignment.end,
                       children: [

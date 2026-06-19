@@ -37,5 +37,6 @@ class InventoryAutomationState extends Equatable {
       );
 
   @override
-  List<Object?> get props => [alerts, deadStock, marginLeaks, dismissedIds, loading];
+  List<Object?> get props =>
+      [alerts, deadStock, marginLeaks, dismissedIds, loading];
 }

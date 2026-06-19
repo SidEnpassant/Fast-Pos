@@ -12,4 +12,10 @@ abstract final class HiveBoxes {
   static const aiPreferences = 'ai_preferences';
   static const aiRequestQueue = 'ai_request_queue';
   static const aiBriefingCache = 'ai_briefing_cache';
+  static const suppliers = 'suppliers';
+  static const purchaseOrders = 'purchase_orders';
+  static const cashRegister = 'cash_register';
+  static const loyaltyConfig = 'loyalty_config';
+  static const stockAudits = 'stock_audits';
+  static const stockAuditLines = 'stock_audit_lines';
 }

@@ -39,6 +39,8 @@ class BillsRepositoryImpl implements BillsRepository {
     String? customerId,
     List<Map<String, dynamic>>? discountBreakdown,
     String? contentHash,
+    double taxAmount = 0.0,
+    String invoiceType = 'tax_invoice',
   }) async {
     final user = _client.auth.currentUser;
     if (user == null) {
@@ -59,6 +61,8 @@ class BillsRepositoryImpl implements BillsRepository {
       if (customerId != null) 'customer_id': customerId,
       if (discountBreakdown != null) 'discount_breakdown': discountBreakdown,
       if (contentHash != null) 'content_hash': contentHash,
+      'tax_amount': taxAmount,
+      'invoice_type': invoiceType,
       'sync_status': 'synced',
     };
     final inserted =
@@ -87,7 +91,8 @@ class BillsRepositoryImpl implements BillsRepository {
         .eq('user_id', userId)
         .eq('payment_status', 'partial');
     return (rows as List<dynamic>)
-        .map((e) => BillMapper.fromSupabaseRow(Map<String, dynamic>.from(e as Map)))
+        .map((e) =>
+            BillMapper.fromSupabaseRow(Map<String, dynamic>.from(e as Map)))
         .toList();
   }
 
@@ -128,8 +133,7 @@ class BillsRepositoryImpl implements BillsRepository {
   }) async {
     await _client.from('bills').update({
       'paid_amount': newPaidAmount,
-      'payment_status':
-          newPaidAmount >= totalAmount ? 'complete' : 'partial',
+      'payment_status': newPaidAmount >= totalAmount ? 'complete' : 'partial',
       'last_updated': DateTime.now().toUtc().toIso8601String(),
     }).eq('id', billId);
   }
@@ -157,7 +161,8 @@ class BillsRepositoryImpl implements BillsRepository {
 
   @override
   Future<Bill?> fetchBillById(String billId) async {
-    final row = await _client.from('bills').select().eq('id', billId).maybeSingle();
+    final row =
+        await _client.from('bills').select().eq('id', billId).maybeSingle();
     if (row == null) return null;
     return BillMapper.fromSupabaseRow(Map<String, dynamic>.from(row));
   }

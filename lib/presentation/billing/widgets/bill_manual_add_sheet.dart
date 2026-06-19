@@ -36,7 +36,7 @@ class _BillManualAddSheetState extends State<_BillManualAddSheet> {
   void _submit() {
     final name = _nameController.text.trim();
     final price = double.tryParse(_priceController.text) ?? 0;
-    final qty = int.tryParse(_qtyController.text) ?? 0;
+    final qty = double.tryParse(_qtyController.text) ?? 0.0;
     if (name.isEmpty || price <= 0 || qty <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Fill required fields')),

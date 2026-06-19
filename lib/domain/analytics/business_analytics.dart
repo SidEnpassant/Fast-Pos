@@ -59,7 +59,7 @@ class TopProductRow {
   });
 
   final String name;
-  final int unitsSold;
+  final double unitsSold;
   final double revenue;
 }
 
@@ -87,8 +87,8 @@ class InventoryProductRow {
 
   final String id;
   final String name;
-  final int stockQuantity;
-  final int minStockThreshold;
+  final double stockQuantity;
+  final double minStockThreshold;
   final double price;
   final bool isOutOfStock;
 
@@ -171,8 +171,7 @@ abstract final class BusinessAnalytics {
   static String monthKey(DateTime dt) =>
       DateFormat('MMM yyyy').format(dt.toLocal());
 
-  static DateTime _monthStart(DateTime ref) =>
-      DateTime(ref.year, ref.month, 1);
+  static DateTime _monthStart(DateTime ref) => DateTime(ref.year, ref.month, 1);
 
   static DateTime _previousMonth(DateTime ref) {
     final start = _monthStart(ref);
@@ -253,8 +252,7 @@ abstract final class BusinessAnalytics {
           e.category.trim().isEmpty ? 'Uncategorized' : e.category.trim();
       byCategory.update(cat, (v) => v + e.amount, ifAbsent: () => e.amount);
     }
-    final totalExp =
-        byCategory.values.fold<double>(0, (s, v) => s + v);
+    final totalExp = byCategory.values.fold<double>(0, (s, v) => s + v);
     return byCategory.entries
         .map(
           (e) => ExpenseCategoryRow(
@@ -281,7 +279,7 @@ abstract final class BusinessAnalytics {
     double revenuePrev = 0;
     int billsNow = 0;
     int billsPrev = 0;
-    
+
     final List<Bill> monthBills = [];
     final List<Bill> sortedBills = List<Bill>.from(bills)
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -305,9 +303,12 @@ abstract final class BusinessAnalytics {
     for (final e in expenses) {
       if (e.expenseDate.year == now.year && e.expenseDate.month == now.month) {
         expNow += e.amount;
-        final cat = e.category.trim().isEmpty ? 'Uncategorized' : e.category.trim();
-        categoriesNow.update(cat, (v) => v + e.amount, ifAbsent: () => e.amount);
-      } else if (e.expenseDate.year == prevMonth.year && e.expenseDate.month == prevMonth.month) {
+        final cat =
+            e.category.trim().isEmpty ? 'Uncategorized' : e.category.trim();
+        categoriesNow.update(cat, (v) => v + e.amount,
+            ifAbsent: () => e.amount);
+      } else if (e.expenseDate.year == prevMonth.year &&
+          e.expenseDate.month == prevMonth.month) {
         expPrev += e.amount;
       }
     }
@@ -317,21 +318,27 @@ abstract final class BusinessAnalytics {
     final avgBill = billsNow > 0 ? revenueNow / billsNow : 0.0;
 
     var complete = 0, partial = 0, pending = 0;
-    final productAgg = <String, ({int units, double revenue})>{};
+    final productAgg = <String, ({double units, double revenue})>{};
 
     for (final b in monthBills) {
       switch (b.paymentStatus.toLowerCase().trim()) {
-        case 'complete': complete++; break;
-        case 'partial': partial++; break;
-        default: pending++; break;
+        case 'complete':
+          complete++;
+          break;
+        case 'partial':
+          partial++;
+          break;
+        default:
+          pending++;
+          break;
       }
       for (final line in b.lineItems) {
         final name = line.productName.trim();
         if (name.isEmpty) continue;
         final cur = productAgg[name];
         productAgg[name] = (
-          units: (cur?.units ?? 0) + line.quantity,
-          revenue: (cur?.revenue ?? 0) + line.totalPrice,
+          units: (cur?.units ?? 0.0) + line.quantity,
+          revenue: (cur?.revenue ?? 0.0) + line.totalPrice,
         );
       }
     }
@@ -341,7 +348,8 @@ abstract final class BusinessAnalytics {
       return RecentBillRow(
         id: b.id,
         label: (num != null && num.isNotEmpty) ? '#$num' : 'Bill',
-        customerName: b.customerName.trim().isEmpty ? 'Walk-in' : b.customerName,
+        customerName:
+            b.customerName.trim().isEmpty ? 'Walk-in' : b.customerName,
         amount: BillRevenue.recognizedAmount(b),
         paymentStatus: b.paymentStatus,
         createdAt: BillRevenue.localCreatedDate(b),
@@ -349,17 +357,21 @@ abstract final class BusinessAnalytics {
     }).toList();
 
     final topProducts = productAgg.entries
-        .map((e) => TopProductRow(name: e.key, unitsSold: e.value.units, revenue: e.value.revenue))
-        .toList()..sort((a, b) => b.revenue.compareTo(a.revenue));
+        .map((e) => TopProductRow(
+            name: e.key, unitsSold: e.value.units, revenue: e.value.revenue))
+        .toList()
+      ..sort((a, b) => b.revenue.compareTo(a.revenue));
 
     final breakdown = categoriesNow.entries
         .map((e) => ExpenseCategoryRow(
             category: e.key,
             amount: e.value,
             sharePercent: expNow > 0 ? (e.value / expNow) * 100 : 0))
-        .toList()..sort((a, b) => b.amount.compareTo(a.amount));
+        .toList()
+      ..sort((a, b) => b.amount.compareTo(a.amount));
 
-    final activeProducts = products.where((p) => p.isActive && p.deletedAt == null);
+    final activeProducts =
+        products.where((p) => p.isActive && p.deletedAt == null);
     int out = 0, low = 0, healthy = 0;
     double retail = 0, cost = 0;
     final List<InventoryProductRow> lowItems = [];
@@ -367,18 +379,26 @@ abstract final class BusinessAnalytics {
     for (final p in activeProducts) {
       retail += p.price * p.stockQuantity;
       if (p.costPrice != null) cost += p.costPrice! * p.stockQuantity;
-      
+
       if (p.stockQuantity <= 0) {
         out++;
         lowItems.add(InventoryProductRow(
-          id: p.id, name: p.name, stockQuantity: p.stockQuantity,
-          minStockThreshold: p.minStockThreshold, price: p.price, isOutOfStock: true,
+          id: p.id,
+          name: p.name,
+          stockQuantity: p.stockQuantity,
+          minStockThreshold: p.minStockThreshold,
+          price: p.price,
+          isOutOfStock: true,
         ));
       } else if (p.isLowStock) {
         low++;
         lowItems.add(InventoryProductRow(
-          id: p.id, name: p.name, stockQuantity: p.stockQuantity,
-          minStockThreshold: p.minStockThreshold, price: p.price, isOutOfStock: false,
+          id: p.id,
+          name: p.name,
+          stockQuantity: p.stockQuantity,
+          minStockThreshold: p.minStockThreshold,
+          price: p.price,
+          isOutOfStock: false,
         ));
       } else {
         healthy++;
@@ -392,18 +412,23 @@ abstract final class BusinessAnalytics {
 
     return BusinessAnalyticsSnapshot(
       revenueTrend: MonthTrend(current: revenueNow, previous: revenuePrev),
-      billsTrend: MonthTrend(current: billsNow.toDouble(), previous: billsPrev.toDouble()),
+      billsTrend: MonthTrend(
+          current: billsNow.toDouble(), previous: billsPrev.toDouble()),
       expensesTrend: MonthTrend(current: expNow, previous: expPrev),
       profitTrend: MonthTrend(current: profitNow, previous: profitPrev),
       avgBillValueThisMonth: avgBill,
-      paymentMix: PaymentMixSnapshot(complete: complete, partial: partial, pending: pending),
+      paymentMix: PaymentMixSnapshot(
+          complete: complete, partial: partial, pending: pending),
       recentBills: recentRows,
       topProductsThisMonth: topProducts.take(8).toList(),
       expenseBreakdownThisMonth: breakdown,
       inventory: InventoryInsightsSnapshot(
         totalSkus: out + low + healthy,
-        outOfStock: out, lowStock: low, inStock: healthy,
-        retailValue: retail, costValue: cost,
+        outOfStock: out,
+        lowStock: low,
+        inStock: healthy,
+        retailValue: retail,
+        costValue: cost,
         lowStockItems: lowItems.take(20).toList(),
       ),
     );

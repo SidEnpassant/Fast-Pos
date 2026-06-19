@@ -16,7 +16,9 @@ class UrlLauncherOutboundAdapter implements OutboundMessagingPort {
       }
       final ok = await launchUrl(uri, mode: LaunchMode.externalApplication);
       if (!ok) {
-        return (failure: const AutomationLaunchFailed('Could not open messaging app'));
+        return (
+          failure: const AutomationLaunchFailed('Could not open messaging app')
+        );
       }
       return (failure: null);
     } catch (e) {

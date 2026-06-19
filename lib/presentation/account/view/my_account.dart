@@ -202,9 +202,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
                                   ? _str(fields, 'businessName')
                                   : 'Add business name',
                               icon: Icons.storefront_outlined,
-                              color: businessReady
-                                  ? Colors.teal
-                                  : Colors.orange,
+                              color:
+                                  businessReady ? Colors.teal : Colors.orange,
                             ),
                           ),
                         ),
@@ -322,7 +321,8 @@ class _MyAccountPageState extends State<MyAccountPage> {
                                 ),
                                 child: Icon(
                                   Icons.architecture_outlined,
-                                  color: Theme.of(context).colorScheme.secondary,
+                                  color:
+                                      Theme.of(context).colorScheme.secondary,
                                 ),
                               ),
                               const SizedBox(width: 14),
@@ -371,6 +371,47 @@ class _MyAccountPageState extends State<MyAccountPage> {
                       child: Column(
                         children: [
                           _AccountToolTile(
+                            icon: Icons.account_balance_wallet_outlined,
+                            iconColor: Colors.green,
+                            title: 'Tax & GST Settings',
+                            subtitle:
+                                'Configure GSTIN, state code & composition',
+                            onTap: () => context.push('/app/tax-settings'),
+                          ),
+                          const Divider(height: 20),
+                          _AccountToolTile(
+                            icon: Icons.loyalty_outlined,
+                            iconColor: Colors.amber,
+                            title: 'Loyalty Program',
+                            subtitle: 'Configure points and rewards',
+                            onTap: () => context.push('/loyalty-settings'),
+                          ),
+                          const Divider(height: 20),
+                          _AccountToolTile(
+                            icon: Icons.menu_book_outlined,
+                            iconColor: Colors.cyan.shade700,
+                            title: 'Day Book',
+                            subtitle: 'View daily cash transactions',
+                            onTap: () => context.push('/daybook'),
+                          ),
+                          const Divider(height: 20),
+                          _AccountToolTile(
+                            icon: Icons.local_shipping_outlined,
+                            iconColor: Colors.purple,
+                            title: 'Suppliers',
+                            subtitle: 'Manage vendors and suppliers',
+                            onTap: () => context.push('/suppliers'),
+                          ),
+                          const Divider(height: 20),
+                          _AccountToolTile(
+                            icon: Icons.shopping_cart_checkout_outlined,
+                            iconColor: Colors.pink,
+                            title: 'Purchase Orders',
+                            subtitle: 'Track restocking and costs',
+                            onTap: () => context.push('/purchase-orders'),
+                          ),
+                          const Divider(height: 20),
+                          _AccountToolTile(
                             icon: Icons.smart_toy_outlined,
                             iconColor: Colors.deepPurple,
                             title: 'Automations',
@@ -389,7 +430,6 @@ class _MyAccountPageState extends State<MyAccountPage> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    
                   ],
                 ),
               ),

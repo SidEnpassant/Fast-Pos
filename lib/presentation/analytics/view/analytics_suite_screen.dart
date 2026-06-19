@@ -11,6 +11,7 @@ import 'package:inventopos/presentation/analytics/widgets/analytics_overview_con
 import 'package:inventopos/presentation/analytics/widgets/analytics_pnl_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_revenue_content.dart';
 import 'package:inventopos/presentation/analytics/widgets/analytics_shimmer_placeholder.dart';
+
 class AnalyticsSuiteScreen extends StatefulWidget {
   const AnalyticsSuiteScreen({super.key});
 
@@ -51,10 +52,11 @@ class _AnalyticsSuiteScreenState extends State<AnalyticsSuiteScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Analytics',
-        style: TextStyle(
-          fontSize: 20,
-         ),
+        title: const Text(
+          'Analytics',
+          style: TextStyle(
+            fontSize: 20,
+          ),
         ),
         bottom: TabBar(
           controller: _tabs,

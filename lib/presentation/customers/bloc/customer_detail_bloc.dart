@@ -7,7 +7,8 @@ import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_event.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_state.dart';
 
-class CustomerDetailBloc extends Bloc<CustomerDetailEvent, CustomerDetailState> {
+class CustomerDetailBloc
+    extends Bloc<CustomerDetailEvent, CustomerDetailState> {
   CustomerDetailBloc(this._customers, this._bills)
       : super(const CustomerDetailState()) {
     on<CustomerDetailStarted>(_onStarted);

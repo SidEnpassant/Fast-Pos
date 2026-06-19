@@ -27,7 +27,11 @@ class ProductListTile extends StatelessWidget {
         : low
             ? Colors.orange.shade800
             : Colors.green.shade700;
-    final statusLabel = out ? 'Out' : low ? 'Low' : 'OK';
+    final statusLabel = out
+        ? 'Out'
+        : low
+            ? 'Low'
+            : 'OK';
     final fill = p.minStockThreshold > 0
         ? (p.stockQuantity / (p.minStockThreshold * 2)).clamp(0.0, 1.0)
         : 1.0;
@@ -55,7 +59,8 @@ class ProductListTile extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(10),
                         decoration: BoxDecoration(
-                          color: theme.colorScheme.primary.withValues(alpha: 0.1),
+                          color:
+                              theme.colorScheme.primary.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(AppRadii.md),
                         ),
                         child: Icon(

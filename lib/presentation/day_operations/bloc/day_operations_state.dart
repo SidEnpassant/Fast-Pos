@@ -47,6 +47,13 @@ class DayOperationsState extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [partialCount, pending, lowStockCount, billCount, revenue, expenseSpike, loading];
+  List<Object?> get props => [
+        partialCount,
+        pending,
+        lowStockCount,
+        billCount,
+        revenue,
+        expenseSpike,
+        loading
+      ];
 }

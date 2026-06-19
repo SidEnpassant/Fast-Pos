@@ -11,7 +11,8 @@ abstract final class BillSanityChecker {
   }) {
     final warnings = <String>[];
     if (lines.isEmpty) {
-      return const BillSanityResult(warnings: ['Bill has no lines'], blocked: true);
+      return const BillSanityResult(
+          warnings: ['Bill has no lines'], blocked: true);
     }
 
     final last7 = recentBills
@@ -20,8 +21,8 @@ abstract final class BillSanityChecker {
             ))
         .toList();
     if (last7.isNotEmpty) {
-      final avg =
-          last7.map((b) => b.totalAmount).reduce((a, b) => a + b) / last7.length;
+      final avg = last7.map((b) => b.totalAmount).reduce((a, b) => a + b) /
+          last7.length;
       if (avg > 0 && draftTotal > avg * 3) {
         warnings.add(
           'Total ₹${draftTotal.toStringAsFixed(0)} is over 3× your recent average (₹${avg.toStringAsFixed(0)})',

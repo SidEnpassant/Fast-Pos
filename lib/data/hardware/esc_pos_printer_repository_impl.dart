@@ -103,7 +103,8 @@ class EscPosPrinterRepositoryImpl implements PrinterRepository {
       'TOTAL: ${payload.totalAmount.toStringAsFixed(2)}',
       styles: const PosStyles(bold: true, align: PosAlign.right),
     ));
-    bytes.addAll(generator.text('Paid: ${payload.paidAmount.toStringAsFixed(2)}'));
+    bytes.addAll(
+        generator.text('Paid: ${payload.paidAmount.toStringAsFixed(2)}'));
     bytes.addAll(generator.text('Via: ${payload.paymentMethod}'));
     bytes.addAll(generator.feed(2));
     bytes.addAll(generator.cut());

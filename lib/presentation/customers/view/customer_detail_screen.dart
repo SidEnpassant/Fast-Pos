@@ -13,6 +13,7 @@ import 'package:inventopos/presentation/customers/bloc/customer_detail_bloc.dart
 import 'package:inventopos/presentation/customers/bloc/customer_detail_event.dart';
 import 'package:inventopos/presentation/customers/bloc/customer_detail_state.dart';
 import 'package:inventopos/presentation/customers/widgets/customer_detail_skeleton.dart';
+import 'package:inventopos/presentation/customers/widgets/customer_loyalty_card.dart';
 import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
@@ -110,6 +111,8 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                 ),
               ),
               const SizedBox(height: 12),
+              CustomerLoyaltyCard(customer: customer),
+              const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
@@ -164,8 +167,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                   .colorScheme
                                   .surfaceContainerHighest
                                   .withValues(alpha: 0.5),
-                              borderRadius:
-                                  BorderRadius.circular(AppRadii.md),
+                              borderRadius: BorderRadius.circular(AppRadii.md),
                               child: ListTile(
                                 shape: RoundedRectangleBorder(
                                   borderRadius:

@@ -66,11 +66,18 @@ class _IncompleteTransactionsScreenState
               builder: (context, txState) {
                 return AppScreenScaffold(
                   title: txState.isSearching ? null : 'Pending Transactions',
-                  titleWidget:
-                      txState.isSearching ? _buildSearchField(blocContext) : null,
+                  titleWidget: txState.isSearching
+                      ? _buildSearchField(blocContext)
+                      : null,
                   leading: IconButton(
                     icon: const Icon(Icons.arrow_back),
-                    onPressed: () => context.pop(),
+                    onPressed: () {
+                      if (context.canPop()) {
+                        context.pop();
+                      } else {
+                        context.go('/');
+                      }
+                    },
                   ),
                   actions: [
                     IconButton(
@@ -89,28 +96,28 @@ class _IncompleteTransactionsScreenState
                     IconButton(
                       icon: const Icon(Icons.calendar_today_outlined),
                       onPressed: () async {
-                          final lastSelectable = DateTime.now();
-                          final firstSelectable = DateTime(2000);
-                          final pickedDate = await showDatePicker(
-                            context: blocContext,
-                            initialDate: DatePickerUtils.clampInitial(
-                              preferred: txState.selectedDate,
-                              fallback: lastSelectable,
-                              first: firstSelectable,
-                              last: lastSelectable,
-                            ),
-                            firstDate: firstSelectable,
-                            lastDate: lastSelectable,
-                          );
+                        final lastSelectable = DateTime.now();
+                        final firstSelectable = DateTime(2000);
+                        final pickedDate = await showDatePicker(
+                          context: blocContext,
+                          initialDate: DatePickerUtils.clampInitial(
+                            preferred: txState.selectedDate,
+                            fallback: lastSelectable,
+                            first: firstSelectable,
+                            last: lastSelectable,
+                          ),
+                          firstDate: firstSelectable,
+                          lastDate: lastSelectable,
+                        );
 
-                          if (pickedDate != null) {
-                            if (!blocContext.mounted) return;
-                            blocContext
-                                .read<IncompleteTransactionsBloc>()
-                                .setSelectedDate(pickedDate);
-                          }
-                        },
-                      ),
+                        if (pickedDate != null) {
+                          if (!blocContext.mounted) return;
+                          blocContext
+                              .read<IncompleteTransactionsBloc>()
+                              .setSelectedDate(pickedDate);
+                        }
+                      },
+                    ),
                   ],
                   body: Builder(
                     builder: (bodyContext) {
@@ -226,7 +233,6 @@ class _IncompleteTransactionsScreenState
       ),
     );
   }
-
 }
 
 class _UpdatePaymentDialog extends StatefulWidget {

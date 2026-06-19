@@ -14,7 +14,8 @@ class BatchMessageQueueScreen extends StatefulWidget {
   const BatchMessageQueueScreen({super.key});
 
   @override
-  State<BatchMessageQueueScreen> createState() => _BatchMessageQueueScreenState();
+  State<BatchMessageQueueScreen> createState() =>
+      _BatchMessageQueueScreenState();
 }
 
 class _BatchMessageQueueScreenState extends State<BatchMessageQueueScreen> {
@@ -27,10 +28,12 @@ class _BatchMessageQueueScreenState extends State<BatchMessageQueueScreen> {
   Future<void> _requestQueue() async {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     final prefs = await context.read<ObserveAiPreferencesUseCase>()(uid).first;
-    final profileStream = context.read<ObserveProfileForCurrentUserUseCase>().call();
-    final profileList = profileStream != null ? await profileStream.first : null;
-    
-    final shopName = profileList != null && profileList.isNotEmpty 
+    final profileStream =
+        context.read<ObserveProfileForCurrentUserUseCase>().call();
+    final profileList =
+        profileStream != null ? await profileStream.first : null;
+
+    final shopName = profileList != null && profileList.isNotEmpty
         ? profileList.first.businessName ?? 'Our Shop'
         : 'Our Shop';
 

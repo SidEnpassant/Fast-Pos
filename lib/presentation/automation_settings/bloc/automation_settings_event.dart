@@ -21,7 +21,8 @@ final class AutomationSettingsEnabledToggled extends AutomationSettingsEvent {
   List<Object?> get props => [enabled];
 }
 
-final class AutomationSettingsDailyBriefToggled extends AutomationSettingsEvent {
+final class AutomationSettingsDailyBriefToggled
+    extends AutomationSettingsEvent {
   const AutomationSettingsDailyBriefToggled(this.enabled);
   final bool enabled;
   @override
@@ -35,21 +36,24 @@ final class AutomationSettingsReorderToggled extends AutomationSettingsEvent {
   List<Object?> get props => [enabled];
 }
 
-final class AutomationSettingsPartialBillToggled extends AutomationSettingsEvent {
+final class AutomationSettingsPartialBillToggled
+    extends AutomationSettingsEvent {
   const AutomationSettingsPartialBillToggled(this.enabled);
   final bool enabled;
   @override
   List<Object?> get props => [enabled];
 }
 
-final class AutomationSettingsCreditAlertsToggled extends AutomationSettingsEvent {
+final class AutomationSettingsCreditAlertsToggled
+    extends AutomationSettingsEvent {
   const AutomationSettingsCreditAlertsToggled(this.enabled);
   final bool enabled;
   @override
   List<Object?> get props => [enabled];
 }
 
-final class AutomationSettingsReceiptShareToggled extends AutomationSettingsEvent {
+final class AutomationSettingsReceiptShareToggled
+    extends AutomationSettingsEvent {
   const AutomationSettingsReceiptShareToggled(this.enabled);
   final bool enabled;
   @override
@@ -63,7 +67,8 @@ final class AutomationSettingsThankYouToggled extends AutomationSettingsEvent {
   List<Object?> get props => [enabled];
 }
 
-final class AutomationSettingsEodSummaryToggled extends AutomationSettingsEvent {
+final class AutomationSettingsEodSummaryToggled
+    extends AutomationSettingsEvent {
   const AutomationSettingsEodSummaryToggled(this.enabled);
   final bool enabled;
   @override
@@ -84,14 +89,16 @@ final class AutomationSettingsLanguageChanged extends AutomationSettingsEvent {
   List<Object?> get props => [language];
 }
 
-final class AutomationSettingsOwnerPhoneChanged extends AutomationSettingsEvent {
+final class AutomationSettingsOwnerPhoneChanged
+    extends AutomationSettingsEvent {
   const AutomationSettingsOwnerPhoneChanged(this.phone);
   final String phone;
   @override
   List<Object?> get props => [phone];
 }
 
-final class AutomationSettingsSupplierPhoneChanged extends AutomationSettingsEvent {
+final class AutomationSettingsSupplierPhoneChanged
+    extends AutomationSettingsEvent {
   const AutomationSettingsSupplierPhoneChanged(this.phone);
   final String phone;
   @override
@@ -102,7 +109,8 @@ final class AutomationSettingsSaveRequested extends AutomationSettingsEvent {
   const AutomationSettingsSaveRequested();
 }
 
-final class AutomationSettingsPreferencesReceived extends AutomationSettingsEvent {
+final class AutomationSettingsPreferencesReceived
+    extends AutomationSettingsEvent {
   const AutomationSettingsPreferencesReceived(this.preferences);
   final AiPreferences preferences;
   @override

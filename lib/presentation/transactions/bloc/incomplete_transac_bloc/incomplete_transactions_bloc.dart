@@ -10,8 +10,8 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_event.dart';
 import 'package:inventopos/presentation/transactions/bloc/incomplete_transac_bloc/incomplete_transactions_state.dart';
 
-class IncompleteTransactionsBloc extends Bloc<IncompleteTransactionsEvent,
-    IncompleteTransactionsViewState> {
+class IncompleteTransactionsBloc
+    extends Bloc<IncompleteTransactionsEvent, IncompleteTransactionsViewState> {
   IncompleteTransactionsBloc(
     this._observeBills,
     this._syncOverdue,
@@ -40,8 +40,7 @@ class IncompleteTransactionsBloc extends Bloc<IncompleteTransactionsEvent,
   void setSearchQuery(String q) =>
       add(IncompleteSearchQueryChanged(q.toLowerCase()));
 
-  void setSelectedDate(DateTime? d) =>
-      add(IncompleteSelectedDateChanged(d));
+  void setSelectedDate(DateTime? d) => add(IncompleteSelectedDateChanged(d));
 
   void toggleSearchMode() => add(const IncompleteSearchModeToggled());
 

@@ -5,6 +5,7 @@ import 'package:inventopos/core/utils/stream_utils.dart';
 import 'package:inventopos/data/local/hive/hive_boxes.dart';
 import 'package:inventopos/data/mappers/bill_mapper.dart';
 import 'package:inventopos/domain/entities/bill.dart';
+
 class HiveBillDao {
   Box<Map> get _box => Hive.box<Map>(HiveBoxes.bills);
 

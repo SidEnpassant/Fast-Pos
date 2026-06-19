@@ -3,31 +3,34 @@ import 'package:inventopos/domain/entities/bill.dart';
 
 class RepeatOrderAnalyzer {
   static RepeatOrderTemplate analyze(String customerId, List<Bill> history) {
-    final customerBills = history.where((b) => b.customerId == customerId).toList()
+    final customerBills = history
+        .where((b) => b.customerId == customerId)
+        .toList()
       ..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
     if (customerBills.isEmpty) {
       return RepeatOrderTemplate(customerId: customerId, items: const []);
     }
 
-    final Map<String, List<int>> productQtys = {};
+    final Map<String, List<double>> productQtys = {};
     final Map<String, double> lastPrices = {};
 
     for (final bill in customerBills.take(5)) {
       for (final item in bill.lineItems) {
         productQtys.putIfAbsent(item.productName, () => []).add(item.quantity);
-        lastPrices.putIfAbsent(item.productName, () => item.totalPrice / item.quantity);
+        lastPrices.putIfAbsent(
+            item.productName, () => item.totalPrice / item.quantity);
       }
     }
 
     final suggestions = productQtys.entries.map((e) {
       final name = e.key;
       final qtys = e.value;
-      final avgQty = (qtys.reduce((a, b) => a + b) / qtys.length).round();
+      final avgQty = (qtys.reduce((a, b) => a + b) / qtys.length).toDouble();
       return RepeatOrderItem(
         productName: name,
         lastPrice: lastPrices[name] ?? 0,
-        avgQuantity: avgQty > 0 ? avgQty : 1,
+        avgQuantity: avgQty > 0.01 ? avgQty : 1.0,
       );
     }).toList();
 

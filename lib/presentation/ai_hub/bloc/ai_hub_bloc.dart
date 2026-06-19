@@ -8,8 +8,7 @@ import 'package:inventopos/presentation/ai_hub/bloc/ai_hub_event.dart';
 import 'package:inventopos/presentation/ai_hub/bloc/ai_hub_state.dart';
 
 class AiHubBloc extends Bloc<AiHubEvent, AiHubState> {
-  AiHubBloc(this._observePrefs, this._insights)
-      : super(const AiHubState()) {
+  AiHubBloc(this._observePrefs, this._insights) : super(const AiHubState()) {
     on<AiHubStarted>(_onStarted);
     on<AiHubPreferencesReceived>(_onPrefs);
     on<AiHubUnreadCountReceived>(_onUnread);

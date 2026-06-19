@@ -38,9 +38,8 @@ class InventoryAutomationBloc
       return;
     }
     final alerts = await _evaluate(event.userId);
-    final visible = alerts
-        .where((a) => !state.dismissedIds.contains(a.productId))
-        .toList();
+    final visible =
+        alerts.where((a) => !state.dismissedIds.contains(a.productId)).toList();
     List<DeadStockAlert> dead = const [];
     List<MarginLeakAlert> margins = const [];
     if (AutomationPolicy.canRunDeadStockAlerts(prefs)) {
@@ -50,7 +49,8 @@ class InventoryAutomationBloc
       margins = await _marginLeaks(event.userId);
     }
     add(InventoryAutomationAlertsReceived(visible));
-    add(InventoryAutomationExtendedLoaded(deadStock: dead, marginLeaks: margins));
+    add(InventoryAutomationExtendedLoaded(
+        deadStock: dead, marginLeaks: margins));
   }
 
   void _onReceived(
@@ -76,9 +76,8 @@ class InventoryAutomationBloc
   ) {
     emit(state.copyWith(
       dismissedIds: {...state.dismissedIds, event.productId},
-      alerts: state.alerts
-          .where((a) => a.productId != event.productId)
-          .toList(),
+      alerts:
+          state.alerts.where((a) => a.productId != event.productId).toList(),
     ));
   }
 }

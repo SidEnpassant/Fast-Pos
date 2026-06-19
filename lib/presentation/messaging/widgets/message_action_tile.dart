@@ -24,8 +24,8 @@ class MessageActionTile extends StatelessWidget {
       child: ListTile(
         leading: CircleAvatar(
           backgroundColor: _colorFor(message.channel).withValues(alpha: 0.1),
-          child:
-              Icon(_iconFor(message.channel), color: _colorFor(message.channel)),
+          child: Icon(_iconFor(message.channel),
+              color: _colorFor(message.channel)),
         ),
         title: Text(message.recipientName ?? message.phone),
         subtitle: Text(
@@ -43,7 +43,7 @@ class MessageActionTile extends StatelessWidget {
     final uid = Supabase.instance.client.auth.currentUser?.id ?? '';
     final prefs = await context.read<ObserveAiPreferencesUseCase>()(uid).first;
     if (!context.mounted) return;
-    
+
     context.read<MessagingAutomationBloc>().add(
           MessagingPreviewRequested(message, prefs),
         );

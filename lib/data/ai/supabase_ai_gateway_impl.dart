@@ -14,7 +14,8 @@ class SupabaseAiGatewayImpl implements AiGatewayPort {
     required Map<String, dynamic> metrics,
   }) async {
     try {
-      final data = await _client.invoke('ai-briefing', body: {'metrics': metrics});
+      final data =
+          await _client.invoke('ai-briefing', body: {'metrics': metrics});
       final insights = (data['insights'] as List? ?? [])
           .map((e) => Map<String, dynamic>.from(e as Map))
           .map(
@@ -44,7 +45,8 @@ class SupabaseAiGatewayImpl implements AiGatewayPort {
   @override
   Future<AiResult<String>> completePrompt({required String prompt}) async {
     try {
-      final data = await _client.invoke('ai-complete', body: {'prompt': prompt});
+      final data =
+          await _client.invoke('ai-complete', body: {'prompt': prompt});
       return AiSuccess(data['answer']?.toString() ?? '');
     } on EdgeFunctionException catch (e) {
       return AiError(_fromEdge(e));

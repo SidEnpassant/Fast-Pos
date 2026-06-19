@@ -24,7 +24,8 @@ class TransactionBillActionsBloc
     TransactionBillReplaceSignedRequested event,
     Emitter<TransactionBillActionsState> emit,
   ) async {
-    emit(const TransactionBillActionsState(phase: TransactionBillActionsPhase.busy));
+    emit(const TransactionBillActionsState(
+        phase: TransactionBillActionsPhase.busy));
     try {
       await _replaceSignedBill(
         billId: event.billId,
@@ -50,14 +51,14 @@ class TransactionBillActionsBloc
     TransactionBillDeleteRequested event,
     Emitter<TransactionBillActionsState> emit,
   ) async {
-    emit(const TransactionBillActionsState(phase: TransactionBillActionsPhase.busy));
+    emit(const TransactionBillActionsState(
+        phase: TransactionBillActionsPhase.busy));
     try {
       await _deleteBill(event.billId);
       emit(
         const TransactionBillActionsState(
           phase: TransactionBillActionsPhase.success,
-          message:
-              'Transaction and associated bill deleted successfully',
+          message: 'Transaction and associated bill deleted successfully',
         ),
       );
     } catch (e) {

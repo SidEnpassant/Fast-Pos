@@ -8,7 +8,7 @@ class ReceiptLine extends Equatable {
   });
 
   final String name;
-  final int quantity;
+  final double quantity;
   final double total;
 
   @override

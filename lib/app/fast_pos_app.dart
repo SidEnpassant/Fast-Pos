@@ -10,18 +10,26 @@ import 'package:inventopos/application/ai/run_daily_business_brief_use_case.dart
 import 'package:inventopos/application/auth/sign_out_use_case.dart';
 import 'package:inventopos/application/automation/automation_use_cases.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
+import 'package:inventopos/application/daybook/compute_day_book_use_case.dart';
+import 'package:inventopos/application/daybook/record_cash_entry_use_case.dart';
 import 'package:inventopos/application/inventory/evaluate_reorder_alerts_use_case.dart';
 import 'package:inventopos/application/messaging/build_message_use_cases.dart';
 import 'package:inventopos/application/messaging/list_pending_message_actions_use_case.dart';
+import 'package:inventopos/application/returns/process_return_use_case.dart';
+import 'package:inventopos/application/stock_audit/complete_stock_audit_use_case.dart';
+import 'package:inventopos/application/stock_audit/start_stock_audit_use_case.dart';
 import 'package:inventopos/core/router/app_router.dart';
 import 'package:inventopos/core/theme/app_theme.dart';
 import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
+import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/customer_repository.dart';
 import 'package:inventopos/domain/repositories/expense_repository.dart';
+import 'package:inventopos/domain/repositories/loyalty_repository.dart';
 import 'package:inventopos/domain/repositories/notifications_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
+import 'package:inventopos/domain/repositories/stock_audit_repository.dart';
 import 'package:inventopos/domain/repositories/sync_repository.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
@@ -35,9 +43,14 @@ import 'package:inventopos/presentation/core/widgets/notification_bridge_listene
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
 import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_event.dart';
 import 'package:inventopos/presentation/day_operations/bloc/day_operations_bloc.dart';
+import 'package:inventopos/presentation/daybook/bloc/daybook_bloc.dart';
 import 'package:inventopos/presentation/insights/bloc/business_insights_ai_bloc.dart';
 import 'package:inventopos/presentation/inventory_automation/bloc/inventory_automation_bloc.dart';
+import 'package:inventopos/presentation/loyalty/bloc/loyalty_bloc.dart';
+import 'package:inventopos/presentation/loyalty/bloc/loyalty_event.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
+import 'package:inventopos/presentation/returns/bloc/return_bloc.dart';
+import 'package:inventopos/presentation/stock_audit/bloc/stock_audit_bloc.dart';
 
 /// Repositories + global Blocs — pass to [runApp].
 Widget fastPosRoot() {
@@ -114,6 +127,33 @@ Widget fastPosRoot() {
             buildThankYou: ctx.read<BuildPaymentThankYouMessageUseCase>(),
           ),
         ),
+        BlocProvider(
+          create: (ctx) => ReturnBloc(
+            ctx.read<BillsRepository>(),
+            ctx.read<ProcessReturnUseCase>(),
+            ctx.read<AuthRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (ctx) => StockAuditBloc(
+            stockAuditRepository: ctx.read<StockAuditRepository>(),
+            startStockAuditUseCase: ctx.read<StartStockAuditUseCase>(),
+            completeStockAuditUseCase: ctx.read<CompleteStockAuditUseCase>(),
+            authRepository: ctx.read<AuthRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (ctx) => DayBookBloc(
+            computeDayBook: ctx.read<ComputeDayBookUseCase>(),
+            recordCashEntry: ctx.read<RecordCashEntryUseCase>(),
+            auth: ctx.read<AuthRepository>(),
+          ),
+        ),
+        BlocProvider(
+          create: (ctx) => LoyaltyBloc(
+            repository: ctx.read<LoyaltyRepository>(),
+          ),
+        ),
       ],
       child: const FastPosApp(),
     ),
@@ -145,6 +185,9 @@ class _FastPosAppState extends State<FastPosApp> {
       if (uid != null) {
         context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
         context.read<ConnectivityBloc>().add(const ConnectivityStarted());
+        context.read<DayBookBloc>().add(DayBookStarted());
+        context.read<LoyaltyBloc>().add(LoadLoyaltyConfig(uid));
+        context.read<StockAuditBloc>().add(LoadStockAudits());
       }
     }
   }
@@ -169,6 +212,9 @@ class _FastPosAppState extends State<FastPosApp> {
           if (uid != null) {
             context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
             context.read<ConnectivityBloc>().add(const ConnectivityStarted());
+            context.read<DayBookBloc>().add(DayBookStarted());
+            context.read<LoyaltyBloc>().add(LoadLoyaltyConfig(uid));
+            context.read<StockAuditBloc>().add(LoadStockAudits());
           }
         }
       },

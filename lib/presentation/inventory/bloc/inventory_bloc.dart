@@ -78,7 +78,8 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     emit(
       state.copyWith(
         filter: event.filter,
-        filteredProducts: _apply(state.allProducts, state.copyWith(filter: event.filter)),
+        filteredProducts:
+            _apply(state.allProducts, state.copyWith(filter: event.filter)),
       ),
     );
   }
@@ -90,7 +91,8 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
     emit(
       state.copyWith(
         sort: event.sort,
-        filteredProducts: _apply(state.allProducts, state.copyWith(sort: event.sort)),
+        filteredProducts:
+            _apply(state.allProducts, state.copyWith(sort: event.sort)),
       ),
     );
   }
@@ -137,13 +139,12 @@ class InventoryBloc extends Bloc<InventoryEvent, InventoryState> {
   }
 
   List<Product> _apply(List<Product> products, InventoryState s) {
-    var list = products.where((p) => p.isActive || p.deletedAt == null).toList();
+    var list =
+        products.where((p) => p.isActive || p.deletedAt == null).toList();
 
     if (s.searchQuery.isNotEmpty) {
       final lower = s.searchQuery.toLowerCase();
-      list = list
-          .where((p) => p.name.toLowerCase().contains(lower))
-          .toList();
+      list = list.where((p) => p.name.toLowerCase().contains(lower)).toList();
     }
 
     switch (s.filter) {

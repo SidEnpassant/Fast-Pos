@@ -28,9 +28,7 @@ class AppPrimaryButton extends StatelessWidget {
       ],
     );
 
-    final child = isLoading
-        ? AppShimmer(child: labelWidget)
-        : labelWidget;
+    final child = isLoading ? AppShimmer(child: labelWidget) : labelWidget;
 
     return SizedBox(
       width: double.infinity,

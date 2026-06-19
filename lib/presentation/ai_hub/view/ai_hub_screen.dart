@@ -40,7 +40,8 @@ class _AiHubScreenState extends State<AiHubScreen> {
             return const AppSkeletonList(itemCount: 8);
           }
           if (!hub.aiEnabled) {
-            return _EnablePrompt(onSettings: () => context.push('/ai-settings'));
+            return _EnablePrompt(
+                onSettings: () => context.push('/ai-settings'));
           }
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
@@ -80,9 +81,8 @@ class _AiHubScreenState extends State<AiHubScreen> {
                           FilledButton(
                             onPressed: ins.loadingBrief
                                 ? null
-                                : () => context
-                                    .read<BusinessInsightsAiBloc>()
-                                    .add(const BusinessInsightsAiBriefingRequested()),
+                                : () => context.read<BusinessInsightsAiBloc>().add(
+                                    const BusinessInsightsAiBriefingRequested()),
                             child: const Text('Refresh brief'),
                           ),
                         ],

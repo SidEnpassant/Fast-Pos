@@ -29,9 +29,8 @@ class AccountState extends Equatable {
       mutationBusy: mutationBusy ?? this.mutationBusy,
       feedbackMessage:
           clearFeedback ? null : (feedbackMessage ?? this.feedbackMessage),
-      feedbackIsError: clearFeedback
-          ? false
-          : (feedbackIsError ?? this.feedbackIsError),
+      feedbackIsError:
+          clearFeedback ? false : (feedbackIsError ?? this.feedbackIsError),
     );
   }
 

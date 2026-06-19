@@ -86,9 +86,8 @@ class _InventoryScreenState extends State<InventoryScreen> {
             (s, p) => s + p.price * p.stockQuantity,
           );
           final lowCount = state.lowStockProducts.length;
-          final outCount = state.allProducts
-              .where((p) => p.stockQuantity <= 0)
-              .length;
+          final outCount =
+              state.allProducts.where((p) => p.stockQuantity <= 0).length;
 
           return CustomScrollView(
             slivers: [

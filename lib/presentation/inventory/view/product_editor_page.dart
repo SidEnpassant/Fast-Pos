@@ -7,6 +7,7 @@ import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/core/widgets/m3/app_section_card.dart';
 import 'package:inventopos/core/widgets/shimmer/app_shimmer.dart';
 import 'package:inventopos/domain/entities/product.dart';
+import 'package:inventopos/domain/inventory/unit_of_measure.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/product_repository.dart';
 
@@ -27,6 +28,11 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
   final _costController = TextEditingController();
   final _stockController = TextEditingController(text: '0');
   final _minStockController = TextEditingController(text: '5');
+  final _conversionController = TextEditingController();
+  final _hsnController = TextEditingController();
+  final _gstController = TextEditingController(text: '0');
+
+  UnitOfMeasure _uom = UnitOfMeasure.piece;
   String? _barcode;
   bool _isActive = true;
   bool _saving = false;
@@ -58,6 +64,10 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
       _minStockController.text = p.minStockThreshold.toString();
       _barcode = p.barcode;
       _isActive = p.isActive;
+      _uom = UnitOfMeasureX.fromString(p.uom);
+      _conversionController.text = p.conversionFactor?.toString() ?? '';
+      _hsnController.text = p.hsnCode ?? '';
+      _gstController.text = p.gstPercent.toString();
     });
   }
 
@@ -70,6 +80,9 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
     _costController.dispose();
     _stockController.dispose();
     _minStockController.dispose();
+    _conversionController.dispose();
+    _hsnController.dispose();
+    _gstController.dispose();
     super.dispose();
   }
 
@@ -83,8 +96,8 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
     if (uid == null) return;
     final name = _nameController.text.trim();
     final price = double.tryParse(_priceController.text) ?? 0;
-    final stock = int.tryParse(_stockController.text) ?? 0;
-    final minStock = int.tryParse(_minStockController.text) ?? 0;
+    final stock = double.tryParse(_stockController.text) ?? 0.0;
+    final minStock = double.tryParse(_minStockController.text) ?? 5.0;
     if (name.isEmpty || price <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Name and price required')),
@@ -115,6 +128,12 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
             isActive: _isActive,
             velocityEma: _existing!.velocityEma,
             updatedAt: DateTime.now(),
+            uom: _uom.name,
+            conversionFactor: double.tryParse(_conversionController.text),
+            hsnCode: _hsnController.text.trim().isEmpty
+                ? null
+                : _hsnController.text.trim(),
+            gstPercent: double.tryParse(_gstController.text) ?? 0.0,
           ),
         );
       } else {
@@ -132,6 +151,12 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
           category: _categoryController.text.trim().isEmpty
               ? null
               : _categoryController.text.trim(),
+          uom: _uom.name,
+          conversionFactor: double.tryParse(_conversionController.text),
+          hsnCode: _hsnController.text.trim().isEmpty
+              ? null
+              : _hsnController.text.trim(),
+          gstPercent: double.tryParse(_gstController.text) ?? 0.0,
         );
       }
       if (mounted) context.pop();
@@ -204,7 +229,7 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
           ),
           const SizedBox(height: 12),
           AppSectionCard(
-            title: 'Pricing',
+            title: 'Pricing & Tax',
             child: Column(
               children: [
                 TextField(
@@ -224,23 +249,69 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
                   ),
                   keyboardType: TextInputType.number,
                 ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: _hsnController,
+                        decoration:
+                            _fieldDecoration.copyWith(labelText: 'HSN Code'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: TextField(
+                        controller: _gstController,
+                        decoration: _fieldDecoration.copyWith(
+                          labelText: 'GST %',
+                          suffixText: '%',
+                        ),
+                        keyboardType: TextInputType.number,
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),
           const SizedBox(height: 12),
           AppSectionCard(
-            title: 'Stock',
+            title: 'Stock & Units',
             child: Column(
               children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: DropdownButtonFormField<UnitOfMeasure>(
+                        initialValue: _uom,
+                        decoration:
+                            _fieldDecoration.copyWith(labelText: 'Unit (UOM)'),
+                        items: UnitOfMeasure.values.map((u) {
+                          return DropdownMenuItem(
+                            value: u,
+                            child: Text(u.name.toUpperCase()),
+                          );
+                        }).toList(),
+                        onChanged: (v) {
+                          if (v != null) setState(() => _uom = v);
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: TextField(
                         controller: _stockController,
                         decoration: _fieldDecoration.copyWith(
-                          labelText: 'Stock',
+                          labelText: 'Initial Stock',
+                          suffixText: _uom.symbol,
                         ),
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                     ),
                     const SizedBox(width: 12),
@@ -250,16 +321,28 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
                         decoration: _fieldDecoration.copyWith(
                           labelText: 'Min stock',
                         ),
-                        keyboardType: TextInputType.number,
+                        keyboardType: const TextInputType.numberWithOptions(
+                            decimal: true),
                       ),
                     ),
                   ],
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _conversionController,
+                  decoration: _fieldDecoration.copyWith(
+                    labelText: 'Conversion Factor (Optional)',
+                    hintText: 'e.g. 12 for dozen to piece',
+                  ),
+                  keyboardType:
+                      const TextInputType.numberWithOptions(decimal: true),
                 ),
                 const SizedBox(height: 8),
                 SwitchListTile(
                   contentPadding: EdgeInsets.zero,
                   title: const Text('Active'),
-                  subtitle: const Text('Inactive products are hidden from billing'),
+                  subtitle:
+                      const Text('Inactive products are hidden from billing'),
                   value: _isActive,
                   onChanged: (v) => setState(() => _isActive = v),
                 ),

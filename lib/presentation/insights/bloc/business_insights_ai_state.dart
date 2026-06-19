@@ -41,6 +41,12 @@ class BusinessInsightsAiState extends Equatable {
       );
 
   @override
-  List<Object?> get props =>
-      [briefing, insights, loadingBrief, loadingInsights, error, lastGeneratedAt];
+  List<Object?> get props => [
+        briefing,
+        insights,
+        loadingBrief,
+        loadingInsights,
+        error,
+        lastGeneratedAt
+      ];
 }

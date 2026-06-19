@@ -54,21 +54,23 @@ Future<void> showProductFormDialog(BuildContext context) async {
           ),
           FilledButton(
             onPressed: () async {
-              final uid =
-                  context.read<AuthRepository>().currentSession?.userId;
+              final uid = context.read<AuthRepository>().currentSession?.userId;
               if (uid == null) return;
-              final product = await context.read<ProductRepository>().createProduct(
-                    userId: uid,
-                    name: nameCtrl.text.trim(),
-                    barcode: barcodeCtrl.text.trim().isEmpty
-                        ? null
-                        : barcodeCtrl.text.trim(),
-                    price: double.tryParse(priceCtrl.text) ?? 0,
-                    stockQuantity: int.tryParse(stockCtrl.text) ?? 0,
-                    minStockThreshold: int.tryParse(minCtrl.text) ?? 5,
-                  );
+              final product =
+                  await context.read<ProductRepository>().createProduct(
+                        userId: uid,
+                        name: nameCtrl.text.trim(),
+                        barcode: barcodeCtrl.text.trim().isEmpty
+                            ? null
+                            : barcodeCtrl.text.trim(),
+                        price: double.tryParse(priceCtrl.text) ?? 0.0,
+                        stockQuantity: double.tryParse(stockCtrl.text) ?? 0.0,
+                        minStockThreshold: double.tryParse(minCtrl.text) ?? 5.0,
+                      );
               if (ctx.mounted) {
-                context.read<InventoryBloc>().add(InventoryProductSaved(product));
+                context
+                    .read<InventoryBloc>()
+                    .add(InventoryProductSaved(product));
                 Navigator.pop(ctx);
               }
             },

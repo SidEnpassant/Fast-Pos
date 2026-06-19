@@ -59,41 +59,41 @@ class AutomationSettingsBloc
     emit(state.copyWith(preferences: patch(p), saved: false));
   }
 
-  void _onEnabled(
-      AutomationSettingsEnabledToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onEnabled(AutomationSettingsEnabledToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(enabled: e.enabled));
-  void _onDailyBrief(
-      AutomationSettingsDailyBriefToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onDailyBrief(AutomationSettingsDailyBriefToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(dailyBriefEnabled: e.enabled));
-  void _onReorder(
-      AutomationSettingsReorderToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onReorder(AutomationSettingsReorderToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(reorderAlertsEnabled: e.enabled));
-  void _onPartial(
-      AutomationSettingsPartialBillToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onPartial(AutomationSettingsPartialBillToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(partialBillRemindersEnabled: e.enabled));
-  void _onCredit(
-      AutomationSettingsCreditAlertsToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onCredit(AutomationSettingsCreditAlertsToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(creditAlertsEnabled: e.enabled));
-  void _onReceipt(
-      AutomationSettingsReceiptShareToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onReceipt(AutomationSettingsReceiptShareToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(autoReceiptShareEnabled: e.enabled));
-  void _onThankYou(
-      AutomationSettingsThankYouToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onThankYou(AutomationSettingsThankYouToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(paymentThankYouEnabled: e.enabled));
-  void _onEod(
-      AutomationSettingsEodSummaryToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onEod(AutomationSettingsEodSummaryToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(eodSummaryEnabled: e.enabled));
-  void _onEnhanced(
-      AutomationSettingsEnhancedToggled e, Emitter<AutomationSettingsState> s) =>
+  void _onEnhanced(AutomationSettingsEnhancedToggled e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(enhancedContext: e.enabled));
-  void _onLanguage(
-      AutomationSettingsLanguageChanged e, Emitter<AutomationSettingsState> s) =>
+  void _onLanguage(AutomationSettingsLanguageChanged e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(language: e.language));
-  void _onOwnerPhone(
-      AutomationSettingsOwnerPhoneChanged e, Emitter<AutomationSettingsState> s) =>
+  void _onOwnerPhone(AutomationSettingsOwnerPhoneChanged e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(ownerWhatsAppPhone: e.phone));
-  void _onSupplierPhone(
-      AutomationSettingsSupplierPhoneChanged e, Emitter<AutomationSettingsState> s) =>
+  void _onSupplierPhone(AutomationSettingsSupplierPhoneChanged e,
+          Emitter<AutomationSettingsState> s) =>
       _patch(s, (p) => p.copyWith(supplierWhatsAppPhone: e.phone));
 
   Future<void> _onSave(

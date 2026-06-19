@@ -8,14 +8,12 @@ abstract final class AppBreakpoints {
   static double widthOf(BuildContext context) =>
       MediaQuery.sizeOf(context).width;
 
-  static bool isCompact(BuildContext context) =>
-      widthOf(context) < tablet;
+  static bool isCompact(BuildContext context) => widthOf(context) < tablet;
 
   static bool isMediumOrWider(BuildContext context) =>
       widthOf(context) >= tablet;
 
-  static bool isDesktop(BuildContext context) =>
-      widthOf(context) >= desktop;
+  static bool isDesktop(BuildContext context) => widthOf(context) >= desktop;
 
   /// Responsive grid columns for stat cards and similar.
   static int gridCrossAxisCount(

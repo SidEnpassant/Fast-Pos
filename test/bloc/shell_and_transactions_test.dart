@@ -16,23 +16,24 @@ class _StubBillsRepo implements BillsRepository {
 
   @override
   Stream<List<Bill>> watchBillsForCurrentUser() => _stream;
-
-  @override
-  Future<String> createBill({
-    required String businessName,
-    required String customerName,
-    required String customerPhone,
-    required List<Map<String, dynamic>> productsJson,
-    required double totalAmount,
-    required double paidAmount,
-    required String paymentMethod,
-    required String paymentStatus,
-    String? clientId,
-    String? customerId,
-    List<Map<String, dynamic>>? discountBreakdown,
-    String? contentHash,
-  }) =>
-      throw UnimplementedError();
+@override
+Future<String> createBill({
+  required String businessName,
+  String? clientId,
+  String? contentHash,
+  String? customerId,
+  required String customerName,
+  required String customerPhone,
+  List<Map<String, dynamic>>? discountBreakdown,
+  String invoiceType = 'tax_invoice',
+  required double paidAmount,
+  required String paymentMethod,
+  required String paymentStatus,
+  required List<Map<String, dynamic>> productsJson,
+  double taxAmount = 0.0,
+  required double totalAmount,
+}) async =>
+    'b-123';
 
   @override
   Future<String> nextBillSequenceNumber() => throw UnimplementedError();

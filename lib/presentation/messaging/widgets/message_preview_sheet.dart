@@ -30,7 +30,8 @@ class _MessagePreviewBodyState extends State<_MessagePreviewBody> {
   @override
   void initState() {
     super.initState();
-    final body = context.read<MessagingAutomationBloc>().state.preview?.body ?? '';
+    final body =
+        context.read<MessagingAutomationBloc>().state.preview?.body ?? '';
     _controller = TextEditingController(text: body);
   }
 
@@ -86,22 +87,27 @@ class _MessagePreviewBodyState extends State<_MessagePreviewBody> {
                   ChoiceChip(
                     label: const Text('WhatsApp'),
                     selected: preview.channel == MessageChannel.whatsapp,
-                    onSelected: (_) => context.read<MessagingAutomationBloc>().add(
-                          const MessagingChannelChanged(MessageChannel.whatsapp),
-                        ),
+                    onSelected: (_) =>
+                        context.read<MessagingAutomationBloc>().add(
+                              const MessagingChannelChanged(
+                                  MessageChannel.whatsapp),
+                            ),
                   ),
                   ChoiceChip(
                     label: const Text('SMS'),
                     selected: preview.channel == MessageChannel.sms,
-                    onSelected: (_) => context.read<MessagingAutomationBloc>().add(
-                          const MessagingChannelChanged(MessageChannel.sms),
-                        ),
+                    onSelected: (_) =>
+                        context.read<MessagingAutomationBloc>().add(
+                              const MessagingChannelChanged(MessageChannel.sms),
+                            ),
                   ),
                 ],
               ),
               if (state.error != null) ...[
                 const SizedBox(height: 8),
-                Text(state.error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(state.error!,
+                    style:
+                        TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: 12),
               FilledButton(

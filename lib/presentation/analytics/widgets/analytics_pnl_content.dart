@@ -75,8 +75,8 @@ class AnalyticsPnLContent extends StatelessWidget {
                     Text(
                       'Log rent, salaries, utilities, and supplies to see margin accurately.',
                       style: theme.textTheme.bodySmall?.copyWith(
-                            color: theme.colorScheme.onSurfaceVariant,
-                          ),
+                        color: theme.colorScheme.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 )

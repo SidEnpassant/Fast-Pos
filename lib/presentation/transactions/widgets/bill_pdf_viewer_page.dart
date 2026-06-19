@@ -22,7 +22,7 @@ Future<void> openBillPdf(BuildContext context, String? pdfUrl) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) =>  Center(
+    builder: (ctx) => Center(
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -83,7 +83,7 @@ Future<void> openBillPdfForBill(BuildContext context, Bill bill) async {
   showDialog<void>(
     context: context,
     barrierDismissible: false,
-    builder: (ctx) =>  Center(
+    builder: (ctx) => Center(
       child: Card(
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -164,7 +164,7 @@ class BillPdfViewerPage extends StatelessWidget {
       openBillPdf(context, pdfUrl);
       Navigator.pop(context);
     });
-    return  Scaffold(
+    return Scaffold(
       body: Center(
         child: AppShimmer(
           child: Column(

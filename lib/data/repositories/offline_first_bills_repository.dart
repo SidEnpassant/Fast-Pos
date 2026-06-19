@@ -128,6 +128,8 @@ class OfflineFirstBillsRepository implements BillsRepository {
     String? customerId,
     List<Map<String, dynamic>>? discountBreakdown,
     String? contentHash,
+    double taxAmount = 0.0,
+    String invoiceType = 'tax_invoice',
   }) async {
     final uid = _userId;
     if (uid == null) throw StateError('User not authenticated');
@@ -135,12 +137,16 @@ class OfflineFirstBillsRepository implements BillsRepository {
     final localId = clientId ?? _uuid.v4();
     final now = DateTime.now();
     final lineItems = productsJson.map((p) {
-      final qty = (p['quantity'] as num?)?.toInt() ?? 1;
-      final price = (p['price'] as num?)?.toDouble() ?? 0;
+      final qty = (p['quantity'] as num?)?.toDouble() ?? 1.0;
+      final price = (p['price'] as num?)?.toDouble() ?? 0.0;
       return BillLineItem(
         productName: p['name']?.toString() ?? '',
         quantity: qty,
         totalPrice: price * qty,
+        gstPercent: (p['gst_percent'] as num?)?.toDouble(),
+        hsnCode: p['hsn_code']?.toString(),
+        taxAmount: (p['tax_amount'] as num?)?.toDouble() ?? 0.0,
+        uom: p['uom']?.toString() ?? 'piece',
       );
     }).toList();
 
@@ -156,6 +162,8 @@ class OfflineFirstBillsRepository implements BillsRepository {
       paymentStatus: paymentStatus,
       createdAt: now,
       lineItems: lineItems,
+      taxAmount: taxAmount,
+      invoiceType: invoiceType,
     );
 
     await _local.putFromBill(
@@ -180,6 +188,8 @@ class OfflineFirstBillsRepository implements BillsRepository {
         if (customerId != null) 'customer_id': customerId,
         if (discountBreakdown != null) 'discount_breakdown': discountBreakdown,
         if (contentHash != null) 'content_hash': contentHash,
+        if (taxAmount > 0) 'tax_amount': taxAmount,
+        if (invoiceType != 'tax_invoice') 'invoice_type': invoiceType,
       },
     );
 

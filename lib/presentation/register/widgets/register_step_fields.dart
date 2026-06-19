@@ -13,7 +13,8 @@ InputDecoration _authFieldDecoration({
     labelText: label,
     prefixIcon: Icon(icon),
     suffixIcon: suffix,
-    border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
+    border:
+        OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadii.md)),
   );
 }
 

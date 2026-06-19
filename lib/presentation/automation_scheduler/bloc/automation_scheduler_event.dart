@@ -21,7 +21,8 @@ final class AutomationSchedulerJobToggled extends AutomationSchedulerEvent {
   List<Object?> get props => [jobId, enabled];
 }
 
-final class AutomationSchedulerRefreshRequested extends AutomationSchedulerEvent {
+final class AutomationSchedulerRefreshRequested
+    extends AutomationSchedulerEvent {
   const AutomationSchedulerRefreshRequested();
 }
 

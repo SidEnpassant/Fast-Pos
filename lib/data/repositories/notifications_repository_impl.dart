@@ -40,7 +40,8 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   }
 
   @override
-  Future<List<PosNotification>> fetchSince(String userId, DateTime since) async {
+  Future<List<PosNotification>> fetchSince(
+      String userId, DateTime since) async {
     final rows = await _client
         .from('notifications')
         .select()

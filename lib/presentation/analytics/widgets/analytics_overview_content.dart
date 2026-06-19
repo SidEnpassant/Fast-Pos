@@ -84,9 +84,8 @@ class AnalyticsOverviewContent extends StatelessWidget {
                   : null,
               icon: Icons.warning_amber,
               color: Colors.red,
-              onTap: lowStockCount > 0
-                  ? () => context.go('/app/inventory')
-                  : null,
+              onTap:
+                  lowStockCount > 0 ? () => context.go('/app/inventory') : null,
             ),
           ],
         ),
@@ -121,9 +120,8 @@ class AnalyticsOverviewContent extends StatelessWidget {
                     dense: true,
                     leading: CircleAvatar(
                       radius: 18,
-                      backgroundColor: Theme.of(context)
-                          .colorScheme
-                          .primaryContainer,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.primaryContainer,
                       child: Icon(
                         Icons.receipt,
                         size: 18,

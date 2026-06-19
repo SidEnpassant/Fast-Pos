@@ -225,11 +225,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               emailController: _emailController,
                               passwordController: _passwordController,
                               obscurePassword: state.obscurePassword,
-                              onTogglePassword: () => context
-                                  .read<RegisterBloc>()
-                                  .add(
-                                    const RegisterPasswordVisibilityToggled(),
-                                  ),
+                              onTogglePassword: () =>
+                                  context.read<RegisterBloc>().add(
+                                        const RegisterPasswordVisibilityToggled(),
+                                      ),
                             ),
                             RegisterStepBusinessFields(
                               businessNameController: _businessNameController,

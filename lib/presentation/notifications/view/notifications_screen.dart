@@ -13,10 +13,11 @@ class NotificationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notifications',
-        style: TextStyle(
-          fontSize: 20,
-         ),
+        title: const Text(
+          'Notifications',
+          style: TextStyle(
+            fontSize: 20,
+          ),
         ),
       ),
       body: BlocBuilder<NotificationsBloc, NotificationsViewState>(

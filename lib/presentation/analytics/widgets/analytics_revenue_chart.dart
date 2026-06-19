@@ -124,8 +124,7 @@ class AnalyticsRevenueChart extends StatelessWidget {
                           radius: 4,
                           color: Theme.of(context).colorScheme.surface,
                           strokeWidth: 2,
-                          strokeColor:
-                              Theme.of(context).colorScheme.primary,
+                          strokeColor: Theme.of(context).colorScheme.primary,
                         ),
                       ),
                       belowBarData: BarAreaData(
@@ -169,9 +168,12 @@ class _BarChart extends StatelessWidget {
         gridData: const FlGridData(show: false),
         borderData: FlBorderData(show: false),
         titlesData: FlTitlesData(
-          leftTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          leftTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          rightTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+          topTitles:
+              const AxisTitles(sideTitles: SideTitles(showTitles: false)),
           bottomTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,

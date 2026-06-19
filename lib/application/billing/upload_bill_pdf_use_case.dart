@@ -127,8 +127,7 @@ class UploadBillPdfUseCase {
 
   bool _isRetryableStorageError(StorageException e) {
     final msg = e.message.toLowerCase();
-    return e.statusCode == 403 ||
-        e.statusCode == '403' ||
+    return e.statusCode == '403' ||
         msg.contains('row-level security') ||
         msg.contains('unauthorized') ||
         msg.contains('already exists');

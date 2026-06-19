@@ -47,7 +47,8 @@ class HiveOutboxDao {
         .where((m) => m['user_id'] == userId && m['status'] == 'pending')
         .toList()
       ..sort(
-        (a, b) => (a['created_at'] as String).compareTo(b['created_at'] as String),
+        (a, b) =>
+            (a['created_at'] as String).compareTo(b['created_at'] as String),
       );
   }
 

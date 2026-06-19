@@ -102,7 +102,8 @@ class AppSkeletonList extends StatelessWidget {
       itemCount: itemCount,
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      itemBuilder: itemBuilder ?? (context, index) => const AppListTileSkeleton(),
+      itemBuilder:
+          itemBuilder ?? (context, index) => const AppListTileSkeleton(),
     );
   }
 }

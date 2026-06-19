@@ -26,9 +26,7 @@ class AppSyncStatusChip extends StatelessWidget {
           color: offline ? theme.colorScheme.error : theme.colorScheme.tertiary,
         ),
         label: Text(
-          offline
-              ? 'Offline'
-              : '$pendingCount pending sync',
+          offline ? 'Offline' : '$pendingCount pending sync',
           style: theme.textTheme.labelSmall,
         ),
         backgroundColor: offline

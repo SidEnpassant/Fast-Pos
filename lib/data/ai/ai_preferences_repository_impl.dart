@@ -107,7 +107,8 @@ class AiPreferencesRepositoryImpl implements AiPreferencesPort {
         eodSummaryEnabled: m['eod_summary_enabled'] as bool? ?? true,
         openingSnapshotEnabled: m['opening_snapshot_enabled'] as bool? ?? true,
         repeatOrderEnabled: m['repeat_order_enabled'] as bool? ?? true,
-        autoReceiptShareEnabled: m['auto_receipt_share_enabled'] as bool? ?? false,
+        autoReceiptShareEnabled:
+            m['auto_receipt_share_enabled'] as bool? ?? false,
         paymentThankYouEnabled: m['payment_thank_you_enabled'] as bool? ?? true,
         expenseAlertsEnabled: m['expense_alerts_enabled'] as bool? ?? true,
         weeklyDigestEnabled: m['weekly_digest_enabled'] as bool? ?? true,

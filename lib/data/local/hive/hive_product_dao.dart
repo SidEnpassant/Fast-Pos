@@ -47,9 +47,8 @@ class HiveProductDao {
 
     for (final p in products) {
       final prefix = '${p.userId}:${p.id}:';
-      final toDelete = _tokens.keys
-          .where((k) => k.toString().startsWith(prefix))
-          .toList();
+      final toDelete =
+          _tokens.keys.where((k) => k.toString().startsWith(prefix)).toList();
       allKeysToDelete.addAll(toDelete);
 
       for (final token in InvertedIndexBuilder.tokenize(p.name)) {
@@ -110,17 +109,13 @@ class HiveProductDao {
     final ranked = scores.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
-    return ranked
-        .map((e) => findById(e.key))
-        .whereType<Product>()
-        .toList();
+    return ranked.map((e) => findById(e.key)).whereType<Product>().toList();
   }
 
   Future<void> _rebuildTokens(Product p) async {
     final prefix = '${p.userId}:${p.id}:';
-    final toDelete = _tokens.keys
-        .where((k) => k.toString().startsWith(prefix))
-        .toList();
+    final toDelete =
+        _tokens.keys.where((k) => k.toString().startsWith(prefix)).toList();
     for (final k in toDelete) {
       await _tokens.delete(k);
     }

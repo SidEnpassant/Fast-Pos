@@ -170,7 +170,8 @@ class _ExpensesScreenState extends State<ExpensesScreen> {
                               color: Theme.of(context).colorScheme.error,
                               alignment: Alignment.centerRight,
                               padding: const EdgeInsets.only(right: 16),
-                              child: const Icon(Icons.delete, color: Colors.white),
+                              child:
+                                  const Icon(Icons.delete, color: Colors.white),
                             ),
                             child: Card(
                               margin: const EdgeInsets.only(bottom: 8),

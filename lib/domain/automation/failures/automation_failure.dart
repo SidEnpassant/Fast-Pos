@@ -9,7 +9,8 @@ sealed class AutomationFailure extends Equatable {
 }
 
 final class AutomationConsentDenied extends AutomationFailure {
-  const AutomationConsentDenied() : super('Automations are disabled in settings');
+  const AutomationConsentDenied()
+      : super('Automations are disabled in settings');
 }
 
 final class AutomationLaunchFailed extends AutomationFailure {

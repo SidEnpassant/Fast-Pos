@@ -12,7 +12,7 @@ abstract final class VelocityCalculator {
   }
 
   static double daysRemaining({
-    required int stockQuantity,
+    required double stockQuantity,
     required double velocity,
   }) {
     if (velocity <= 0) return double.infinity;
@@ -20,7 +20,7 @@ abstract final class VelocityCalculator {
   }
 
   static bool shouldReorder({
-    required int stockQuantity,
+    required double stockQuantity,
     required double velocity,
     double thresholdDays = defaultReorderDaysThreshold,
   }) {

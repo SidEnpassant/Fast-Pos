@@ -28,7 +28,8 @@ final class BusinessInsightsAiStarted extends BusinessInsightsAiEvent {
   List<Object?> get props => [userId, bills, expenses, products];
 }
 
-final class BusinessInsightsAiBriefingRequested extends BusinessInsightsAiEvent {
+final class BusinessInsightsAiBriefingRequested
+    extends BusinessInsightsAiEvent {
   const BusinessInsightsAiBriefingRequested();
 }
 
@@ -49,7 +50,8 @@ final class BusinessInsightsAiInsightsReceived extends BusinessInsightsAiEvent {
   List<Object?> get props => [insights];
 }
 
-final class BusinessInsightsAiInsightMarkedRead extends BusinessInsightsAiEvent {
+final class BusinessInsightsAiInsightMarkedRead
+    extends BusinessInsightsAiEvent {
   const BusinessInsightsAiInsightMarkedRead(this.insightId);
   final String insightId;
 

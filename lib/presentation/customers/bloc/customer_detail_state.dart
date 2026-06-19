@@ -13,8 +13,7 @@ class CustomerDetailState extends Equatable {
   final List<Bill> bills;
   final bool loading;
 
-  double get totalSpent =>
-      bills.fold(0.0, (s, b) => s + b.totalAmount);
+  double get totalSpent => bills.fold(0.0, (s, b) => s + b.totalAmount);
 
   CustomerDetailState copyWith({
     Customer? customer,
