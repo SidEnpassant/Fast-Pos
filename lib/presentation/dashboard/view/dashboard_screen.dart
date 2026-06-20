@@ -425,20 +425,49 @@ class _KpiGrid extends StatelessWidget {
       );
     }
 
-    return GridView.count(
-      crossAxisCount: cross,
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      crossAxisSpacing: 12,
-      mainAxisSpacing: 12,
-      childAspectRatio: 1.12,
-      children: [
-        revenueTodayCard,
-        monthCard,
-        pendingCard,
-        profitCard,
-      ],
-    );
+    if (cross == 4) {
+      return SizedBox(
+        height: AppMetricCard.heightWithSubtitle,
+        child: Row(
+          children: [
+            Expanded(child: revenueTodayCard),
+            const SizedBox(width: 12),
+            Expanded(child: monthCard),
+            const SizedBox(width: 12),
+            Expanded(child: pendingCard),
+            const SizedBox(width: 12),
+            Expanded(child: profitCard),
+          ],
+        ),
+      );
+    } else {
+      // tablet (cross == 2)
+      return Column(
+        children: [
+          SizedBox(
+            height: AppMetricCard.heightWithSubtitle,
+            child: Row(
+              children: [
+                Expanded(child: revenueTodayCard),
+                const SizedBox(width: 12),
+                Expanded(child: monthCard),
+              ],
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: AppMetricCard.heightWithSubtitle,
+            child: Row(
+              children: [
+                Expanded(child: pendingCard),
+                const SizedBox(width: 12),
+                Expanded(child: profitCard),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
   }
 }
 
@@ -548,49 +577,47 @@ class _BillRow extends StatelessWidget {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
-      child: RepaintBoundary(
-        child: Material(
-          color:
-              theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-          borderRadius: BorderRadius.circular(AppRadii.md),
-          child: ListTile(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(AppRadii.md),
-            ),
-            leading: CircleAvatar(
-              backgroundColor: theme.colorScheme.primaryContainer,
-              child: Icon(
-                Icons.receipt_long,
-                size: 20,
-                color: theme.colorScheme.onPrimaryContainer,
-              ),
-            ),
-            title: Text(
-              bill.customerName.trim().isEmpty ? 'Walk-in' : bill.customerName,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            subtitle: Text(
-              [
-                if (label != null) label,
-                DateFormat('d MMM, h:mm a')
-                    .format(BillRevenue.localCreatedDate(bill)),
-              ].join(' · '),
-            ),
-            trailing: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  fmt.format(amount),
-                  style: const TextStyle(fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
-                AppStatusChip(label: bill.paymentStatus, color: statusColor),
-              ],
-            ),
-            onTap: () => context.push('/complete-transactions'),
+      child: Material(
+        color:
+            theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(AppRadii.md),
+        child: ListTile(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadii.md),
           ),
+          leading: CircleAvatar(
+            backgroundColor: theme.colorScheme.primaryContainer,
+            child: Icon(
+              Icons.receipt_long,
+              size: 20,
+              color: theme.colorScheme.onPrimaryContainer,
+            ),
+          ),
+          title: Text(
+            bill.customerName.trim().isEmpty ? 'Walk-in' : bill.customerName,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          subtitle: Text(
+            [
+              if (label != null) label,
+              DateFormat('d MMM, h:mm a')
+                  .format(BillRevenue.localCreatedDate(bill)),
+            ].join(' · '),
+          ),
+          trailing: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                fmt.format(amount),
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              AppStatusChip(label: bill.paymentStatus, color: statusColor),
+            ],
+          ),
+          onTap: () => context.push('/complete-transactions'),
         ),
       ),
     );

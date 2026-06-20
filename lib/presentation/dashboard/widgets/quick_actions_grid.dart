@@ -168,16 +168,39 @@ class _ActionGroup extends StatelessWidget {
               ),
         ),
         const SizedBox(height: 8),
-        GridView.count(
-          crossAxisCount: 3,
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          childAspectRatio: 1.05,
-          children: children,
+        Column(
+          children: _buildGridRows(children, 3),
         ),
       ],
     );
+  }
+
+  List<Widget> _buildGridRows(List<Widget> items, int crossAxisCount) {
+    final rows = <Widget>[];
+    for (int i = 0; i < items.length; i += crossAxisCount) {
+      final rowChildren = <Widget>[];
+      for (int j = 0; j < crossAxisCount; j++) {
+        if (i + j < items.length) {
+          rowChildren.add(
+            Expanded(
+              child: AspectRatio(
+                aspectRatio: 1.05,
+                child: items[i + j],
+              ),
+            ),
+          );
+        } else {
+          rowChildren.add(const Expanded(child: SizedBox.shrink()));
+        }
+        if (j < crossAxisCount - 1) {
+          rowChildren.add(const SizedBox(width: 10));
+        }
+      }
+      rows.add(Row(children: rowChildren));
+      if (i + crossAxisCount < items.length) {
+        rows.add(const SizedBox(height: 10));
+      }
+    }
+    return rows;
   }
 }
