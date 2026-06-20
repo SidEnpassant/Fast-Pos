@@ -41,6 +41,48 @@ class Product extends Equatable {
   final String uom;
   final double? conversionFactor;
 
+  Product copyWith({
+    String? id,
+    String? userId,
+    String? name,
+    String? sku,
+    String? barcode,
+    double? price,
+    double? costPrice,
+    double? stockQuantity,
+    double? minStockThreshold,
+    String? category,
+    bool? isActive,
+    double? velocityEma,
+    DateTime? updatedAt,
+    DateTime? deletedAt,
+    String? hsnCode,
+    double? gstPercent,
+    String? uom,
+    double? conversionFactor,
+  }) {
+    return Product(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      name: name ?? this.name,
+      sku: sku ?? this.sku,
+      barcode: barcode ?? this.barcode,
+      price: price ?? this.price,
+      costPrice: costPrice ?? this.costPrice,
+      stockQuantity: stockQuantity ?? this.stockQuantity,
+      minStockThreshold: minStockThreshold ?? this.minStockThreshold,
+      category: category ?? this.category,
+      isActive: isActive ?? this.isActive,
+      velocityEma: velocityEma ?? this.velocityEma,
+      updatedAt: updatedAt ?? this.updatedAt,
+      deletedAt: deletedAt ?? this.deletedAt,
+      hsnCode: hsnCode ?? this.hsnCode,
+      gstPercent: gstPercent ?? this.gstPercent,
+      uom: uom ?? this.uom,
+      conversionFactor: conversionFactor ?? this.conversionFactor,
+    );
+  }
+
   bool get isLowStock => stockQuantity <= minStockThreshold;
 
   double daysRemaining(double velocity) {

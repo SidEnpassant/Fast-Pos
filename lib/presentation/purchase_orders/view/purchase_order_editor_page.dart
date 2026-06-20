@@ -9,6 +9,7 @@ import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/domain/repositories/supplier_repository.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_bloc.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_event.dart';
+import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_state.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -43,17 +44,33 @@ class _PurchaseOrderEditorPageState extends State<PurchaseOrderEditorPage> {
     final suppliers = await supplierRepo.watchSuppliersForUser(userId).first;
     final products = await productRepo.watchProductsForUser(userId).first;
 
+    PurchaseOrder? existingPo;
+    if (widget.purchaseOrderId != null) {
+      final bloc = context.read<PurchaseOrderBloc>();
+      PurchaseOrderState state = bloc.state;
+      if (state.status != PurchaseOrderStatus.success) {
+        state = await bloc.stream.firstWhere((s) => s.status == PurchaseOrderStatus.success);
+      }
+      try {
+        existingPo = state.orders.firstWhere((o) => o.id == widget.purchaseOrderId);
+      } catch (_) {}
+    }
+
     setState(() {
       _suppliers = suppliers;
       _products = products;
+      
+      if (existingPo != null) {
+        try {
+          _selectedSupplier = suppliers.firstWhere((s) => s.id == existingPo!.supplierId);
+        } catch (_) {}
+        _notesController.text = existingPo.notes ?? '';
+        _lines.clear();
+        _lines.addAll(existingPo.lineItems);
+      }
+
       _isLoading = false;
     });
-
-    if (widget.purchaseOrderId != null) {
-      // Load existing PO if editing
-      // For simplicity in this demo, we assume we get the PO from the bloc state or repository
-      // In a real app, you might want a dedicated use case or fetch it here.
-    }
   }
 
   void _addLine() {
@@ -66,7 +83,7 @@ class _PurchaseOrderEditorPageState extends State<PurchaseOrderEditorPage> {
             final p = _products[index];
             return ListTile(
               title: Text(p.name),
-              subtitle: Text('Price: ₹${p.price}'),
+              subtitle: Text('Cost: ₹${p.costPrice ?? p.price}'),
               onTap: () {
                 setState(() {
                   _lines.add(PurchaseOrderLine(
@@ -74,7 +91,7 @@ class _PurchaseOrderEditorPageState extends State<PurchaseOrderEditorPage> {
                     productName: p.name,
                     orderedQty: 1,
                     receivedQty: 0,
-                    unitCost: p.costPrice ?? 0,
+                    unitCost: p.costPrice ?? p.price,
                     uom: p.uom,
                   ));
                 });
@@ -82,6 +99,58 @@ class _PurchaseOrderEditorPageState extends State<PurchaseOrderEditorPage> {
               },
             );
           },
+        );
+      },
+    );
+  }
+
+  void _editLine(int index) {
+    final line = _lines[index];
+    final qtyController = TextEditingController(text: line.orderedQty.toString());
+    final costController = TextEditingController(text: line.unitCost.toString());
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return AlertDialog(
+          title: Text('Edit ${line.productName}'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: qtyController,
+                decoration: const InputDecoration(labelText: 'Ordered Qty'),
+                keyboardType: TextInputType.number,
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: costController,
+                decoration: const InputDecoration(labelText: 'Unit Cost'),
+                keyboardType: TextInputType.number,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            FilledButton(
+              onPressed: () {
+                final qty = double.tryParse(qtyController.text) ?? line.orderedQty;
+                final cost = double.tryParse(costController.text) ?? line.unitCost;
+                setState(() {
+                  _lines[index] = PurchaseOrderLine(
+                    productId: line.productId,
+                    productName: line.productName,
+                    orderedQty: qty,
+                    receivedQty: line.receivedQty,
+                    unitCost: cost,
+                    uom: line.uom,
+                  );
+                });
+                Navigator.pop(ctx);
+              },
+              child: const Text('Save'),
+            ),
+          ],
         );
       },
     );
@@ -176,12 +245,25 @@ class _PurchaseOrderEditorPageState extends State<PurchaseOrderEditorPage> {
                   return ListTile(
                     title: Text(line.productName),
                     subtitle: Text('Qty: ${line.orderedQty} x ₹${line.unitCost}'),
-                    trailing: Text('₹${line.orderedQty * line.unitCost}'),
-                    onLongPress: () {
-                      setState(() {
-                        _lines.removeAt(index);
-                      });
-                    },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text('₹${line.orderedQty * line.unitCost}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                        const SizedBox(width: 8),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 20),
+                          onPressed: () => _editLine(index),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.delete, size: 20, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _lines.removeAt(index);
+                            });
+                          },
+                        ),
+                      ],
+                    ),
                   );
                 },
               ),

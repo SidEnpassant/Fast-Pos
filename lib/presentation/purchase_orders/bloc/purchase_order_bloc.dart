@@ -1,15 +1,18 @@
 import 'dart:async';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:inventopos/application/purchasing/receive_purchase_order_use_case.dart';
 import 'package:inventopos/domain/entities/purchase_order.dart';
+import 'package:inventopos/domain/repositories/product_repository.dart';
 import 'package:inventopos/domain/repositories/purchase_order_repository.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_event.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_state.dart';
 
 class PurchaseOrderBloc extends Bloc<PurchaseOrderEvent, PurchaseOrderState> {
   final PurchaseOrderRepository _repository;
+  final ProductRepository _productRepo;
   StreamSubscription? _subscription;
 
-  PurchaseOrderBloc(this._repository) : super(const PurchaseOrderState()) {
+  PurchaseOrderBloc(this._repository, this._productRepo) : super(const PurchaseOrderState()) {
     on<PurchaseOrdersStarted>(_onStarted);
     on<PurchaseOrderCreated>(_onCreated);
     on<PurchaseOrderUpdated>(_onUpdated);
@@ -57,7 +60,8 @@ class PurchaseOrderBloc extends Bloc<PurchaseOrderEvent, PurchaseOrderState> {
 
   Future<void> _onReceived(PurchaseOrderReceived event, Emitter<PurchaseOrderState> emit) async {
     try {
-      await _repository.receivePurchaseOrder(event.orderId, event.receivedLines);
+      final useCase = ReceivePurchaseOrderUseCase(_repository, _productRepo);
+      await useCase(event.orderId, event.receivedLines);
     } catch (e) {
       emit(state.copyWith(status: PurchaseOrderStatus.failure, errorMessage: e.toString()));
     }

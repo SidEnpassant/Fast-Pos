@@ -269,4 +269,32 @@ class ProductRepositoryImpl implements ProductRepository {
       ),
     );
   }
+
+  @override
+  Future<void> incrementStockLocal({
+    required String productId,
+    required double quantity,
+  }) async {
+    final p = _local.findById(productId);
+    if (p == null) return;
+    final nextQty = (p.stockQuantity + quantity).clamp(0.0, 999999.0);
+    await _local.put(
+      Product(
+        id: p.id,
+        userId: p.userId,
+        name: p.name,
+        sku: p.sku,
+        barcode: p.barcode,
+        price: p.price,
+        costPrice: p.costPrice,
+        stockQuantity: nextQty,
+        minStockThreshold: p.minStockThreshold,
+        category: p.category,
+        isActive: p.isActive,
+        velocityEma: p.velocityEma,
+        updatedAt: DateTime.now(),
+        deletedAt: p.deletedAt,
+      ),
+    );
+  }
 }

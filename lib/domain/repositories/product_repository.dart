@@ -38,4 +38,10 @@ abstract class ProductRepository {
     required String productId,
     required double quantity,
   });
+
+  /// Increments local Hive stock when receiving purchase orders or returns.
+  Future<void> incrementStockLocal({
+    required String productId,
+    required double quantity,
+  });
 }

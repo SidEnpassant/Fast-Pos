@@ -20,8 +20,10 @@ class PurchaseOrderListScreen extends StatelessWidget {
     final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
     
     return BlocProvider(
-      create: (context) => PurchaseOrderBloc(context.read())
-        ..add(PurchaseOrdersStarted(userId)),
+      create: (context) => PurchaseOrderBloc(
+        context.read(),
+        context.read(),
+      )..add(PurchaseOrdersStarted(userId)),
       child: const PurchaseOrderListView(),
     );
   }
@@ -182,9 +184,9 @@ class _PurchaseOrderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(20),
         onTap: () {
           if (isPending) {
-            context.push('/purchase-orders/editor', extra: po.id);
+            context.push('/purchase-orders/editor/${po.id}');
           } else {
-            context.push('/purchase-orders/receive', extra: po.id);
+            context.push('/purchase-orders/receive/${po.id}');
           }
         },
         child: Padding(
@@ -296,7 +298,7 @@ class _PurchaseOrderCard extends StatelessWidget {
                     Expanded(
                       child: FilledButton.icon(
                         onPressed: () {
-                           context.push('/purchase-orders/receive', extra: po.id);
+                           context.push('/purchase-orders/receive/${po.id}');
                         },
                         icon: const Icon(Icons.check_circle_outline, size: 18),
                         label: const Text('Receive'),

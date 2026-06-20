@@ -331,31 +331,48 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         path: '/purchase-orders',
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) => BlocProvider(
-          create: (ctx) => PurchaseOrderBloc(ctx.read<PurchaseOrderRepository>())..add(PurchaseOrdersStarted(Supabase.instance.client.auth.currentUser?.id ?? '')),
+          create: (ctx) => PurchaseOrderBloc(
+            ctx.read<PurchaseOrderRepository>(),
+            ctx.read<ProductRepository>(),
+          )..add(PurchaseOrdersStarted(Supabase.instance.client.auth.currentUser?.id ?? '')),
           child: const PurchaseOrderListScreen(),
         ),
-      ),
-      GoRoute(
-        path: '/purchase-orders/editor',
-        parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) {
-          final poId = state.extra as String?;
-          return BlocProvider(
-            create: (ctx) => PurchaseOrderBloc(ctx.read<PurchaseOrderRepository>()),
-            child: PurchaseOrderEditorPage(purchaseOrderId: poId),
-          );
-        },
-      ),
-      GoRoute(
-        path: '/purchase-orders/receive',
-        parentNavigatorKey: appRootNavigatorKey,
-        builder: (context, state) {
-          final poId = state.extra as String;
-          return BlocProvider(
-            create: (ctx) => PurchaseOrderBloc(ctx.read<PurchaseOrderRepository>()),
-            child: PurchaseOrderReceivePage(purchaseOrderId: poId),
-          );
-        },
+        routes: [
+          GoRoute(
+            path: 'editor',
+            builder: (context, state) => BlocProvider(
+              create: (ctx) => PurchaseOrderBloc(
+                ctx.read<PurchaseOrderRepository>(),
+                ctx.read<ProductRepository>(),
+              )..add(PurchaseOrdersStarted(Supabase.instance.client.auth.currentUser?.id ?? '')),
+              child: const PurchaseOrderEditorPage(),
+            ),
+          ),
+          GoRoute(
+            path: 'editor/:id',
+            builder: (context, state) => BlocProvider(
+              create: (ctx) => PurchaseOrderBloc(
+                ctx.read<PurchaseOrderRepository>(),
+                ctx.read<ProductRepository>(),
+              )..add(PurchaseOrdersStarted(Supabase.instance.client.auth.currentUser?.id ?? '')),
+              child: PurchaseOrderEditorPage(
+                purchaseOrderId: state.pathParameters['id'],
+              ),
+            ),
+          ),
+          GoRoute(
+            path: 'receive/:id',
+            builder: (context, state) => BlocProvider(
+              create: (ctx) => PurchaseOrderBloc(
+                ctx.read<PurchaseOrderRepository>(),
+                ctx.read<ProductRepository>(),
+              )..add(PurchaseOrdersStarted(Supabase.instance.client.auth.currentUser?.id ?? '')),
+              child: PurchaseOrderReceivePage(
+                purchaseOrderId: state.pathParameters['id']!,
+              ),
+            ),
+          ),
+        ],
       ),
       GoRoute(
         path: '/daybook',

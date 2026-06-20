@@ -1,3 +1,4 @@
+import 'package:inventopos/core/supabase/guard_supabase_postgres_stream.dart';
 import 'package:inventopos/domain/ai/entities/ai_insight.dart';
 import 'package:inventopos/domain/ai/repositories/ai_insights_port.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,12 +11,14 @@ class AiInsightsRepositoryImpl implements AiInsightsPort {
 
   @override
   Stream<List<AiInsight>> watchForUser(String userId) {
-    return _client
-        .from('ai_insights')
-        .stream(primaryKey: ['id'])
-        .eq('user_id', userId)
-        .order('created_at', ascending: false)
-        .map((rows) => rows.map(_fromRow).toList());
+    return guardSupabasePostgresStream(
+      _client
+          .from('ai_insights')
+          .stream(primaryKey: ['id'])
+          .eq('user_id', userId)
+          .order('created_at', ascending: false)
+          .map((rows) => rows.map(_fromRow).toList()),
+    );
   }
 
   @override
