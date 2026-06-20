@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
@@ -6,7 +7,6 @@ import 'package:inventopos/core/widgets/m3/app_metric_card.dart';
 import 'package:inventopos/domain/entities/supplier.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/suppliers/bloc/suppliers_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
 
 class SuppliersScreen extends StatefulWidget {
@@ -83,7 +83,7 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                         ),
                       ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
                       const SizedBox(width: 8),
-                      Expanded(
+                      const Expanded(
                         child: SizedBox(
                           height: AppMetricCard.heightCompact,
                           child: AppMetricCard(
@@ -208,7 +208,7 @@ class _SupplierCard extends StatelessWidget {
       color: scheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: scheme.outlineVariant.withOpacity(0.5)),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -294,7 +294,7 @@ class _SupplierCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 16),
-              Divider(height: 1, color: scheme.outlineVariant.withOpacity(0.5)),
+              Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
               const SizedBox(height: 12),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
