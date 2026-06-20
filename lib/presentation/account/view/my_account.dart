@@ -206,7 +206,7 @@ class _MyAccountPageState extends State<MyAccountPage> {
                   );
                 },
                 child: ListView(
-                  padding: const EdgeInsets.all(AppSpacing.md),
+                  padding: EdgeInsets.all(AppSpacing.md),
                   children: [
                     AccountProfileHeaderSection(
                       fields: fields,

@@ -77,27 +77,27 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   slivers: [
                     const SliverToBoxAdapter(child: _DashboardHeader()),
                     SliverPadding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
+                      padding: EdgeInsets.all(AppSpacing.md),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
                           const _KpiSection(),
-                          const SizedBox(height: AppSpacing.md),
+                          SizedBox(height: AppSpacing.md),
                           const _PulseSection(),
-                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(height: AppSpacing.lg),
                           const _AttentionSection(),
                           const _QuickActionsSection(),
-                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(height: AppSpacing.lg),
                           const DashboardAiBriefingCard(),
-                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(height: AppSpacing.lg),
                           const DashboardOpeningSnapshot(),
-                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(height: AppSpacing.lg),
                           const DashboardReorderAlerts(),
-                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(height: AppSpacing.lg),
                           const _PaymentHealthSection(),
                           const _TopSellersSection(),
                           const _LowStockSection(),
                           const _RecentBillsSection(),
-                          const SizedBox(height: AppSpacing.lg),
+                          SizedBox(height: AppSpacing.lg),
                         ]),
                       ),
                     ),
@@ -238,7 +238,7 @@ class _AttentionSection extends StatelessWidget {
         return Column(
           children: [
             DashboardNeedsAttention(state: state),
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: AppSpacing.lg),
           ],
         );
       },
@@ -272,7 +272,7 @@ class _PaymentHealthSection extends StatelessWidget {
         return Column(
           children: [
             DashboardPaymentHealth(state: state),
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: AppSpacing.lg),
           ],
         );
       },
@@ -292,7 +292,7 @@ class _TopSellersSection extends StatelessWidget {
         return Column(
           children: [
             DashboardTopSellers(state: state),
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: AppSpacing.lg),
           ],
         );
       },
@@ -312,7 +312,7 @@ class _LowStockSection extends StatelessWidget {
         return Column(
           children: [
             _LowStockAlerts(state: state),
-            const SizedBox(height: AppSpacing.lg),
+            SizedBox(height: AppSpacing.lg),
           ],
         );
       },
@@ -397,7 +397,7 @@ class _KpiGrid extends StatelessWidget {
     );
 
     if (cross == 2) {
-      const kpiHeight = AppMetricCard.heightWithSubtitle;
+      final kpiHeight = AppMetricCard.heightWithSubtitle;
       return Column(
         children: [
           SizedBox(
@@ -576,7 +576,7 @@ class _BillRow extends StatelessWidget {
         : null;
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Material(
         color:
             theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),

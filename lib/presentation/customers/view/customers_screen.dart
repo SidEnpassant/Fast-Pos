@@ -150,7 +150,7 @@ class _CustomerCard extends StatelessWidget {
         customer.name.isNotEmpty ? customer.name[0].toUpperCase() : '?';
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Material(
         color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
         borderRadius: BorderRadius.circular(AppRadii.md),
@@ -158,7 +158,7 @@ class _CustomerCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadii.md),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             child: Row(
               children: [
                 CircleAvatar(

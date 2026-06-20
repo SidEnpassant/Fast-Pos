@@ -234,7 +234,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                     child: CustomScrollView(
                                       slivers: [
                                         SliverPadding(
-                                          padding: const EdgeInsets.all(
+                                          padding: EdgeInsets.all(
                                             AppSpacing.md,
                                           ),
                                           sliver: SliverList(
@@ -251,7 +251,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                                       const BillVoiceAssistTogglePressed(),
                                                     ),
                                               ),
-                                              const SizedBox(
+                                              SizedBox(
                                                 height: AppSpacing.md,
                                               ),
                                               BillGenerationProductsSection(
@@ -260,7 +260,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                                 onAddProduct:
                                                     _showAddProductChooser,
                                               ),
-                                              const SizedBox(
+                                              SizedBox(
                                                 height: AppSpacing.md,
                                               ),
                                               if (checkout.availablePoints > 0)
@@ -271,7 +271,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                                   ),
                                                 ),
                                               if (checkout.availablePoints > 0)
-                                                const SizedBox(height: AppSpacing.md),
+                                                SizedBox(height: AppSpacing.md),
                                               _PaymentSection(
                                                 totalAmount: totalAmount,
                                                 onChanged: (method, status, paid) {
@@ -280,7 +280,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                                   _paidAmount = paid;
                                                 },
                                               ),
-                                              const SizedBox(
+                                              SizedBox(
                                                 height: AppSpacing.lg,
                                               ),
                                               _GenerateBillButton(
@@ -288,7 +288,7 @@ class _BillGenerationPageState extends State<BillGenerationPage> {
                                                     !submitting,
                                                 onPressed: () => _generateBill(checkout),
                                               ),
-                                              const SizedBox(
+                                              SizedBox(
                                                 height: AppSpacing.lg,
                                               ),
                                             ]),
@@ -641,7 +641,7 @@ class _BillHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.fromLTRB(
+      padding: EdgeInsets.fromLTRB(
         AppSpacing.md,
         AppSpacing.sm,
         AppSpacing.sm,
@@ -672,7 +672,7 @@ class _BillHeader extends StatelessWidget {
           ),
           if (lineCount > 0)
             Container(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.sm,
               ),
@@ -712,7 +712,7 @@ class _SubmittingIndicator extends StatelessWidget {
                 shape: BoxShape.circle,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
+            SizedBox(height: AppSpacing.md),
             Container(
               width: 150,
               height: 24,
@@ -721,7 +721,7 @@ class _SubmittingIndicator extends StatelessWidget {
                 borderRadius: BorderRadius.all(Radius.circular(4)),
               ),
             ),
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: AppSpacing.sm),
             Container(
               width: 200,
               height: 16,
@@ -781,7 +781,7 @@ class _LoyaltyRedemptionCard extends StatelessWidget {
     final discount = pts * checkoutState.currencyPerPoint;
 
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: checkoutState.isLoyaltyRedemptionActive
             ? theme.colorScheme.primaryContainer
@@ -801,7 +801,7 @@ class _LoyaltyRedemptionCard extends StatelessWidget {
                 ? theme.colorScheme.primary
                 : theme.colorScheme.onSurfaceVariant,
           ),
-          const SizedBox(width: AppSpacing.sm),
+          SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

@@ -102,11 +102,11 @@ class _PrinterSetupPageState extends State<PrinterSetupPage> {
   Future<void> _testPrint() async {
     try {
       await context.read<PrinterRepository>().printReceipt(
-        ReceiptPayload(
+        const ReceiptPayload(
           businessName: "TEST PRINT",
           billNumber: "001",
           customerName: "John Doe",
-          lines: const [
+          lines: [
             ReceiptLine(name: "Test Item 1", quantity: 1, total: 100),
             ReceiptLine(name: "Test Item 2", quantity: 2, total: 200),
           ],

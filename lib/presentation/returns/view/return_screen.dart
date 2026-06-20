@@ -48,22 +48,22 @@ class ReturnScreen extends StatelessWidget {
             if (bill == null) {
               return Center(
                 child: Padding(
-                  padding: const EdgeInsets.all(AppSpacing.xl),
+                  padding: EdgeInsets.all(AppSpacing.xl),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       const Icon(Icons.receipt_long, size: 64, color: Colors.grey),
-                      const SizedBox(height: AppSpacing.md),
+                      SizedBox(height: AppSpacing.md),
                       Text(
                         'No bill selected',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(height: AppSpacing.sm),
                       const Text(
                         'To process a return, please select a completed bill from your Transactions.',
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: AppSpacing.lg),
+                      SizedBox(height: AppSpacing.lg),
                       FilledButton.icon(
                         onPressed: () {
                           context.go('/complete-transactions');
@@ -78,7 +78,7 @@ class ReturnScreen extends StatelessWidget {
             }
 
             return ListView(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: EdgeInsets.all(AppSpacing.md),
               children: [
                 AppSectionCard(
                   title: 'Original Bill: ${bill.displayBillNumber ?? 'N/A'}',
@@ -127,7 +127,7 @@ class ReturnScreen extends StatelessWidget {
                     }).toList(),
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.md),
                 AppSectionCard(
                   title: 'Refund Details',
                   child: Column(
@@ -144,7 +144,7 @@ class ReturnScreen extends StatelessWidget {
                           }
                         },
                       ),
-                      const SizedBox(height: AppSpacing.sm),
+                      SizedBox(height: AppSpacing.sm),
                       DropdownButtonFormField<String>(
                         initialValue: state.refundMethod,
                         decoration: const InputDecoration(labelText: 'Refund Method'),
@@ -160,7 +160,7 @@ class ReturnScreen extends StatelessWidget {
                     ],
                   ),
                 ),
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.md),
                 Text(
                   'Total Refund: Rs. ${state.totalRefundAmount.toStringAsFixed(2)}',
                   style: Theme.of(context).textTheme.titleLarge,
@@ -177,7 +177,7 @@ class ReturnScreen extends StatelessWidget {
             }
             return SafeArea(
               child: Padding(
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: EdgeInsets.all(AppSpacing.md),
                 child: FilledButton(
                   onPressed: state.submitting || state.returnQuantities.isEmpty
                       ? null

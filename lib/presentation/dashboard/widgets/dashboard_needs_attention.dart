@@ -103,7 +103,7 @@ class _AttentionTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Material(
         color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(AppRadii.md),
@@ -111,7 +111,7 @@ class _AttentionTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadii.md),
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.sm),
+            padding: EdgeInsets.all(AppSpacing.sm),
             child: Row(
               children: [
                 Container(

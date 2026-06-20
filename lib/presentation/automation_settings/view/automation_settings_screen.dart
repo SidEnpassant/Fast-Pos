@@ -71,14 +71,14 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
           }
           final on = p.enabled;
           return ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             children: [
               const Text(
                 'Automations use rules on-device and optional cloud AI (Groq via secure servers). '
                 'WhatsApp and SMS open your messaging app — nothing is sent automatically.',
                 style: TextStyle(fontSize: 13),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               SwitchListTile(
                 title: const Text('Enable Automations'),
                 subtitle:
@@ -171,7 +171,7 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
                       AutomationSettingsOwnerPhoneChanged(v),
                     ),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              SizedBox(height: AppSpacing.sm),
               TextField(
                 controller: _supplierPhone,
                 decoration: const InputDecoration(
@@ -213,7 +213,7 @@ class _AutomationSettingsScreenState extends State<AutomationSettingsScreen> {
                       : null,
                 ),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               FilledButton(
                 onPressed: state.saving
                     ? null

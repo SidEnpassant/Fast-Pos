@@ -109,7 +109,7 @@ class _SupplierEditorPageState extends State<SupplierEditorPage> {
         onPressed: () => context.pop(),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
         children: [
           AppSectionCard(
             title: 'Basic Info',
@@ -168,7 +168,7 @@ class _SupplierEditorPageState extends State<SupplierEditorPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: EdgeInsets.all(AppSpacing.md),
           child: FilledButton(
             onPressed: _saving ? null : _save,
             child: Text(_saving ? 'Saving...' : 'Save supplier'),

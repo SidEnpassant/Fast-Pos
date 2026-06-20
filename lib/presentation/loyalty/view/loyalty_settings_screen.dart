@@ -78,29 +78,29 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
                   slivers: [
                     SliverToBoxAdapter(
                       child: Padding(
-                        padding: const EdgeInsets.all(AppSpacing.md),
+                        padding: EdgeInsets.all(AppSpacing.md),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             // 1. Enable Toggle Banner
                             _buildEnableBanner(theme, scheme).animate().fadeIn().slideX(begin: -0.1),
                             
-                            const SizedBox(height: AppSpacing.lg),
+                            SizedBox(height: AppSpacing.lg),
                             
                             if (_isEnabled) ...[
                               // 2. Analytics Mock Row
                               _buildAnalyticsRow(theme).animate().fadeIn(delay: 200.ms),
-                              const SizedBox(height: AppSpacing.lg),
+                              SizedBox(height: AppSpacing.lg),
                               
                               // 3. Customer Preview Card
                               Text(
                                 'Customer Card Preview',
                                 style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
                               ).animate().fadeIn(delay: 300.ms),
-                              const SizedBox(height: AppSpacing.sm),
+                              SizedBox(height: AppSpacing.sm),
                               _buildCustomerCardPreview(theme).animate().fadeIn(delay: 400.ms).slideY(begin: 0.1),
                               
-                              const SizedBox(height: AppSpacing.xl),
+                              SizedBox(height: AppSpacing.xl),
                               
                               // 4. Configuration Form
                               Form(
@@ -108,13 +108,13 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
                                 child: Column(
                                   children: [
                                     _buildConfigSection(theme).animate().fadeIn(delay: 500.ms),
-                                    const SizedBox(height: AppSpacing.xl),
+                                    SizedBox(height: AppSpacing.xl),
                                     _buildTierSection(theme).animate().fadeIn(delay: 600.ms),
                                   ],
                                 ),
                               ),
                               
-                              const SizedBox(height: AppSpacing.xl),
+                              SizedBox(height: AppSpacing.xl),
                               
                               // 5. Save Button
                               SizedBox(
@@ -377,14 +377,14 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
             icon: Icons.add_circle_outline,
             theme: theme,
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           _buildPremiumTextField(
             controller: _currencyPerPointController,
             label: '₹ Value per 1 Point',
             icon: Icons.currency_rupee,
             theme: theme,
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           _buildPremiumTextField(
             controller: _minPointsController,
             label: 'Minimum Points to Redeem',

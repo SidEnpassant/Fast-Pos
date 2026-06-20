@@ -31,7 +31,7 @@ class AiBriefMarkdownView extends StatelessWidget {
           if (block.isBullet) ...[
             if (bulletCount++ < maxBullets)
               Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                padding: EdgeInsets.only(bottom: AppSpacing.sm),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -51,7 +51,7 @@ class AiBriefMarkdownView extends StatelessWidget {
               ),
           ] else ...[
             Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: EdgeInsets.only(bottom: AppSpacing.sm),
               child: _richText(
                 context,
                 block.text,

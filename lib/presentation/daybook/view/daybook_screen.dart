@@ -29,7 +29,7 @@ class DayBookView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    //final theme = Theme.of(context);
     return AppScreenScaffold(
       title: 'Day Book (Khata)',
       actions: [

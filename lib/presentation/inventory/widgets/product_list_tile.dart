@@ -38,7 +38,7 @@ class ProductListTile extends StatelessWidget {
 
     return RepaintBoundary(
       child: Padding(
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
         ),
@@ -49,7 +49,7 @@ class ProductListTile extends StatelessWidget {
             onTap: onTap,
             borderRadius: BorderRadius.circular(AppRadii.lg),
             child: Padding(
-              padding: const EdgeInsets.all(AppSpacing.md),
+              padding: EdgeInsets.all(AppSpacing.md),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

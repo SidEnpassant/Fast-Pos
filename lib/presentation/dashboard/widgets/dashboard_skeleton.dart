@@ -39,7 +39,7 @@ class DashboardSkeleton extends StatelessWidget {
           ),
         ),
         SliverPadding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: EdgeInsets.all(AppSpacing.md),
           sliver: SliverList(
             delegate: SliverChildListDelegate([
               // KPI Grid Skeleton
@@ -75,12 +75,12 @@ class DashboardSkeleton extends StatelessWidget {
                       List.generate(4, (_) => const AppMetricCardSkeleton()),
                 ),
 
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.md),
               // Pulse Strip Skeleton
               const AppShimmer(
                 child: AppSkeleton(height: 80, borderRadius: 12),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               // Quick Actions Skeleton
               GridView.count(
                 crossAxisCount: 4,
@@ -91,15 +91,15 @@ class DashboardSkeleton extends StatelessWidget {
                 children:
                     List.generate(8, (_) => const AppSkeletonCircle(size: 56)),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               // AI Briefing Skeleton
               const AppShimmer(
                 child: AppSkeleton(height: 150, borderRadius: 16),
               ),
-              const SizedBox(height: AppSpacing.lg),
+              SizedBox(height: AppSpacing.lg),
               // Recent Bills Skeleton
               const AppSkeletonText(width: 120, height: 20),
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.md),
               const AppSkeletonList(itemCount: 5),
             ]),
           ),

@@ -83,10 +83,10 @@ class _SuppliersScreenState extends State<SuppliersScreen> {
                         ),
                       ).animate().fadeIn(duration: 400.ms).slideX(begin: -0.1, end: 0),
                       const SizedBox(width: 8),
-                      const Expanded(
+                      Expanded(
                         child: SizedBox(
                           height: AppMetricCard.heightCompact,
-                          child: AppMetricCard(
+                          child: const AppMetricCard(
                             title: 'To Pay',
                             value: '₹0.00', // Mocked ledger balance
                             icon: Icons.account_balance_wallet,

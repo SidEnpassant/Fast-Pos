@@ -79,8 +79,8 @@ class _PulseChip extends StatelessWidget {
     return RepaintBoundary(
       child: Container(
         width: 132,
-        margin: const EdgeInsets.only(right: AppSpacing.sm),
-        padding: const EdgeInsets.all(AppSpacing.sm),
+        margin: EdgeInsets.only(right: AppSpacing.sm),
+        padding: EdgeInsets.all(AppSpacing.sm),
         decoration: BoxDecoration(
           color: theme.colorScheme.surfaceContainerLow,
           borderRadius: BorderRadius.circular(AppRadii.lg),

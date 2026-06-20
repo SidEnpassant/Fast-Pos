@@ -1,8 +1,10 @@
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 /// Spacing scale (logical pixels) for padding and gaps.
 abstract final class AppSpacing {
-  static const double xs = 4;
-  static const double sm = 8;
-  static const double md = 16;
-  static const double lg = 24;
-  static const double xl = 32;
+  static double get xs => 4.w;
+  static double get sm => 8.w;
+  static double get md => 16.w;
+  static double get lg => 24.w;
+  static double get xl => 32.w;
 }

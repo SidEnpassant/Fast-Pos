@@ -41,7 +41,7 @@ class DashboardAiBriefingCard extends StatelessWidget {
             children: [
               _BriefHeader(lastGeneratedAt: state.lastGeneratedAt),
               if (insights.isNotEmpty) ...[
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.md),
                 Wrap(
                   spacing: 8,
                   runSpacing: 8,
@@ -51,10 +51,10 @@ class DashboardAiBriefingCard extends StatelessWidget {
                       .toList(),
                 ),
               ],
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.md),
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.all(AppSpacing.md),
+                padding: EdgeInsets.all(AppSpacing.md),
                 decoration: BoxDecoration(
                   color: Theme.of(context)
                       .colorScheme
@@ -97,7 +97,7 @@ class DashboardAiBriefingCard extends StatelessWidget {
                       )
                     : AiBriefMarkdownView(markdown: state.briefing!.markdown),
               ),
-              const SizedBox(height: AppSpacing.sm),
+              SizedBox(height: AppSpacing.sm),
               Row(
                 children: [
                   // ── Last updated label ──
@@ -159,7 +159,7 @@ class _EmptyBriefCard extends StatelessWidget {
                   size: 28,
                 ),
               ),
-              const SizedBox(width: AppSpacing.md),
+              SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
                   'A short, readable summary of today\'s sales, stock, and collections — powered by Groq AI.',
@@ -171,7 +171,7 @@ class _EmptyBriefCard extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           FilledButton.icon(
             onPressed: state.loadingBrief
                 ? null
@@ -186,7 +186,7 @@ class _EmptyBriefCard extends StatelessWidget {
                 : const Text('Generate today\'s brief'),
           ),
           if (state.error != null) ...[
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: AppSpacing.sm),
             Material(
               color: theme.colorScheme.errorContainer.withValues(alpha: 0.5),
               borderRadius: BorderRadius.circular(AppRadii.sm),

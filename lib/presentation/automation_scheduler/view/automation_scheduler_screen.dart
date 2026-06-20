@@ -43,7 +43,7 @@ class _AutomationSchedulerScreenState extends State<AutomationSchedulerScreen> {
             );
           }
           return ListView.separated(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             itemCount: state.jobs.length,
             separatorBuilder: (_, __) => const Divider(height: 1),
             itemBuilder: (context, i) {

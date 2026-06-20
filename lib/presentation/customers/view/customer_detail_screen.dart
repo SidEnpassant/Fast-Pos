@@ -64,7 +64,7 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
               customer.name.isNotEmpty ? customer.name[0].toUpperCase() : '?';
 
           return ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             children: [
               AppSectionCard(
                 title: 'Profile',

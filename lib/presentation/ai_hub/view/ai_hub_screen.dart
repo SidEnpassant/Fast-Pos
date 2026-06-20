@@ -44,7 +44,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
                 onSettings: () => context.push('/ai-settings'));
           }
           return ListView(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             children: [
               ListTile(
                 leading: const Icon(Icons.settings),
@@ -63,7 +63,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
                 builder: (context, ins) {
                   return Card(
                     child: Padding(
-                      padding: const EdgeInsets.all(AppSpacing.md),
+                      padding: EdgeInsets.all(AppSpacing.md),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
@@ -77,7 +77,7 @@ class _AiHubScreenState extends State<AiHubScreen> {
                               'Generate your daily business brief for a '
                               'readable summary of sales and stock.',
                             ),
-                          const SizedBox(height: AppSpacing.sm),
+                          SizedBox(height: AppSpacing.sm),
                           FilledButton(
                             onPressed: ins.loadingBrief
                                 ? null
@@ -115,17 +115,17 @@ class _EnablePrompt extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(AppSpacing.lg),
+      padding: EdgeInsets.all(AppSpacing.lg),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           const Icon(Icons.smart_toy_outlined, size: 64),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           const Text(
             'Enable Automations for daily briefs, collections reminders, reorder alerts, and WhatsApp follow-ups.',
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.lg),
+          SizedBox(height: AppSpacing.lg),
           FilledButton(
             onPressed: onSettings,
             child: const Text('Open settings'),

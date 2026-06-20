@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 
@@ -22,10 +23,10 @@ class AppMetricCard extends StatelessWidget {
   final VoidCallback? onTap;
 
   /// Use in a [SizedBox] when the card has no subtitle.
-  static const double heightCompact = 120;
+  static double get heightCompact => 132.h;
 
   /// Use in a [SizedBox] when the card shows a subtitle line.
-  static const double heightWithSubtitle = 136;
+  static double get heightWithSubtitle => 148.h;
 
   static double heightFor({String? subtitle}) =>
       subtitle != null && subtitle.isNotEmpty
@@ -45,7 +46,7 @@ class AppMetricCard extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(AppRadii.lg),
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: EdgeInsets.all(AppSpacing.md),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

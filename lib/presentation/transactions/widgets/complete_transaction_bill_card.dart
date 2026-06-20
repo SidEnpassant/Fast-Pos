@@ -26,7 +26,7 @@ class CompleteTransactionBillCard extends StatelessWidget {
 
     return RepaintBoundary(
       child: Padding(
-        padding: const EdgeInsets.symmetric(
+        padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
           vertical: AppSpacing.xs,
         ),
@@ -125,24 +125,24 @@ class CompleteTransactionBillCard extends StatelessWidget {
                 const Divider(height: 24),
                 Row(
                   children: [
-                    Expanded(
-                      child: FilledButton.icon(
+                    
+                      IconButton.filledTonal(
                         icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: const Text('Bill'),
+                        tooltip: 'Bill',
                         onPressed: onShowBill,
                       ),
-                    ),
+                    
                     const SizedBox(width: 8),
                     IconButton.filledTonal(
                       onPressed: () => printBillToBluetooth(context, bill),
                       icon: const Icon(Icons.print),
                       tooltip: 'Print to POS Printer',
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Expanded(
                       child: OutlinedButton.icon(
                         icon: const Icon(Icons.assignment_return_outlined),
-                        label: const Text('Return Items'),
+                        label: const Text('Return'),
                         onPressed: () => context.push('/returns/new?billId=${bill.id}'),
                       ),
                     ),

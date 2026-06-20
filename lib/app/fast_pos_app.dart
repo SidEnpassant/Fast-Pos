@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/app/app_providers.dart';
 import 'package:inventopos/application/ai/build_briefing_metrics_use_case.dart';
@@ -220,11 +221,18 @@ class _FastPosAppState extends State<FastPosApp> {
       },
       child: NotificationBridgeListener(
         child: AiAutomationBridgeListener(
-          child: MaterialApp.router(
-            debugShowCheckedModeBanner: false,
-            title: 'Fast Pos',
-            theme: AppTheme.light(),
-            routerConfig: _router!,
+          child: ScreenUtilInit(
+            designSize: const Size(360, 690),
+            minTextAdapt: true,
+            splitScreenMode: true,
+            builder: (_, child) {
+              return MaterialApp.router(
+                debugShowCheckedModeBanner: false,
+                title: 'Fast Pos',
+                theme: AppTheme.light(),
+                routerConfig: _router!,
+              );
+            },
           ),
         ),
       ),

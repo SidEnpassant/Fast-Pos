@@ -42,7 +42,7 @@ class CreditNotesScreen extends StatelessWidget {
           }
 
           return ListView.builder(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             itemCount: state.notes.length,
             itemBuilder: (context, index) {
               final note = state.notes[index];
@@ -68,9 +68,9 @@ class _CreditNoteCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Card(
-      margin: const EdgeInsets.only(bottom: AppSpacing.md),
+      margin: EdgeInsets.only(bottom: AppSpacing.md),
       child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -89,10 +89,10 @@ class _CreditNoteCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: AppSpacing.sm),
+            SizedBox(height: AppSpacing.sm),
             if (note.customerName.isNotEmpty)
               Padding(
-                padding: const EdgeInsets.only(bottom: AppSpacing.xs),
+                padding: EdgeInsets.only(bottom: AppSpacing.xs),
                 child: Text('Customer: ${note.customerName}'),
               ),
             Text('Refund Method: ${note.refundMethod.toUpperCase()}'),

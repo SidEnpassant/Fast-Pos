@@ -193,7 +193,7 @@ class AnalyticsCustomersContent extends StatelessWidget {
           icon: const Icon(Icons.groups_outlined),
           label: const Text('Open customer directory'),
         ),
-        const SizedBox(height: AppSpacing.md),
+        SizedBox(height: AppSpacing.md),
       ],
     );
   }

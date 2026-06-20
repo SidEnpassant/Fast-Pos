@@ -19,7 +19,7 @@ class DashboardOpeningSnapshot extends StatelessWidget {
         }
         return Card(
           child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
+            padding: EdgeInsets.all(AppSpacing.md),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -27,14 +27,14 @@ class DashboardOpeningSnapshot extends StatelessWidget {
                   'Today\'s attention',
                   style: Theme.of(context).textTheme.titleSmall,
                 ),
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: AppSpacing.sm),
                 Text(
                   '${state.partialCount} partial bills · '
                   '₹${state.pending.toStringAsFixed(0)} to collect · '
                   '${state.lowStockCount} low stock',
                 ),
                 if (state.billCount > 0) ...[
-                  const SizedBox(height: AppSpacing.xs),
+                  SizedBox(height: AppSpacing.xs),
                   Text(
                     'Today: ${state.billCount} bills · '
                     '₹${state.revenue.toStringAsFixed(0)} sales',
@@ -43,7 +43,7 @@ class DashboardOpeningSnapshot extends StatelessWidget {
                 ],
                 if (state.expenseSpike)
                   Padding(
-                    padding: const EdgeInsets.only(top: AppSpacing.xs),
+                    padding: EdgeInsets.only(top: AppSpacing.xs),
                     child: Text(
                       'Expenses spiked vs recent weeks',
                       style: TextStyle(

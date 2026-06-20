@@ -32,7 +32,7 @@ class AccountEditableFieldTile extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(8),
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
             child: Row(
               children: [
                 Container(

@@ -8,7 +8,7 @@ class AppListTileSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppShimmer(
+    return AppShimmer(
       child: Padding(
         padding: EdgeInsets.symmetric(
           horizontal: AppSpacing.md,
@@ -16,15 +16,15 @@ class AppListTileSkeleton extends StatelessWidget {
         ),
         child: Row(
           children: [
-            AppSkeletonCircle(size: 48),
+            const AppSkeletonCircle(size: 48),
             SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  AppSkeletonText(width: 150),
+                  const AppSkeletonText(width: 150),
                   SizedBox(height: AppSpacing.xs),
-                  AppSkeletonText(width: 100, height: 12),
+                  const AppSkeletonText(width: 100, height: 12),
                 ],
               ),
             ),
@@ -41,7 +41,7 @@ class AppMetricCardSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppShimmer(
+    return AppShimmer(
       child: Card(
         child: Padding(
           padding: EdgeInsets.all(AppSpacing.md),
@@ -49,11 +49,11 @@ class AppMetricCardSkeleton extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              AppSkeletonText(width: 80, height: 12),
+              const AppSkeletonText(width: 80, height: 12),
               SizedBox(height: AppSpacing.sm),
-              AppSkeletonText(width: 120, height: 24),
+              const AppSkeletonText(width: 120, height: 24),
               SizedBox(height: AppSpacing.sm),
-              AppSkeletonText(width: 60, height: 12),
+              const AppSkeletonText(width: 60, height: 12),
             ],
           ),
         ),
@@ -68,17 +68,17 @@ class AppProductGridSkeleton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const AppShimmer(
+    return AppShimmer(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
+          const Expanded(
             child: AppSkeleton(borderRadius: 12),
           ),
           SizedBox(height: AppSpacing.sm),
-          AppSkeletonText(width: 100),
+          const AppSkeletonText(width: 100),
           SizedBox(height: AppSpacing.xs),
-          AppSkeletonText(width: 60, height: 12),
+          const AppSkeletonText(width: 60, height: 12),
         ],
       ),
     );

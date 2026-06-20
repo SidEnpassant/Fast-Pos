@@ -55,7 +55,7 @@ class _TaxSettingsView extends StatelessWidget {
             return const Center(child: CircularProgressIndicator());
           }
           return ListView(
-            padding: const EdgeInsets.all(16),
+            padding:const EdgeInsets.all(16),
             children: [
               AppSectionCard(
                 title: 'GST Configuration',

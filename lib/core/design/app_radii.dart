@@ -1,7 +1,9 @@
+import 'package:flutter_screenutil/flutter_screenutil.dart';
+
 /// Corner radii shared across cards, fields, and dialogs.
 abstract final class AppRadii {
-  static const double sm = 8;
-  static const double md = 12;
-  static const double lg = 16;
-  static const double xl = 20;
+  static double get sm => 8.r;
+  static double get md => 12.r;
+  static double get lg => 16.r;
+  static double get xl => 20.r;
 }

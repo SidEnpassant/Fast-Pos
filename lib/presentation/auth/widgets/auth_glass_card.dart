@@ -13,7 +13,7 @@ class AuthGlassCard extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(AppSpacing.md),
+      padding: EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         color: scheme.surface.withValues(alpha: 0.94),
         borderRadius: BorderRadius.circular(AppRadii.lg),

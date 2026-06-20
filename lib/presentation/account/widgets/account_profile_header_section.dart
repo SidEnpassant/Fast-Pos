@@ -33,7 +33,7 @@ class AccountProfileHeaderSection extends StatelessWidget {
               onEdit: onChangeSignature,
             ),
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           Text(
             name.isNotEmpty ? name : 'Your name',
             style: theme.textTheme.titleLarge?.copyWith(
@@ -41,7 +41,7 @@ class AccountProfileHeaderSection extends StatelessWidget {
             ),
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.sm),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             decoration: BoxDecoration(
@@ -70,7 +70,7 @@ class AccountProfileHeaderSection extends StatelessWidget {
               ],
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          SizedBox(height: AppSpacing.sm),
           Text(
             'Tap the camera to update your bill signature image',
             textAlign: TextAlign.center,

@@ -64,7 +64,7 @@ class BillGenerationCustomerSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           TextFormField(
             controller: phoneController,
             decoration: billGenerationInputDecoration(
@@ -127,11 +127,11 @@ class BillGenerationProductsSection extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
+          SizedBox(height: AppSpacing.md),
           if (lines.isEmpty)
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+              padding: EdgeInsets.symmetric(vertical: AppSpacing.xl),
               decoration: BoxDecoration(
                 color: theme.colorScheme.surfaceContainerHighest
                     .withValues(alpha: 0.3),
@@ -150,14 +150,14 @@ class BillGenerationProductsSection extends StatelessWidget {
                     color: theme.colorScheme.onSurfaceVariant
                         .withValues(alpha: 0.5),
                   ),
-                  const SizedBox(height: AppSpacing.sm),
+                  SizedBox(height: AppSpacing.sm),
                   Text(
                     'No products added yet',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: theme.colorScheme.onSurfaceVariant,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xs),
+                  SizedBox(height: AppSpacing.xs),
                   Text(
                     'Scan barcode or add manually',
                     style: theme.textTheme.bodySmall?.copyWith(
@@ -182,9 +182,9 @@ class BillGenerationProductsSection extends StatelessWidget {
               ],
             ),
           if (lines.isNotEmpty) ...[
-            const Divider(height: AppSpacing.xl),
+            Divider(height: AppSpacing.xl),
             Container(
-              padding: const EdgeInsets.symmetric(
+              padding: EdgeInsets.symmetric(
                 horizontal: AppSpacing.md,
                 vertical: AppSpacing.sm,
               ),
@@ -265,7 +265,7 @@ class BillGenerationPaymentSection extends StatelessWidget {
                   },
                 ),
                 const Divider(),
-                const SizedBox(height: AppSpacing.sm),
+                SizedBox(height: AppSpacing.sm),
               ],
               BillGenerationDropdownField(
                 label: 'Payment Method',
@@ -277,7 +277,7 @@ class BillGenerationPaymentSection extends StatelessWidget {
                 prefixIcon: Icons.payments,
                 onChanged: onPaymentMethodChanged,
               ),
-              const SizedBox(height: AppSpacing.md),
+              SizedBox(height: AppSpacing.md),
               BillGenerationDropdownField(
                 label: 'Payment Status',
                 value: paymentStatus,
@@ -289,7 +289,7 @@ class BillGenerationPaymentSection extends StatelessWidget {
                 onChanged: onPaymentStatusChanged,
               ),
               if (paymentStatus == 'partial') ...[
-                const SizedBox(height: AppSpacing.md),
+                SizedBox(height: AppSpacing.md),
                 TextFormField(
                   initialValue: paidAmount.toString(),
                   decoration: billGenerationInputDecoration(
@@ -343,7 +343,7 @@ class _BillDraftLineTile extends StatelessWidget {
     final fmt = NumberFormat.currency(locale: 'en_IN', symbol: '₹');
 
     return Padding(
-      padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      padding: EdgeInsets.only(bottom: AppSpacing.sm),
       child: Slidable(
         key: ValueKey('slidable-$index'),
         endActionPane: ActionPane(

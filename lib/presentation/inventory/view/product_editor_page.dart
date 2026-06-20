@@ -175,7 +175,7 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
         onPressed: () => context.pop(),
       ),
       body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.md),
+        padding: EdgeInsets.all(AppSpacing.md),
         children: [
           AppSectionCard(
             title: 'Barcode',
@@ -354,7 +354,7 @@ class _ProductEditorPageState extends State<ProductEditorPage> {
       ),
       bottomNavigationBar: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
+          padding: EdgeInsets.all(AppSpacing.md),
           child: FilledButton(
             onPressed: _saving ? null : _save,
             child: _saving
