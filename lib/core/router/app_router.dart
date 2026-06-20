@@ -8,6 +8,9 @@ import 'package:inventopos/application/ai/observe_ai_preferences_use_case.dart';
 import 'package:inventopos/application/ai/save_ai_preferences_use_case.dart';
 import 'package:inventopos/application/auth/request_password_reset_use_case.dart';
 import 'package:inventopos/application/auth/sign_in_use_case.dart';
+import 'package:inventopos/application/auth/sign_out_use_case.dart';
+import 'package:inventopos/application/auth/update_password_use_case.dart';
+import 'package:inventopos/application/auth/verify_recovery_otp_use_case.dart';
 import 'package:inventopos/application/automation/automation_use_cases.dart';
 import 'package:inventopos/application/billing/observe_bills_use_case.dart';
 import 'package:inventopos/application/billing/resolve_product_for_barcode_use_case.dart';
@@ -195,8 +198,7 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
       }
       if (path == '/' ||
           path == '/login' ||
-          path == '/signup' ||
-          path == '/forgot-password') {
+          path == '/signup') {
         return '/app/dashboard';
       }
       return null;
@@ -245,7 +247,12 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
         parentNavigatorKey: appRootNavigatorKey,
         builder: (context, state) => BlocProvider(
           create: (ctx) =>
-              ForgotPasswordBloc(ctx.read<RequestPasswordResetUseCase>()),
+              ForgotPasswordBloc(
+                ctx.read<RequestPasswordResetUseCase>(),
+                ctx.read<VerifyRecoveryOtpUseCase>(),
+                ctx.read<UpdatePasswordUseCase>(),
+                ctx.read<SignOutUseCase>(),
+              ),
           child: const ForgotPassword(),
         ),
       ),

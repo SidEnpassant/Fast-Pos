@@ -9,6 +9,8 @@ import 'package:inventopos/application/ai/save_ai_preferences_use_case.dart';
 import 'package:inventopos/application/auth/request_password_reset_use_case.dart';
 import 'package:inventopos/application/auth/sign_in_use_case.dart';
 import 'package:inventopos/application/auth/sign_out_use_case.dart';
+import 'package:inventopos/application/auth/verify_recovery_otp_use_case.dart';
+import 'package:inventopos/application/auth/update_password_use_case.dart';
 import 'package:inventopos/application/automation/automation_use_cases.dart';
 import 'package:inventopos/application/automation/sync_automation_jobs_from_prefs_use_case.dart';
 import 'package:inventopos/application/billing/delete_bill_use_case.dart';
@@ -278,6 +280,12 @@ List<RepositoryProvider<dynamic>> appRepositoryProviders() {
     ),
     RepositoryProvider<RequestPasswordResetUseCase>(
       create: (c) => RequestPasswordResetUseCase(c.read<AuthRepository>()),
+    ),
+    RepositoryProvider<VerifyRecoveryOtpUseCase>(
+      create: (c) => VerifyRecoveryOtpUseCase(c.read<AuthRepository>()),
+    ),
+    RepositoryProvider<UpdatePasswordUseCase>(
+      create: (c) => UpdatePasswordUseCase(c.read<AuthRepository>()),
     ),
     RepositoryProvider<RegisterAccountUseCase>(
       create: (c) => RegisterAccountUseCase(c.read<RegistrationRepository>()),

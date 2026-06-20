@@ -17,4 +17,13 @@ abstract class AuthRepository {
   Future<void> signOut();
 
   Future<void> resetPasswordForEmail(String email);
+
+  /// Verify a 6-digit OTP sent to the user's email for password recovery.
+  Future<void> verifyRecoveryOtp({
+    required String email,
+    required String otp,
+  });
+
+  /// Update the user's password (must be called after verifying recovery OTP).
+  Future<void> updatePassword(String newPassword);
 }

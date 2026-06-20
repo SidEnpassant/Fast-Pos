@@ -84,7 +84,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       alignment: Alignment.centerRight,
                       child: TextButton(
                         onPressed: () => context.push('/forgot-password'),
-                        child: const Text('Forgot password?'),
+                        child: const Text('Login with Otp'),
                       ),
                     ),
                     const SizedBox(height: 8),

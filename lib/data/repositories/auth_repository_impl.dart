@@ -86,4 +86,31 @@ class AuthRepositoryImpl implements AuthRepository {
       throw AuthOperationFailure(e.message);
     }
   }
+
+  @override
+  Future<void> verifyRecoveryOtp({
+    required String email,
+    required String otp,
+  }) async {
+    try {
+      await _client.auth.verifyOTP(
+        email: email.trim(),
+        token: otp.trim(),
+        type: OtpType.recovery,
+      );
+    } on AuthException catch (e) {
+      throw AuthOperationFailure(e.message);
+    }
+  }
+
+  @override
+  Future<void> updatePassword(String newPassword) async {
+    try {
+      await _client.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
+    } on AuthException catch (e) {
+      throw AuthOperationFailure(e.message);
+    }
+  }
 }
