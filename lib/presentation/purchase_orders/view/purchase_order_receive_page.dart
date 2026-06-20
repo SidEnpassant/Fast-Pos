@@ -3,10 +3,11 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/entities/purchase_order.dart';
-import 'package:inventopos/domain/repositories/purchase_order_repository.dart';
+
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_bloc.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_event.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_state.dart';
+
 
 class PurchaseOrderReceivePage extends StatefulWidget {
   final String purchaseOrderId;
@@ -29,21 +30,31 @@ class _PurchaseOrderReceivePageState extends State<PurchaseOrderReceivePage> {
   }
 
   Future<void> _loadPO() async {
-    final userId = Supabase.instance.client.auth.currentUser?.id ?? '';
-    final repo = context.read<PurchaseOrderRepository>();
-    final orders = await repo.watchPurchaseOrdersForUser(userId).first;
-    final po = orders.firstWhere((o) => o.id == widget.purchaseOrderId);
+    final bloc = context.read<PurchaseOrderBloc>();
+    PurchaseOrderState state = bloc.state;
+    if (state.status != PurchaseOrderStatus.success) {
+      state = await bloc.stream.firstWhere((s) => s.status == PurchaseOrderStatus.success);
+    }
     
+    PurchaseOrder? po;
+    try {
+      po = state.orders.firstWhere((o) => o.id == widget.purchaseOrderId);
+    } catch (_) {}
+
+    if (!mounted) return;
+
     setState(() {
       _po = po;
-      _receivedLines = po.lineItems.map((line) => PurchaseOrderLine(
-        productId: line.productId,
-        productName: line.productName,
-        orderedQty: line.orderedQty,
-        receivedQty: line.orderedQty, // Default to receiving everything
-        unitCost: line.unitCost,
-        uom: line.uom,
-      )).toList();
+      if (po != null) {
+        _receivedLines = po.lineItems.map((line) => PurchaseOrderLine(
+          productId: line.productId,
+          productName: line.productName,
+          orderedQty: line.orderedQty,
+          receivedQty: line.orderedQty, // Default to receiving everything
+          unitCost: line.unitCost,
+          uom: line.uom,
+        )).toList();
+      }
       _isLoading = false;
     });
   }

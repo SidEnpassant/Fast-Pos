@@ -1,14 +1,15 @@
 import 'dart:ui';
+
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/entities/cash_entry.dart';
-import 'package:inventopos/presentation/daybook/bloc/daybook_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:inventopos/domain/pdf/daybook_pdf_generator.dart';
+import 'package:inventopos/presentation/daybook/bloc/daybook_bloc.dart';
 import 'package:open_file/open_file.dart';
 
 class DayBookScreen extends StatelessWidget {
@@ -137,7 +138,7 @@ class DayBookView extends StatelessWidget {
               ),
               if (summary.entries.isEmpty)
                 SliverFillRemaining(
-                  child: AppEmptyState(
+                  child: const AppEmptyState(
                     icon: Icons.account_balance_wallet_outlined,
                     title: 'No entries',
                     message: 'No cash entries recorded for this date yet.',
@@ -272,7 +273,7 @@ class _SummaryHeader extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: theme.colorScheme.shadow.withOpacity(0.05),
+            color: theme.colorScheme.shadow.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -293,7 +294,7 @@ class _SummaryHeader extends StatelessWidget {
                     Container(
                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                       decoration: BoxDecoration(
-                        color: netBalance >= 0 ? Colors.green.withOpacity(0.2) : Colors.red.withOpacity(0.2),
+                        color: netBalance >= 0 ? Colors.green.withValues(alpha: 0.2) : Colors.red.withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Text(
@@ -400,7 +401,7 @@ class _MiniChart extends StatelessWidget {
             dotData: const FlDotData(show: false),
             belowBarData: BarAreaData(
               show: true,
-              color: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+              color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
             ),
           ),
         ],
@@ -474,7 +475,7 @@ class _CashEntryTile extends StatelessWidget {
       color: theme.colorScheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+        side: BorderSide(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(12.0),
@@ -483,7 +484,7 @@ class _CashEntryTile extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isIn ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
+                color: isIn ? Colors.green.withValues(alpha: 0.1) : Colors.red.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
               ),
               child: Icon(

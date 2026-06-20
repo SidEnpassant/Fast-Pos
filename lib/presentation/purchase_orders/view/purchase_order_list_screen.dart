@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/entities/purchase_order.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_bloc.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_event.dart';
 import 'package:inventopos/presentation/purchase_orders/bloc/purchase_order_state.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class PurchaseOrderListScreen extends StatelessWidget {
   const PurchaseOrderListScreen({super.key});
@@ -76,7 +76,7 @@ class _PurchaseOrderListViewState extends State<PurchaseOrderListView> with Sing
               indicatorColor: theme.colorScheme.primary,
               indicatorWeight: 3,
               indicatorSize: TabBarIndicatorSize.label,
-              dividerColor: theme.colorScheme.outlineVariant.withOpacity(0.5),
+              dividerColor: theme.colorScheme.outlineVariant.withValues(alpha: 0.5),
               tabs: _tabs.map((tab) => Tab(text: tab)).toList(),
             ),
           ).animate().fadeIn().slideY(begin: -0.1, end: 0),
@@ -178,7 +178,7 @@ class _PurchaseOrderCard extends StatelessWidget {
       color: scheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: scheme.outlineVariant.withOpacity(0.5)),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -281,7 +281,7 @@ class _PurchaseOrderCard extends StatelessWidget {
               ),
               if (isPending) ...[
                 const SizedBox(height: 16),
-                Divider(height: 1, color: scheme.outlineVariant.withOpacity(0.5)),
+                Divider(height: 1, color: scheme.outlineVariant.withValues(alpha: 0.5)),
                 const SizedBox(height: 12),
                 Row(
                   children: [
@@ -318,20 +318,20 @@ class _PurchaseOrderCard extends StatelessWidget {
   }
 
   Widget _buildStatusChip(ThemeData theme, bool isPending, bool isReceived, bool isCancelled) {
-    Color bgColor = Colors.grey.withOpacity(0.1);
+    Color bgColor = Colors.grey.withValues(alpha: 0.1);
     Color textColor = Colors.grey.shade700;
     String label = po.status;
 
     if (isPending) {
-      bgColor = Colors.orange.withOpacity(0.1);
+      bgColor = Colors.orange.withValues(alpha: 0.1);
       textColor = Colors.orange.shade800;
       label = 'Pending';
     } else if (isReceived) {
-      bgColor = Colors.green.withOpacity(0.1);
+      bgColor = Colors.green.withValues(alpha: 0.1);
       textColor = Colors.green.shade700;
       label = 'Received';
     } else if (isCancelled) {
-      bgColor = Colors.red.withOpacity(0.1);
+      bgColor = Colors.red.withValues(alpha: 0.1);
       textColor = Colors.red.shade700;
       label = 'Cancelled';
     }

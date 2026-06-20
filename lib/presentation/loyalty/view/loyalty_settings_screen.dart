@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
@@ -8,7 +9,6 @@ import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/loyalty/bloc/loyalty_bloc.dart';
 import 'package:inventopos/presentation/loyalty/bloc/loyalty_event.dart';
 import 'package:inventopos/presentation/loyalty/bloc/loyalty_state.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 
 class LoyaltySettingsScreen extends StatefulWidget {
   const LoyaltySettingsScreen({super.key});
@@ -169,7 +169,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
         color: _isEnabled ? scheme.primaryContainer : scheme.surfaceContainerHigh,
         borderRadius: BorderRadius.circular(24),
         border: Border.all(
-          color: _isEnabled ? scheme.primary.withOpacity(0.5) : Colors.transparent,
+          color: _isEnabled ? scheme.primary.withValues(alpha: 0.5) : Colors.transparent,
           width: 2,
         ),
       ),
@@ -210,7 +210,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
           ),
           Switch(
             value: _isEnabled,
-            activeColor: scheme.primary,
+            activeThumbColor: scheme.primary,
             onChanged: (val) => setState(() => _isEnabled = val),
           ),
         ],
@@ -250,7 +250,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
       decoration: BoxDecoration(
         color: theme.colorScheme.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: theme.colorScheme.outlineVariant.withOpacity(0.5)),
+        border: Border.all(color: theme.colorScheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -292,7 +292,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.amber.withOpacity(0.3),
+            color: Colors.amber.withValues(alpha: 0.3),
             blurRadius: 15,
             offset: const Offset(0, 8),
           ),
@@ -318,7 +318,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
+                  color: Colors.white.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
@@ -337,12 +337,12 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
                 children: [
                   Text(
                     'Avinash Kumar',
-                    style: theme.textTheme.titleMedium?.copyWith(color: Colors.white.withOpacity(0.9)),
+                    style: theme.textTheme.titleMedium?.copyWith(color: Colors.white.withValues(alpha: 0.9)),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     'Customer since 2024',
-                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withOpacity(0.7)),
+                    style: theme.textTheme.labelSmall?.copyWith(color: Colors.white.withValues(alpha: 0.7)),
                   ),
                 ],
               ),
@@ -355,7 +355,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
                   ),
                   Text(
                     'Points Available',
-                    style: theme.textTheme.labelMedium?.copyWith(color: Colors.white.withOpacity(0.9)),
+                    style: theme.textTheme.labelMedium?.copyWith(color: Colors.white.withValues(alpha: 0.9)),
                   ),
                 ],
               ),
@@ -462,8 +462,8 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.05),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: color.withValues(alpha: 0.05),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -482,7 +482,7 @@ class _LoyaltySettingsScreenState extends State<LoyaltySettingsScreen> {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               borderRadius: BorderRadius.circular(8),
             ),
             child: Text(multiplier, style: theme.textTheme.labelMedium?.copyWith(fontWeight: FontWeight.bold, color: color)),

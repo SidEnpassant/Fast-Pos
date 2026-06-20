@@ -1,11 +1,10 @@
 import 'dart:io';
+
 import 'package:intl/intl.dart';
 import 'package:inventopos/application/daybook/compute_day_book_use_case.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
-import 'package:inventopos/domain/entities/cash_entry.dart';
-import 'package:inventopos/presentation/daybook/bloc/daybook_bloc.dart'; // To access DayBookSummary
 
 class DayBookPdfGenerator {
   static Future<File> generate(DayBookSummary summary) async {
@@ -28,7 +27,7 @@ class DayBookPdfGenerator {
                   mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
                   children: [
                     pw.Text('Day Book Report', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
-                    pw.Text('Fast POS', style: pw.TextStyle(fontSize: 18, color: PdfColors.grey700)),
+                    pw.Text('Fast POS', style: const pw.TextStyle(fontSize: 18, color: PdfColors.grey700)),
                   ],
                 ),
               ),
@@ -37,9 +36,9 @@ class DayBookPdfGenerator {
               // Summary Section
               pw.Container(
                 padding: const pw.EdgeInsets.all(12),
-                decoration: pw.BoxDecoration(
+                decoration: const pw.BoxDecoration(
                   color: PdfColors.grey200,
-                  borderRadius: const pw.BorderRadius.all(pw.Radius.circular(8)),
+                  borderRadius: pw.BorderRadius.all(pw.Radius.circular(8)),
                 ),
                 child: pw.Row(
                   mainAxisAlignment: pw.MainAxisAlignment.spaceAround,

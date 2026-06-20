@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/core/widgets/m3/app_empty_state.dart';
+import 'package:inventopos/core/widgets/m3/app_screen_scaffold.dart';
 import 'package:inventopos/domain/entities/stock_audit.dart';
 import 'package:inventopos/presentation/stock_audit/bloc/stock_audit_bloc.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:shimmer/shimmer.dart';
 
 class StockAuditListScreen extends StatefulWidget {
@@ -182,7 +182,7 @@ class _StockAuditCard extends StatelessWidget {
       color: scheme.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(20),
-        side: BorderSide(color: scheme.outlineVariant.withOpacity(0.5)),
+        side: BorderSide(color: scheme.outlineVariant.withValues(alpha: 0.5)),
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(20),
@@ -277,7 +277,7 @@ class _StockAuditCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: mockVarianceVal < 0 ? Colors.red.withOpacity(0.1) : Colors.green.withOpacity(0.1),
+                    color: mockVarianceVal < 0 ? Colors.red.withValues(alpha: 0.1) : Colors.green.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Row(
@@ -315,17 +315,17 @@ class _StockAuditCard extends StatelessWidget {
 
     switch (audit.status) {
       case StockAuditStatus.inProgress:
-        bgColor = Colors.blue.withOpacity(0.1);
+        bgColor = Colors.blue.withValues(alpha: 0.1);
         textColor = Colors.blue.shade700;
         label = 'In Progress';
         break;
       case StockAuditStatus.completed:
-        bgColor = Colors.green.withOpacity(0.1);
+        bgColor = Colors.green.withValues(alpha: 0.1);
         textColor = Colors.green.shade700;
         label = 'Completed';
         break;
       case StockAuditStatus.cancelled:
-        bgColor = Colors.red.withOpacity(0.1);
+        bgColor = Colors.red.withValues(alpha: 0.1);
         textColor = Colors.red.shade700;
         label = 'Cancelled';
         break;

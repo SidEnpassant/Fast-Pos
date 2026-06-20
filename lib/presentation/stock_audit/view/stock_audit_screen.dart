@@ -203,14 +203,14 @@ class _AuditLineCard extends StatelessWidget {
     final isOk = line.variance == 0;
     
     Color cardColor = scheme.surfaceContainerLowest;
-    Color borderColor = scheme.outlineVariant.withOpacity(0.5);
+    Color borderColor = scheme.outlineVariant.withValues(alpha: 0.5);
     
     if (line.variance > 0) {
-      cardColor = Colors.green.withOpacity(0.05);
-      borderColor = Colors.green.withOpacity(0.3);
+      cardColor = Colors.green.withValues(alpha: 0.05);
+      borderColor = Colors.green.withValues(alpha: 0.3);
     } else if (line.variance < 0) {
-      cardColor = Colors.red.withOpacity(0.05);
-      borderColor = Colors.red.withOpacity(0.3);
+      cardColor = Colors.red.withValues(alpha: 0.05);
+      borderColor = Colors.red.withValues(alpha: 0.3);
     }
 
     return Card(
@@ -270,7 +270,7 @@ class _AuditLineCard extends StatelessWidget {
                   decoration: BoxDecoration(
                     color: scheme.surfaceContainerHigh,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: scheme.outlineVariant.withOpacity(0.5)),
+                    border: Border.all(color: scheme.outlineVariant.withValues(alpha: 0.5)),
                   ),
                   child: Row(
                     children: [

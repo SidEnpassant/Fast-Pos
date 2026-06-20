@@ -4,14 +4,14 @@ import 'package:inventopos/application/customers/upsert_customer_from_bill_use_c
 import 'package:inventopos/application/daybook/record_cash_entry_use_case.dart';
 import 'package:inventopos/application/inventory/decrement_stock_on_bill_use_case.dart';
 import 'package:inventopos/application/inventory/update_product_velocity_use_case.dart';
-import 'package:inventopos/application/tax/compute_gst_for_bill_use_case.dart';
-import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/application/loyalty/earn_loyalty_points_use_case.dart';
 import 'package:inventopos/application/loyalty/redeem_loyalty_points_use_case.dart';
+import 'package:inventopos/application/tax/compute_gst_for_bill_use_case.dart';
 import 'package:inventopos/core/performance/main_isolate.dart';
 import 'package:inventopos/data/billing/bill_pdf_generator.dart';
 import 'package:inventopos/data/security/bill_audit_service.dart';
 import 'package:inventopos/domain/billing/bill_submission.dart';
+import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/domain/repositories/bills_repository.dart';
 import 'package:inventopos/domain/repositories/profile_repository.dart';
