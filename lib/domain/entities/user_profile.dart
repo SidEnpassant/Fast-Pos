@@ -15,6 +15,7 @@ class UserProfile extends Equatable {
     this.createdAt,
     this.stateCode,
     this.isCompositionDealer = false,
+    this.pdfBillSize = 'A4',
   });
 
   final String? name;
@@ -29,6 +30,7 @@ class UserProfile extends Equatable {
   final Object? createdAt;
   final String? stateCode;
   final bool isCompositionDealer;
+  final String pdfBillSize;
 
   @override
   List<Object?> get props => [
@@ -44,5 +46,6 @@ class UserProfile extends Equatable {
         createdAt,
         stateCode,
         isCompositionDealer,
+        pdfBillSize,
       ];
 }

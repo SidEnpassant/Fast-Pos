@@ -117,6 +117,46 @@ class _MyAccountPageState extends State<MyAccountPage> {
     return keys.where((k) => _str(fields, k).isNotEmpty).length;
   }
 
+  String _formatPdfSize(String? val) {
+    if (val == 'A5') return 'A5 (Half)';
+    if (val == '80mm') return '80mm (3-inch Roll)';
+    if (val == '58mm') return '58mm (2-inch Roll)';
+    return 'A4 (Standard)';
+  }
+
+  void _showPdfSizeDialog(BuildContext context, String currentValue) {
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return SimpleDialog(
+          title: const Text('Select Invoice PDF Size'),
+          children: [
+            _buildPdfSizeOption(ctx, 'A4', currentValue),
+            _buildPdfSizeOption(ctx, 'A5', currentValue),
+            _buildPdfSizeOption(ctx, '80mm', currentValue),
+            _buildPdfSizeOption(ctx, '58mm', currentValue),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildPdfSizeOption(BuildContext ctx, String value, String currentValue) {
+    return RadioListTile<String>(
+      title: Text(_formatPdfSize(value)),
+      value: value,
+      groupValue: currentValue,
+      onChanged: (val) {
+        if (val != null) {
+          context.read<AccountBloc>().add(
+            AccountPatchFieldRequested(fieldKey: 'pdfBillSize', value: val),
+          );
+        }
+        Navigator.pop(ctx);
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<AccountBloc, AccountState>(
@@ -288,12 +328,22 @@ class _MyAccountPageState extends State<MyAccountPage> {
                             fieldKey: 'billRules',
                             icon: Icons.rule_outlined,
                             valueText: _str(fields, 'billRules'),
-                            showDivider: false,
                             onTap: () => showAccountFieldEditDialog(
                               context,
                               label: 'Bill Rules',
                               fieldKey: 'billRules',
                               initialValue: _str(fields, 'billRules'),
+                            ),
+                          ),
+                          AccountEditableFieldTile(
+                            label: 'Invoice PDF Size',
+                            fieldKey: 'pdfBillSize',
+                            icon: Icons.picture_as_pdf_outlined,
+                            valueText: _formatPdfSize(fields['pdfBillSize']?.toString()),
+                            showDivider: false,
+                            onTap: () => _showPdfSizeDialog(
+                              context,
+                              fields['pdfBillSize']?.toString() ?? 'A4',
                             ),
                           ),
                         ],

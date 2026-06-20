@@ -4,6 +4,7 @@ import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
 import 'package:inventopos/domain/entities/bill.dart';
 import 'package:inventopos/presentation/collections_automation/widgets/bill_whatsapp_action_button.dart';
+import 'package:inventopos/presentation/transactions/widgets/print_bill_helper.dart';
 import 'package:inventopos/presentation/transactions/widgets/transaction_amount_row.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -98,10 +99,10 @@ class PendingTransactionBillCard extends StatelessWidget {
                 children: [
                   if (remainingAmount > 0)
                     Expanded(
-                      flex: 2,
+                      flex: 3,
                       child: FilledButton.icon(
                         icon: const Icon(Icons.payments_outlined),
-                        label: const Text('Update payment'),
+                        label: const Text('Update'),
                         onPressed: onUpdatePayment,
                       ),
                     ),
@@ -117,9 +118,15 @@ class PendingTransactionBillCard extends StatelessWidget {
                     flex: 2,
                     child: FilledButton.tonalIcon(
                       icon: const Icon(Icons.picture_as_pdf_outlined),
-                      label: const Text('Show Bill'),
+                      label: const Text('Bill'),
                       onPressed: onShowBill,
                     ),
+                  ),
+                  const SizedBox(width: 8),
+                  IconButton.filledTonal(
+                    onPressed: () => printBillToBluetooth(context, bill),
+                    icon: const Icon(Icons.print),
+                    tooltip: 'Print to POS Printer',
                   ),
                 ],
               ),

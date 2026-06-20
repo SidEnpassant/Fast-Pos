@@ -15,6 +15,7 @@ import 'package:inventopos/presentation/customers/bloc/customer_detail_state.dar
 import 'package:inventopos/presentation/customers/widgets/customer_detail_skeleton.dart';
 import 'package:inventopos/presentation/customers/widgets/customer_loyalty_card.dart';
 import 'package:inventopos/presentation/transactions/widgets/bill_pdf_viewer_page.dart';
+import 'package:inventopos/presentation/transactions/widgets/print_bill_helper.dart';
 
 class CustomerDetailScreen extends StatefulWidget {
   const CustomerDetailScreen({super.key, required this.customerId});
@@ -197,18 +198,22 @@ class _CustomerDetailScreenState extends State<CustomerDetailScreen> {
                                     ],
                                   ),
                                 ),
-                                trailing: bill.pdfUrl != null
-                                    ? IconButton(
-                                        icon: const Icon(
-                                          Icons.picture_as_pdf_outlined,
-                                        ),
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    if (bill.pdfUrl != null)
+                                      IconButton(
+                                        icon: const Icon(Icons.picture_as_pdf_outlined),
                                         tooltip: 'Show bill',
-                                        onPressed: () => openBillPdf(
-                                          context,
-                                          bill.pdfUrl,
-                                        ),
-                                      )
-                                    : null,
+                                        onPressed: () => openBillPdf(context, bill.pdfUrl),
+                                      ),
+                                    IconButton(
+                                      icon: const Icon(Icons.print),
+                                      tooltip: 'Print to POS Printer',
+                                      onPressed: () => printBillToBluetooth(context, bill),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           );

@@ -3,6 +3,9 @@ import 'package:inventopos/domain/entities/receipt_payload.dart';
 abstract class PrinterRepository {
   Stream<List<Map<String, dynamic>>> scanDevices();
 
+  Future<void> startScan();
+  Future<void> stopScan();
+
   Future<void> saveDefaultPrinter({
     required String userId,
     required String macAddress,
@@ -11,6 +14,8 @@ abstract class PrinterRepository {
   });
 
   Future<Map<String, dynamic>?> getDefaultPrinter(String userId);
+  
+  Future<void> deleteDefaultPrinter(String userId);
 
   Future<void> printReceipt(ReceiptPayload payload);
 }

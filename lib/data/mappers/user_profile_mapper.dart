@@ -17,6 +17,7 @@ abstract final class UserProfileMapper {
       createdAt: m['createdAt'],
       stateCode: m['stateCode'] as String?,
       isCompositionDealer: m['isCompositionDealer'] as bool? ?? false,
+      pdfBillSize: m['pdfBillSize'] as String? ?? 'A4',
     );
   }
 
@@ -35,6 +36,7 @@ abstract final class UserProfileMapper {
       'createdAt': p.createdAt,
       'stateCode': p.stateCode,
       'isCompositionDealer': p.isCompositionDealer,
+      'pdfBillSize': p.pdfBillSize,
     };
   }
 }

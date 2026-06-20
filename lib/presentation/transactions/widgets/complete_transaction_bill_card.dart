@@ -5,6 +5,7 @@ import 'package:inventopos/core/design/app_radii.dart';
 import 'package:inventopos/core/design/app_spacing.dart';
 import 'package:inventopos/core/widgets/m3/app_status_chip.dart';
 import 'package:inventopos/domain/entities/bill.dart';
+import 'package:inventopos/presentation/transactions/widgets/print_bill_helper.dart';
 
 class CompleteTransactionBillCard extends StatelessWidget {
   const CompleteTransactionBillCard({
@@ -127,9 +128,15 @@ class CompleteTransactionBillCard extends StatelessWidget {
                     Expanded(
                       child: FilledButton.icon(
                         icon: const Icon(Icons.picture_as_pdf_outlined),
-                        label: const Text('Show Bill'),
+                        label: const Text('Bill'),
                         onPressed: onShowBill,
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    IconButton.filledTonal(
+                      onPressed: () => printBillToBluetooth(context, bill),
+                      icon: const Icon(Icons.print),
+                      tooltip: 'Print to POS Printer',
                     ),
                     const SizedBox(width: 8),
                     Expanded(
