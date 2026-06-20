@@ -78,27 +78,31 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     const SliverToBoxAdapter(child: _DashboardHeader()),
                     SliverPadding(
                       padding: EdgeInsets.all(AppSpacing.md),
-                      sliver: SliverList(
-                        delegate: SliverChildListDelegate([
-                          const _KpiSection(),
-                          SizedBox(height: AppSpacing.md),
-                          const _PulseSection(),
-                          SizedBox(height: AppSpacing.lg),
-                          const _AttentionSection(),
-                          const _QuickActionsSection(),
-                          SizedBox(height: AppSpacing.lg),
-                          const DashboardAiBriefingCard(),
-                          SizedBox(height: AppSpacing.lg),
-                          const DashboardOpeningSnapshot(),
-                          SizedBox(height: AppSpacing.lg),
-                          const DashboardReorderAlerts(),
-                          SizedBox(height: AppSpacing.lg),
-                          const _PaymentHealthSection(),
-                          const _TopSellersSection(),
-                          const _LowStockSection(),
-                          const _RecentBillsSection(),
-                          SizedBox(height: AppSpacing.lg),
-                        ]),
+                      sliver: SliverList.builder(
+                        itemCount: 18,
+                        itemBuilder: (context, index) {
+                          switch (index) {
+                            case 0: return const _KpiSection();
+                            case 1: return SizedBox(height: AppSpacing.md);
+                            case 2: return const _PulseSection();
+                            case 3: return SizedBox(height: AppSpacing.lg);
+                            case 4: return const _AttentionSection();
+                            case 5: return const _QuickActionsSection();
+                            case 6: return SizedBox(height: AppSpacing.lg);
+                            case 7: return const DashboardAiBriefingCard();
+                            case 8: return SizedBox(height: AppSpacing.lg);
+                            case 9: return const DashboardOpeningSnapshot();
+                            case 10: return SizedBox(height: AppSpacing.lg);
+                            case 11: return const DashboardReorderAlerts();
+                            case 12: return SizedBox(height: AppSpacing.lg);
+                            case 13: return const _PaymentHealthSection();
+                            case 14: return const _TopSellersSection();
+                            case 15: return const _LowStockSection();
+                            case 16: return const _RecentBillsSection();
+                            case 17: return SizedBox(height: AppSpacing.lg);
+                            default: return const SizedBox.shrink();
+                          }
+                        },
                       ),
                     ),
                   ],
