@@ -1,10 +1,10 @@
 # Fast POS (InventoPOS)
 
-**Fast POS** is a production-oriented Flutter point-of-sale (POS) app for small retail shops in India and similar markets. It covers billing with PDF invoices, offline-first sync, inventory, customers, expenses, rich analytics, Bluetooth printing, and a **cloud AI layer** (Groq via Supabase Edge Functions) for voice billing, daily briefs, and reorder intelligence.
+**Fast POS** is a production-oriented, feature-rich Flutter point-of-sale (POS) app tailored for small retail shops and businesses. It encompasses a massive suite of features from billing with PDF invoices, offline-first sync, inventory management, customer relationships, expense tracking, rich analytics, Bluetooth printing, to an advanced **cloud AI layer** (Groq via Supabase Edge Functions) for voice billing, daily briefs, automations, and intelligent business insights.
 
 | | |
 |---|---|
-| **Display name** | Fast Pos |
+| **Display name** | Fast POS |
 | **Dart package** | `inventopos` |
 | **SDK** | Dart ^3.5.1 · Flutter 3.x |
 | **Backend** | [Supabase](https://supabase.com/) (Auth, Postgres, Storage, Realtime, Edge Functions) |
@@ -20,8 +20,8 @@
 
 1. [What’s in this release](#whats-in-this-release)
 2. [Feature catalog](#feature-catalog)
-3. [UI & UX (Material 3 & Responsiveness)](#ui--ux-material-3--responsiveness)
-4. [Smart Assistant & AI (Groq)](#smart-assistant--ai-groq)
+3. [Smart Assistant, AI & Automation](#smart-assistant-ai--automation)
+4. [UI & UX (Material 3 & Responsiveness)](#ui--ux-material-3--responsiveness)
 5. [Dashboard (home)](#dashboard-home)
 6. [Architecture](#architecture)
 7. [Project structure](#project-structure)
@@ -35,173 +35,132 @@
 15. [Configuration](#configuration)
 16. [Deploy Smart Assistant (Groq)](#deploy-smart-assistant-groq)
 17. [Running, building, testing & OTA Updates](#running-building-testing--ota-updates)
-18. [Billing flow (end-to-end)](#billing-flow-end-to-end)
-19. [Troubleshooting](#troubleshooting)
-20. [Repository](#repository)
+18. [Troubleshooting](#troubleshooting)
+19. [Repository](#repository)
 
 ---
 
 ## What’s in this release
 
-This release reflects a **major UX, architecture, and capability upgrade** beyond a standard POS:
+Fast POS has evolved far beyond a standard POS system, incorporating deep business logic and automation:
 
 | Area | Highlights |
 |------|------------|
-| **Home dashboard** | Lazy loaded KPI grid (revenue today/month, pending dues, net profit), pulse strip, “needs attention”, grouped quick actions, payment mix, top sellers, low-stock block, recent bills, **AI daily brief**, **reorder alerts** |
-| **Analytics** | Full **Analytics Suite** with 5 tabs: Overview, Revenue, P&L, Inventory, Customers — powered by `BusinessAnalytics` + `CustomerAnalytics` |
-| **Smart Assistant** | Opt-in AI: voice **Billing Copilot**, Groq **daily brief**, rule + cloud **insights**, velocity-based **reorder** hints |
-| **Inventory** | Product CRUD, barcode, low-stock, EMA **velocity** updated on bill submit, import/export via CSV/XLSX |
-| **Customers** | Phone-normalized search, detail with bill history, ledger from bills |
-| **Expenses** | M3 expenses hub with categories, filters, editor |
-| **Transactions** | Completed / pending (partial) bills, PDF view/upload, payment updates |
-| **Auth & Security** | OTP-based **Password Recovery**, Glass login/register, 3-step registration, Biometric gating, RLS on all AI tables |
-| **Account** | M3 profile sections, KPI chips, signature upload, **Smart Assistant settings** under Tools |
-| **Offline** | Hive bills/products/outbox; sync on connectivity; offline banner |
-| **Notifications** | Supabase stream + local notifications; background poll hook |
+| **Home Dashboard** | Lazy loaded KPI grid, pulse strip, grouped quick actions, top sellers, low-stock block, recent bills, **AI daily brief**, **reorder alerts**. |
+| **Billing & Checkout** | Full billing flows with discounts, barcode scanning, OCR parsing, **Repeat Orders**, offline drafts, and PDF generation. |
+| **Inventory & Audits** | Real-time product tracking, **Live Stock Audits**, CSV/XLSX Import/Export, barcode generation, and velocity (EMA) tracking. |
+| **Supply Chain** | Full **Purchase Orders (PO)** lifecycle and **Suppliers** directory (create, issue, receive full/partial stock). |
+| **Returns & Credits** | Complete **Returns** workflow with automatic inventory restock and **Credit Note** issuance/tracking. |
+| **Daybook & Cash** | Daily ledger tracking cash-in and cash-out (Daybook). |
+| **Customers & Loyalty** | Phone-normalized customer CRM with ledger, messaging, and a highly configurable **Loyalty Point System** tied to checkout. |
+| **Expenses & Taxes** | M3 expenses hub + **Tax Settings** for granular multi-tax/GST setups. |
+| **Analytics Suite** | 5 comprehensive tabs: Overview, Revenue, P&L, Inventory, Customers. |
+| **Smart Assistant** | Voice **Billing Copilot**, Groq daily briefs, rule + cloud insights, and automated scheduled background jobs. |
+| **Auth & Security** | OTP-based recovery, seamless signup, Biometric gating, strict RLS on all backend tables. |
 
 ---
 
 ## Feature catalog
 
-### Authentication & onboarding
-- **Login** — `LoginBloc` + `SignInUseCase`; glass card over looping promo video (`assets/video_asset/`).
-- **Register** — 3-step `PageView`: Personal → Business → Billing; `RegisterBloc`; step progress bar.
-- **Forgot password (OTP)** — Fully native OTP-based recovery flow with a clean UI, `verifyRecoveryOtp`, and secure `updatePassword` logic.
-- **Post-verify** — `RegistrationSuccessScreen`.
-- **Session** — Global `AuthBloc` drives `GoRouter` redirects via `AuthRouterRefresh`.
-- **Biometrics** — Optional biometric gate via `local_auth`.
+### Authentication & Onboarding
+- **Login** — OTP login & Email/Password with glassmorphism UI over a looping promo video.
+- **Register** — 3-step dynamic flow (Personal → Business → Billing) with email OTP verification.
+- **Forgot password** — Fully native OTP-based recovery flow (`verifyRecoveryOtp` & `updatePassword`).
+- **Session & Routing** — Handled via `AuthBloc` driving `GoRouter` redirects without context issues.
+- **Biometrics** — Optional biometric gating via `local_auth`.
 
-### Billing & checkout
-- **Bill draft** — `BillDraftBloc`; lines with product id, qty, price, comment.
-- **Submit** — `SubmitBillUseCase`: validate → create bill (offline-first) → decrement stock → update **velocity EMA** → customer upsert → transaction → sequential bill # → PDF → Supabase PDF upload.
-- **Customer voice** — `BillVoiceAssistBloc` on customer name field.
-- **Billing Copilot** — `BillingCopilotBloc` + bottom sheet: mic → on-device STT → **Groq** `ai-voice-parse` → **confirm** → add lines (human-in-the-loop).
-- **Add product** — inventory picker route, barcode sheet (`mobile_scanner`), OCR (`google_mlkit_text_recognition`), manual dialog.
-- **Checkout scan** — `CheckoutScanBloc` resolves barcode to catalog product.
-- **Discounts** — `CheckoutBloc` + discount breakdown on submission.
-- **PDF** — generate, view, share; cloud storage with signed URLs; regen on payment update.
+### Billing & Checkout
+- **Bill Drafts** — Add products, alter quantities, inject manual items, and apply dynamic tax/discounts.
+- **Smart Add** — Barcode scanner (`mobile_scanner`), ML Kit OCR (`google_mlkit_text_recognition`), and manual catalog picker.
+- **Billing Copilot** — Mic → on-device STT → **Groq** `ai-voice-parse` → parse natural language directly into bill lines.
+- **Repeat Orders** — Instantly reconstruct a cart based on past customer purchases.
+- **Checkout** — Apply Loyalty Points, partial payments, generate sequential invoice numbers, and auto-decrease stock.
+- **PDF & Print** — Generates rich invoices with uploaded business signatures, outputs to ESC/POS Bluetooth printers, or shares via native sheets.
 
-### Inventory
-- List/search, create/edit (`ProductEditorPage`), barcode field.
-- **Low stock** thresholds; notifications (server functions available).
-- **Import/export** — CSV/XLSX via `ImportExportPage`.
-- **Velocity EMA** — `VelocityCalculator`; updated after each successful bill via `UpdateProductVelocityUseCase`.
+### Inventory & Audits
+- **Catalog** — Comprehensive product CRUD with categories, barcodes, and dynamic cost/retail tracking.
+- **Low Stock & Velocity** — EMA (Exponential Moving Average) velocity updated per bill, firing low-stock triggers.
+- **Stock Audits** — Reconcile physical vs. system stock via live audit sessions, capturing variance.
+- **Import/Export** — Bulk catalog management using CSV/XLSX integration.
 
-### Analytics (`AnalyticsHubBloc` + `AnalyticsBloc`)
-**Route:** `/app/analysis` — `AnalyticsSuiteScreen` with tabs:
-1. **Overview** — trends, payment mix, recent bills, expense breakdown, inventory snapshot.
-2. **Revenue** — charts + monthly maps (`fl_chart`).
-3. **P&L** — revenue vs expenses vs profit.
-4. **Inventory** — stock health, low/out lists, retail/cost value.
-5. **Customers** — ranks, repeat buyers, outstanding patterns.
-Deep links via query: `/app/analysis?tab=revenue` | `pnl` | etc.
+### Purchasing & Suppliers
+- **Suppliers** — Maintain supplier contact, GST, and business details.
+- **Purchase Orders (POs)** — Draft, issue, and manage supplier orders.
+- **Receive Stock** — Execute full or partial PO receipts, automatically updating current inventory levels.
 
-### Transactions
-- **Complete** — paid/closed bills; PDF actions.
-- **Incomplete** — partial payments; collect balance; PDF regen.
-- **TransactionBillActionsBloc** — replace signed bill, delete, show PDF.
+### Returns & Credit Notes
+- **Process Returns** — Select a past bill, mark returned items, choose to restock inventory or write-off.
+- **Credit Notes** — Issue digital credit notes for returned value, applying them natively against future customer bills.
 
-### Account (`AccountBloc`)
-- Profile header, editable fields (dialog-safe `AccountBloc` capture before `showDialog`).
-- Business KPIs (profile completeness).
-- **Tools:** Smart Assistant settings, printer setup.
-- Signature image upload/replace.
+### Daybook & Expenses
+- **Daybook** — Real-time cash register tracking opening balances, daily cash-in (sales), cash-out (expenses), and closing balances.
+- **Expenses** — Track operational expenditures with categorization and receipt attachments.
 
-### Hardware & I/O
-- **Bluetooth ESC/POS** printing (`PrinterSetupPage`).
+### Customers, Loyalty & Messaging
+- **CRM** — Unified customer database tracking outstanding balances and lifetime value.
+- **Loyalty Program** — Configure earnings (X points per $) and redemptions (Y points = $Z discount), tracked per customer.
+- **Batch Messaging Queue** — Send targeted promotional or transactional SMS/Emails to customer segments.
+
+### Analytics Suite (`AnalyticsHubBloc`)
+1. **Overview** — KPI trends, payment mix, recent activities.
+2. **Revenue** — Rich charting with `fl_chart`.
+3. **P&L** — Profit & Loss visualizations.
+4. **Inventory** — Stock health, valuation, and dead-stock identification.
+5. **Customers** — Retention ranks, top buyers, and outstanding ledgers.
+
+---
+
+## Smart Assistant, AI & Automation
+
+Cloud AI is **opt-in** (`ai_preferences.enabled`). The Flutter app **never** stores the `GROQ_API_KEY` — all inference happens securely via Supabase Edge Functions.
+
+### AI Capabilities
+- **Voice Parsing (`ai-voice-parse`)**: Transcript + catalog → structured bill lines.
+- **Daily Brief (`ai-briefing`)**: Compiles metrics into a markdown brief + actionable insight rows.
+- **Automation Scheduler**: CRON jobs executed via the `automation-runner` Edge Function to pre-compute insights and run maintenance tasks.
+
+### Automation & Configuration
+- **Settings**: Manage Smart Assistant, reorder alerts, and background execution frequency.
+- **Context Awareness**: Configurable context (e.g., sending barcode metadata securely to Groq).
+- **Language**: Support for English and Hindi/Hinglish.
 
 ---
 
 ## UI & UX (Material 3 & Responsiveness)
 
-The app uses a consistent **Material 3** design language augmented with extensive dynamic scaling for multi-device support.
+The app uses a strict **Material 3** design language augmented with dynamic scaling for multi-device support via `flutter_screenutil`.
 
-### Responsive Design (`flutter_screenutil`)
-Every padding, font size, and radius is dynamically calculated (e.g. `16.w`, `24.h`, `14.sp`). This ensures perfect visual proportions on everything from small 4-inch phones to large format tablets and desktop displays.
+### Core Design Principles
+- **Responsive Geometry** — Paddings, fonts, and radii scale fluidly (`16.w`, `24.h`, `14.sp`).
+- **Glassmorphism & Animation** — Heavy use of blurred backgrounds, micro-interactions (`flutter_animate`), and skeleton loaders (`AppShimmer`).
+- **Design Tokens** — Managed via `AppSpacing`, `AppRadii`, and `AppTheme.light()`.
 
-### Design tokens (`lib/core/design/`)
-- **Spacing** — `AppSpacing` (xs → xl).
-- **Radii** — `AppRadii` for cards, chips, sheets.
-- **Theme** — `AppTheme.light()` in `lib/core/theme/app_theme.dart` (surface containers, outline variants).
-
-### Shared M3 widgets (`lib/core/widgets/m3/`)
-| Widget | Used for |
-|--------|----------|
-| `AppScreenScaffold` | Consistent app bars + body padding |
-| `AppSectionCard` | Titled sections with optional action |
-| `AppMetricCard` | KPI tiles (dashboard, analytics, account) |
-| `AppQuickActionTile` | Dashboard quick actions + optional badge |
-| `AppStatusChip` / `AppSyncStatusChip` | Status pills, sync pending |
-| `AppBarcodeScanSheet` | Unified scanner UX |
-
-### Responsive shell
-- **Bottom `NavigationBar`** on phones.
-- **`NavigationRail`** on medium+ width (`AppBreakpoints`).
-
----
-
-## Smart Assistant & AI (Groq)
-
-Cloud AI is **opt-in** (`ai_preferences.enabled`). The Flutter app **never** contains `GROQ_API_KEY` — only Supabase Edge Functions call Groq.
-
-### Architecture
-```text
-Flutter (Bloc → Use case → AiGatewayPort)
-    → Supabase.functions.invoke('ai-…')
-        → Edge Function (Deno)
-            → Groq OpenAI-compatible API (https://api.groq.com/openai/v1)
-            → Postgres (ai_insights, ai_usage_daily, …)
-```
-
-### Edge Functions (repo)
-| Function | Purpose |
-|----------|---------|
-| `ai-voice-parse` | Transcript + catalog → structured bill lines (structured JSON on **smart** model) |
-| `ai-suggest-products` | Prefix + basket → ranked product suggestions |
-| `ai-briefing` | Metrics snapshot → markdown brief + rule-based insight rows |
-| `ai-complete` | Generic Q&A (future admin chat) |
-| `automation-runner` | Cron: automation jobs → briefings / insights |
-
-### User settings (`/ai-settings`)
-- Enable Smart Assistant (required for all AI calls)
-- Daily brief / reorder alerts toggles
-- Enhanced context (send barcode hints to Groq)
-- Language: English or Hindi/Hinglish
+### Shared M3 Widgets
+- `AppScreenScaffold`, `AppSectionCard`, `AppMetricCard`, `AppQuickActionTile`, `AppBarcodeScanSheet`.
 
 ---
 
 ## Dashboard (home)
 
-**Route:** `/app/dashboard`  
-**Bloc:** `DashboardHubBloc` (multi-stream fan-in)  
-
-**Data sources (lazy loaded & live):**
-- Bills stream → revenue KPIs, partial bills, top products, payment mix
-- Products → low stock, inventory value, reorder alerts
-- Expenses → month expenses, net profit
-- Customers → credit/outstanding helpers
-- Sync outbox → pending count
-- Notifications → badge count
-- AI insights stream → unread count in attention score
+The central operational hub (`/app/dashboard`). Lazy loads data via multi-stream fan-in (`DashboardHubBloc`):
+- **Sales & Revenue** (Today, Monthly, Net Profit).
+- **Pulse Strip** (Real-time updates on active bills, pending syncs).
+- **Quick Actions** (Generate Bill, Add Product, Process Return, Record Expense).
+- **AI Daily Brief** (Top sellers, low stock warnings, reorder suggestions).
 
 ---
 
 ## Architecture
 
-### Layers
-| Layer | Path | Responsibility |
-|--------|------|----------------|
-| **Domain** | `lib/domain/` | Entities, pure logic (`BusinessAnalytics`, `VelocityCalculator`, `BillRevenue`), repository **interfaces**, AI/automation entities |
-| **Application** | `lib/application/` | **Use cases** — orchestration only |
-| **Data** | `lib/data/` | Supabase/Hive implementations, PDF, OCR, sync, AI gateway |
-| **Presentation** | `lib/presentation/` | Screens, widgets, **Blocs** |
-| **Core** | `lib/core/` | Router, theme, M3 widgets, notifications, router helpers |
-| **App** | `lib/app/` | `bootstrap.dart`, `app_providers.dart`, `fast_pos_app.dart` |
+Built with a strict separation of concerns, heavily utilizing Domain-Driven Design (DDD) principles:
 
-### Principles
-- **DIP:** UI → use cases → ports; `app_providers.dart` composition root.
-- **Bloc-only** feature state (sealed events, `Equatable` states).
-- **Offline-first bills** via `OfflineFirstBillsRepository` + `SyncRepository` outbox.
+| Layer | Responsibility |
+|--------|----------------|
+| **Domain** | Entities, business logic (`VelocityCalculator`, `BillRevenue`), interfaces. |
+| **Application**| **Use Cases** — Orchestrates logic between repositories and blocs. |
+| **Data** | Supabase/Hive implementations, offline sync outbox, AI gateways. |
+| **Presentation**| Screens, widgets, and **Blocs** (Strictly `flutter_bloc` with sealed states/events). |
+| **Core** | Router configurations (`GoRouter`), theme tokens, shared components. |
 
 ---
 
@@ -211,37 +170,16 @@ Flutter (Bloc → Use case → AiGatewayPort)
 Fast-Pos/
 ├── lib/
 │   ├── main.dart
-│   ├── app/
-│   │   ├── bootstrap.dart
-│   │   ├── app_providers.dart        # all RepositoryProviders + use cases
-│   │   └── fast_pos_app.dart
-│   ├── core/
-│   │   ├── router/                   # GoRouter, app_shell_navigation
-│   │   ├── design/                   # spacing, radii
-│   │   ├── widgets/m3/               # shared M3 components
-│   │   └── responsive/               # breakpoints
-│   ├── domain/
-│   │   ├── entities/, repositories/, analytics/, billing/
-│   │   ├── inventory/, ai/, automation/
-│   ├── application/
-│   │   ├── auth/, billing/, profile/, registration/
-│   │   ├── inventory/, customers/, checkout/, ai/
-│   ├── data/
-│   │   ├── local/hive/               # DAOs, boxes
-│   │   ├── sync/                     # coordinator, outbox impl
-│   │   ├── repositories/           # offline-first bills, customers, …
-│   │   └── ai/, automation/
-│   └── presentation/
-│       ├── dashboard/, analytics/, billing/, billing_copilot/
-│       ├── inventory/, customers/, expenses/, transactions/
-│       ├── account/, auth/, auth_login/, register/, forgot_password/
-│       ├── ai_hub/, automation_settings/, insights/
-│       ├── shell/, notifications/, import_export/, printer_setup/
+│   ├── app/                    # Composition root (app_providers), Bootstrap
+│   ├── core/                   # Router, design tokens, shared M3 widgets
+│   ├── domain/                 # Interfaces, entities
+│   ├── application/            # Use cases (Auth, Billing, Inventory, AI)
+│   ├── data/                   # Supabase repos, Hive DAOs, Sync coordinators
+│   └── presentation/           # Feature folders containing views & blocs
 ├── supabase/
-│   ├── migrations/                   # SQL schema + RLS
-│   └── functions/                    # Edge Functions (Groq, notifications)
-├── test/
-├── assets/                           # images, fonts, icon, video_asset
+│   ├── migrations/             # SQL schema + RLS
+│   └── functions/              # Deno Edge Functions
+├── assets/                     # Images, fonts, animations, videos
 └── README.md
 ```
 
@@ -253,18 +191,18 @@ Fast-Pos/
 |----------|----------|
 | **Core** | `flutter`, `supabase_flutter`, `go_router`, `hive_flutter`, `flutter_dotenv` |
 | **State** | `flutter_bloc`, `bloc`, `equatable`, `bloc_concurrency`, `rxdart` |
-| **UI** | `flutter_screenutil`, `google_fonts`, `flutter_animate`, `shimmer`, `cached_network_image`, `flutter_slidable`, `glassmorphism`, `video_player` |
+| **UI** | `flutter_screenutil`, `google_fonts`, `flutter_animate`, `shimmer`, `glassmorphism`, `video_player` |
 | **Charts** | `fl_chart` |
-| **Billing** | `pdf`, `printing`, `esc_pos_utils_plus`, `share_plus`, `open_file`, `path_provider` |
-| **Scan / vision / voice** | `mobile_scanner`, `google_mlkit_text_recognition`, `speech_to_text`, `image_picker`, `permission_handler` |
-| **Device & I/O** | `connectivity_plus`, `flutter_local_notifications`, `workmanager`, `flutter_blue_plus`, `local_auth`, `file_picker`, `excel`, `csv`, `dio`, `http` |
-| **Release / OTA** | `shorebird_code_push` |
+| **Billing / Print** | `pdf`, `printing`, `esc_pos_utils_plus`, `share_plus` |
+| **Hardware** | `mobile_scanner`, `google_mlkit_text_recognition`, `speech_to_text`, `flutter_blue_plus`, `local_auth` |
+| **Platform I/O**| `connectivity_plus`, `workmanager`, `excel`, `csv`, `file_picker` |
+| **Release** | `shorebird_code_push` |
 
 ---
 
 ## Supabase: schema, migrations, Edge Functions
 
-Apply migrations in order (SQL Editor or `supabase db push`):
+Apply migrations in order using Supabase CLI:
 
 | Migration | Contents |
 |-----------|----------|
@@ -272,62 +210,47 @@ Apply migrations in order (SQL Editor or `supabase db push`):
 | `20260521100000_v11_production.sql` | Production hardening |
 | `20260521110000_fix_notifications_timestamp.sql` | Notifications fix |
 | `20260521120000_bill_pdfs_storage_policies.sql` | Bill PDF storage bucket + RLS |
-| `20260522120000_ai_automation.sql` | `ai_preferences`, `ai_insights`, `ai_usage_daily`, `automation_jobs`, RLS |
+| `20260522120000_ai_automation.sql` | AI usage tracking, background automation tables, RLS |
 
-**IMPORTANT FOR OTP:** In your Supabase Dashboard -> Authentication -> Email Templates -> Reset Password, ensure you are using `{{ .Token }}` instead of a magic link to support the native 6-digit OTP UI flow.
+**IMPORTANT FOR OTP:** In the Supabase Dashboard -> Authentication -> Email Templates -> Reset Password, ensure you use `{{ .Token }}` instead of a magic link for the native 6-digit OTP UI flow.
 
 ---
 
 ## Offline-first sync
 
-```text
-User creates bill
-  → HiveBillDao (sync_status: pending)
-  → HiveOutboxDao (create_bill, decrement_stock, …)
-  → SyncRepository.processOutbox when online
-  → Supabase Postgres
-```
-- **`ConnectivityBloc`** — triggers outbox drain + **AI queue replay** on reconnect.
-- **`SyncCoordinator`** — periodic + connectivity-driven outbox processing.
+Robust offline capabilities powered by Hive local storage:
+1. **Action** → Saved locally to Hive (`sync_status: pending`).
+2. **Outbox** → Appended to `HiveOutboxDao` (e.g., `create_bill`, `decrement_stock`).
+3. **Sync** → `SyncCoordinator` processes the queue securely in the background upon connectivity restoration.
 
 ---
 
 ## Routing reference
 
-### Tab shell (`StatefulShellRoute`)
-| Index | Path | Screen |
-|-------|------|--------|
-| 0 | `/app/dashboard` | `DashboardScreen` + hub + AI blocs |
-| 1 | `/app/inventory` | `InventoryScreen` |
-| 2 | `/app/new-bill` | `BillGenerationPage` + copilot blocs |
-| 3 | `/app/analysis` | `AnalyticsSuiteScreen` |
+Powered by `go_router` with a `StatefulShellRoute` for seamless tab navigation.
 
-### Root / modal routes (examples)
-| Path | Screen |
-|------|--------|
-| `/login`, `/signup`, `/forgot-password`, `/verify-email` | Auth |
-| `/complete-transactions`, `/incomplete-transactions` | Transactions |
-| `/expenses` | Expenses |
-| `/customers`, `/customers/:id` | Customers |
-| `/ai-hub`, `/ai-settings` | Smart Assistant |
-| `/app/profile` | My Account |
+**Tab Shell:** `/app/dashboard`, `/app/inventory`, `/app/new-bill`, `/app/analysis`  
+**Top-Level Routes:**
+- `/login`, `/signup`, `/forgot-password`
+- `/complete-transactions`, `/incomplete-transactions`
+- `/returns/new`, `/credit-notes`
+- `/purchase-orders`, `/suppliers`
+- `/daybook`, `/expenses`
+- `/stock-audit`, `/import-export`, `/printer-setup`
+- `/ai-hub`, `/automation-jobs`
 
 ---
 
 ## Blocs & screens reference
 
-| Bloc | Role |
-|------|------|
-| `AuthBloc` | Global session |
-| `LoginBloc` / `RegisterBloc` / `ForgotPasswordBloc` | Auth forms |
-| `ConnectivityBloc` | Online/offline + sync + AI replay |
-| `DashboardHubBloc` | Dashboard multi-stream hub |
-| `InventoryBloc` | Product list |
-| `BillDraftBloc` / `BillSubmissionBloc` | Bill compose + submit |
-| `BillVoiceAssistBloc` / `BillingCopilotBloc` | STT and Groq parsing |
-| `CheckoutBloc` / `CheckoutScanBloc` | Totals + barcode |
-| `AnalyticsBloc` / `AnalyticsHubBloc` | Analytics suite data |
-| `BusinessInsightsAiBloc` | AI brief + insights stream |
+- `AuthBloc` / `LoginBloc` / `RegisterBloc`: Global session and auth forms.
+- `DashboardHubBloc`: Multi-stream data aggregator.
+- `BillSubmissionBloc` / `CheckoutBloc`: Orchestrates billing business logic.
+- `ReturnBloc` / `CreditNotesBloc`: Handles complex return restocks.
+- `PurchaseOrderBloc` / `SuppliersBloc`: Manages supply chain data.
+- `DayBookBloc` / `ExpensesBloc`: Financial ledger management.
+- `LoyaltyBloc`: Computes and applies points/discounts dynamically.
+- `SyncCoordinator`: Background data synchronization.
 
 ---
 
@@ -336,7 +259,7 @@ User creates bill
 - Flutter SDK (Dart **3.5+**)
 - Supabase project (URL + anon JWT key)
 - Groq API key (for Smart Assistant — **server-side only**)
-- Supabase CLI (recommended for migrations + `functions deploy`)
+- Supabase CLI
 - Android/iOS: camera, mic, Bluetooth permissions as needed
 
 ---
@@ -364,7 +287,6 @@ User creates bill
 | Item | Location |
 |------|----------|
 | Supabase URL/key | `.env` file |
-| Barcode Lookup API | `BarcodeProductLookupRepositoryImpl` |
 | Launcher icons | `pubspec.yaml` → `flutter_launcher_icons` |
 | Groq secrets | Supabase Dashboard → Edge Functions → Secrets |
 
@@ -380,9 +302,9 @@ User creates bill
 
 ## Running, building, testing & OTA Updates
 
-This application integrates **Shorebird** for instant Over-The-Air (OTA) updates, bypassing Play Store review times for minor patches.
+This application integrates **Shorebird** for instant Over-The-Air (OTA) updates, bypassing app store review times for minor patches.
 
-**Standard Build (Testing):**
+**Standard Build:**
 ```bash
 flutter analyze
 flutter test
@@ -391,11 +313,10 @@ flutter build apk
 ```
 
 **Production Release Build (Shorebird Enabled):**
-Do *not* use `flutter build appbundle`. Instead, use:
 ```bash
 shorebird release android
 ```
-*(Note: Windows users may need to run `git config --system core.longpaths true` if Shorebird encounters path length issues).*
+*(Windows users: Run `git config --system core.longpaths true` if Shorebird fails due to path length issues).*
 
 **Pushing an OTA Patch (Shorebird):**
 ```bash
@@ -404,36 +325,20 @@ shorebird patch android
 
 ---
 
-## Billing flow (end-to-end)
-
-1. Open **New Bill** tab → enter customer.
-2. Add lines: inventory picker, barcode, OCR, manual, or **Billing Copilot**.
-3. Set payment method/status, discounts via checkout UI.
-4. Submit → local bill + outbox → stock decrement + velocity update → PDF → upload.
-5. View in **Sales** or **Pending**; open PDF; print via printer setup.
-
----
-
 ## Troubleshooting
 
 | Symptom | Fix |
 |---------|-----|
-| AI: 500 `json_schema` | Redeploy `ai-briefing`; fast model uses plain text. |
-| Bills not syncing | Check connectivity; watch dashboard sync outbox counter. |
-| Shorebird path error | Run `git config --system core.longpaths true` |
-| OTP link opens browser | Fix Supabase Email template to use `{{ .Token }}`. |
-| UI elements clipped | Ensure `ScreenUtilInit` wraps the `MaterialApp` in `fast_pos_app.dart`. |
-| Barcode lookup empty | Add API key to `BarcodeProductLookupRepositoryImpl`. |
-| Redirect loop | Check `AuthBloc` + `AuthRouterRefresh` in `fast_pos_app.dart`. |
+| Redirect loop | Check `AuthBloc` + `AuthRouterRefresh` routing rules in `app_router.dart`. |
+| OTP link opens browser | Fix Supabase Email template to use `{{ .Token }}` natively. |
+| Shorebird path error | Run `git config --system core.longpaths true`. |
+| AI / Automation errors | Check Supabase Edge Function logs; ensure GROQ_API_KEY is set. |
 
 ---
 
 ## Repository
 
-- **Example remote:** [github.com/CoderSid007/Fast-Pos](https://github.com/CoderSid007/Fast-Pos)
 - **Package:** `inventopos`
-- **App title:** Fast Pos
+- **App title:** Fast POS
 
-### Suggested Play Store one-liner
-
-> Smart POS, Billing, Inventory & AI-powered business analytics in one app!
+> Smart POS, Billing, Inventory, Supply Chain, and AI-powered analytics in one robust application!
