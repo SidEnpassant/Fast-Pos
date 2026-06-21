@@ -1,10 +1,13 @@
 import 'package:equatable/equatable.dart';
 
 enum RegisterStatus { initial, submitting, success, failure }
+enum RegisterOtpStatus { none, sending, sent, verifying, verified, error }
 
 class RegisterState extends Equatable {
   const RegisterState({
     this.status = RegisterStatus.initial,
+    this.otpStatus = RegisterOtpStatus.none,
+    this.isEmailVerified = false,
     this.errorMessage,
     this.obscurePassword = true,
     this.signatureLocalPath,
@@ -12,6 +15,8 @@ class RegisterState extends Equatable {
   });
 
   final RegisterStatus status;
+  final RegisterOtpStatus otpStatus;
+  final bool isEmailVerified;
   final String? errorMessage;
   final bool obscurePassword;
   final String? signatureLocalPath;
@@ -19,6 +24,8 @@ class RegisterState extends Equatable {
 
   RegisterState copyWith({
     RegisterStatus? status,
+    RegisterOtpStatus? otpStatus,
+    bool? isEmailVerified,
     String? errorMessage,
     bool? obscurePassword,
     String? signatureLocalPath,
@@ -29,6 +36,8 @@ class RegisterState extends Equatable {
   }) {
     return RegisterState(
       status: status ?? this.status,
+      otpStatus: otpStatus ?? this.otpStatus,
+      isEmailVerified: isEmailVerified ?? this.isEmailVerified,
       errorMessage: clearError ? null : (errorMessage ?? this.errorMessage),
       obscurePassword: obscurePassword ?? this.obscurePassword,
       signatureLocalPath: clearSignature
@@ -42,6 +51,8 @@ class RegisterState extends Equatable {
   @override
   List<Object?> get props => [
         status,
+        otpStatus,
+        isEmailVerified,
         errorMessage,
         obscurePassword,
         signatureLocalPath,

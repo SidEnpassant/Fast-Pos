@@ -14,7 +14,7 @@ class LoginRegisterPrompt extends StatelessWidget {
           style: Theme.of(context).textTheme.bodyMedium,
         ),
         TextButton(
-          onPressed: () => context.push('/signup'),
+          onPressed: () => context.go('/signup'),
           child: const Text('Create account'),
         ),
       ],

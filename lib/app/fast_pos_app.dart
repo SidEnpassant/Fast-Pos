@@ -53,6 +53,7 @@ import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc
 import 'package:inventopos/presentation/returns/bloc/return_bloc.dart';
 import 'package:inventopos/presentation/stock_audit/bloc/stock_audit_bloc.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Repositories + global Blocs — pass to [runApp].
 Widget fastPosRoot() {
@@ -184,6 +185,12 @@ class _FastPosAppState extends State<FastPosApp> {
   void _initHubIfAuthenticated() {
     final auth = context.read<AuthBloc>().state;
     if (auth.status == AuthFlowStatus.authenticated) {
+      // If we are currently on the signup screen, do not initialize Dashboard yet
+      try {
+        final path = appRouter.routerDelegate.currentConfiguration.uri.path;
+        if (path == '/signup') return;
+      } catch (_) {}
+
       final uid = context.read<AuthRepository>().currentSession?.userId;
       if (uid != null) {
         context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
@@ -211,6 +218,12 @@ class _FastPosAppState extends State<FastPosApp> {
       listenWhen: (prev, curr) => prev.status != curr.status,
       listener: (context, state) {
         if (state.status == AuthFlowStatus.authenticated) {
+          // If we are currently on the signup screen, do not initialize Dashboard yet
+          try {
+            final path = appRouter.routerDelegate.currentConfiguration.uri.path;
+            if (path == '/signup') return;
+          } catch (_) {}
+
           final uid = context.read<AuthRepository>().currentSession?.userId;
           if (uid != null) {
             context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));

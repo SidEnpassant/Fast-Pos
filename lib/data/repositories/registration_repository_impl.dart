@@ -14,19 +14,34 @@ class RegistrationRepositoryImpl implements RegistrationRepository {
   @override
   Future<RegistrationResult> register(RegistrationPayload payload) async {
     try {
-      final authRes = await _client.auth.signUp(
-        email: payload.email.trim(),
-        password: payload.password,
-      );
-      final user = authRes.user;
+      final currentUser = _client.auth.currentUser;
+      final User? user;
+      
+      if (currentUser != null && currentUser.email == payload.email.trim()) {
+        final authRes = await _client.auth.updateUser(
+          UserAttributes(
+            password: payload.password,
+            data: {'profile_completed': true},
+          ),
+        );
+        user = authRes.user;
+      } else {
+        final authRes = await _client.auth.signUp(
+          email: payload.email.trim(),
+          password: payload.password,
+          data: {'profile_completed': true},
+        );
+        user = authRes.user;
+        if (authRes.session == null) {
+          return RegistrationResult.rejectedNoSession();
+        }
+      }
+
       if (user == null) {
         return RegistrationResult.rejectedInvalid(
           'Sign up was rejected. Check the email format, password strength, '
           'and that your Supabase anon key is the JWT from Project Settings → API (starts with eyJ).',
         );
-      }
-      if (authRes.session == null) {
-        return RegistrationResult.rejectedNoSession();
       }
 
       final signatureUrl =

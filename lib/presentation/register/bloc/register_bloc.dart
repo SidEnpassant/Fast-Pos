@@ -3,12 +3,16 @@ import 'package:inventopos/application/registration/register_account_use_case.da
 import 'package:inventopos/domain/registration/registration_result.dart';
 import 'package:inventopos/presentation/register/bloc/register_event.dart';
 import 'package:inventopos/presentation/register/bloc/register_state.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
   RegisterBloc(this._registerAccount) : super(const RegisterState()) {
     on<RegisterPasswordVisibilityToggled>(_onTogglePassword);
     on<RegisterSignaturePathChanged>(_onSignaturePath);
     on<RegisterSubmitted>(_onSubmitted);
+    on<RegisterSendOtpRequested>(_onSendOtp);
+    on<RegisterVerifyOtpRequested>(_onVerifyOtp);
+    on<RegisterOtpStatusCleared>(_onOtpStatusCleared);
   }
 
   final RegisterAccountUseCase _registerAccount;
@@ -74,5 +78,58 @@ class RegisterBloc extends Bloc<RegisterEvent, RegisterState> {
           ),
         );
     }
+  }
+
+  Future<void> _onSendOtp(
+    RegisterSendOtpRequested event,
+    Emitter<RegisterState> emit,
+  ) async {
+    emit(state.copyWith(otpStatus: RegisterOtpStatus.sending, clearError: true));
+    try {
+      await Supabase.instance.client.auth.signInWithOtp(email: event.email.trim());
+      emit(state.copyWith(otpStatus: RegisterOtpStatus.sent));
+    } catch (e) {
+      emit(state.copyWith(
+        otpStatus: RegisterOtpStatus.error,
+        errorMessage: 'An error occurred sending OTP: $e',
+      ));
+    }
+  }
+
+  Future<void> _onVerifyOtp(
+    RegisterVerifyOtpRequested event,
+    Emitter<RegisterState> emit,
+  ) async {
+    emit(state.copyWith(otpStatus: RegisterOtpStatus.verifying, clearError: true));
+    try {
+      final response = await Supabase.instance.client.auth.verifyOTP(
+        email: event.email,
+        token: event.otp.trim(),
+        type: OtpType.magiclink,
+      );
+      if (response.session != null) {
+        emit(state.copyWith(
+          otpStatus: RegisterOtpStatus.verified,
+          isEmailVerified: true,
+        ));
+      } else {
+        emit(state.copyWith(
+          otpStatus: RegisterOtpStatus.error,
+          errorMessage: 'Invalid OTP entered.',
+        ));
+      }
+    } catch (e) {
+      emit(state.copyWith(
+        otpStatus: RegisterOtpStatus.error,
+        errorMessage: 'An error occurred verifying OTP.',
+      ));
+    }
+  }
+
+  void _onOtpStatusCleared(
+    RegisterOtpStatusCleared event,
+    Emitter<RegisterState> emit,
+  ) {
+    emit(state.copyWith(otpStatus: RegisterOtpStatus.none, clearError: true));
   }
 }

@@ -122,11 +122,22 @@ final GlobalKey<NavigatorState> appRootNavigatorKey =
 /// Notifies [GoRouter] when [AuthBloc] emits so [redirect] re-runs.
 class AuthRouterRefresh extends ChangeNotifier {
   AuthRouterRefresh(this._authBloc) {
-    _subscription = _authBloc.stream.listen((_) {
+    _subscription = _authBloc.stream.listen((state) {
       // Defer so [GoRouter] does not refresh during another widget's build or
       // during router delegate updates (avoids setState-during-build asserts).
       SchedulerBinding.instance.addPostFrameCallback((_) {
-        if (!_disposed) notifyListeners();
+        if (!_disposed) {
+          // Prevent GoRouter from destroying the /signup screen when the user verifies OTP
+          if (state.status == AuthFlowStatus.authenticated) {
+            try {
+              final currentPath = appRouter.routerDelegate.currentConfiguration.uri.path;
+              if (currentPath == '/signup') {
+                return; // Do not notify listeners, stay on /signup without rebuilding
+              }
+            } catch (_) {}
+          }
+          notifyListeners();
+        }
       });
     });
   }
@@ -143,8 +154,10 @@ class AuthRouterRefresh extends ChangeNotifier {
   }
 }
 
+late final GoRouter appRouter;
+
 GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
-  return GoRouter(
+  return appRouter = GoRouter(
     navigatorKey: appRootNavigatorKey,
     initialLocation: '/',
     refreshListenable: refresh,
@@ -182,6 +195,8 @@ GoRouter createAppRouter(AuthBloc auth, Listenable refresh) {
       }
 
       // authenticated
+      if (path == '/signup') return null; // Let them finish signup!
+
       switch (path) {
         case '/home':
           return '/app/dashboard';

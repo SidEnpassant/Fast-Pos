@@ -4,6 +4,8 @@ import 'package:inventopos/core/notifications/notification_sync_coordinator.dart
 import 'package:inventopos/domain/repositories/auth_repository.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_bloc.dart';
 import 'package:inventopos/presentation/auth_login/bloc/auth_flow_state.dart';
+import 'package:inventopos/core/router/app_router.dart';
+import 'package:go_router/go_router.dart';
 
 /// Starts OS notification sync when the user is signed in.
 class NotificationBridgeListener extends StatefulWidget {
@@ -27,6 +29,13 @@ class _NotificationBridgeListenerState
   void _syncIfAuthenticated() {
     final auth = context.read<AuthBloc>().state;
     if (auth.status != AuthFlowStatus.authenticated) return;
+    
+    // If we are on the signup screen, do not ask for notification permissions yet
+    try {
+      final path = appRouter.routerDelegate.currentConfiguration.uri.path;
+      if (path == '/signup') return;
+    } catch (_) {}
+
     final uid = context.read<AuthRepository>().currentSession?.userId;
     if (uid != null) {
       context.read<NotificationSyncCoordinator>().start(uid);
@@ -40,6 +49,12 @@ class _NotificationBridgeListenerState
       listener: (context, state) async {
         final coordinator = context.read<NotificationSyncCoordinator>();
         if (state.status == AuthFlowStatus.authenticated) {
+          // If we are on the signup screen, do not ask for notification permissions yet
+          try {
+            final path = appRouter.routerDelegate.currentConfiguration.uri.path;
+            if (path == '/signup') return;
+          } catch (_) {}
+
           final uid = context.read<AuthRepository>().currentSession?.userId;
           if (uid != null) await coordinator.start(uid);
         } else {

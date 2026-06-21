@@ -42,9 +42,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
-lib/firebase_options.dart
-android/app/google-services.json
-firebase.json
+
 pubspec.lock
 android/app/release-key.keystore
 android/key.properties

@@ -9,10 +9,19 @@ import 'package:inventopos/domain/registration/registration_payload.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_glass_card.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_scaffold.dart';
 import 'package:inventopos/presentation/auth/widgets/auth_step_progress_bar.dart';
+import 'package:inventopos/presentation/core/bloc/connectivity_bloc.dart';
+import 'package:inventopos/presentation/core/bloc/connectivity_event.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_bloc.dart';
+import 'package:inventopos/presentation/dashboard/bloc/dashboard_hub_event.dart';
+import 'package:inventopos/presentation/daybook/bloc/daybook_bloc.dart';
+import 'package:inventopos/presentation/loyalty/bloc/loyalty_bloc.dart';
+import 'package:inventopos/presentation/loyalty/bloc/loyalty_event.dart';
+import 'package:inventopos/presentation/stock_audit/bloc/stock_audit_bloc.dart';
 import 'package:inventopos/presentation/register/bloc/register_bloc.dart';
 import 'package:inventopos/presentation/register/bloc/register_event.dart';
 import 'package:inventopos/presentation/register/bloc/register_state.dart';
 import 'package:inventopos/presentation/register/widgets/register_step_fields.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -112,8 +121,15 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _nextStep() {
+  void _nextStep(RegisterState state) {
     if (!_validateCurrentStep()) return;
+    
+    // Gating Step 1 with Email OTP
+    if (_step == 0 && !state.isEmailVerified) {
+      context.read<RegisterBloc>().add(RegisterSendOtpRequested(_emailController.text));
+      return;
+    }
+
     if (_step >= _stepLabels.length - 1) return;
     setState(() => _step++);
     _pageController.nextPage(
@@ -122,9 +138,100 @@ class _RegisterScreenState extends State<RegisterScreen> {
     );
   }
 
+  void _showOtpBottomSheet(BuildContext context, RegisterState state) {
+    final otpController = TextEditingController();
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      isDismissible: false,
+      enableDrag: false,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (ctx) {
+        return BlocProvider.value(
+          value: context.read<RegisterBloc>(),
+          child: Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(ctx).viewInsets.bottom,
+              left: 24,
+              right: 24,
+              top: 24,
+            ),
+            child: BlocConsumer<RegisterBloc, RegisterState>(
+              listenWhen: (p, c) => p.otpStatus != c.otpStatus,
+              listener: (ctx, cState) {
+                if (cState.otpStatus == RegisterOtpStatus.verified) {
+                  Navigator.of(ctx).pop(); // Close sheet
+                  _nextStep(cState); // Advance to Step 2
+                } else if (cState.otpStatus == RegisterOtpStatus.error && cState.errorMessage != null) {
+                  ScaffoldMessenger.of(ctx).showSnackBar(
+                    SnackBar(content: Text(cState.errorMessage!)),
+                  );
+                }
+              },
+              builder: (ctx, cState) {
+                final isVerifying = cState.otpStatus == RegisterOtpStatus.verifying;
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Verify your email',
+                      style: Theme.of(ctx).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 8),
+                    Text('We sent a 6-digit code to ${_emailController.text}'),
+                    const SizedBox(height: 24),
+                    TextFormField(
+                      controller: otpController,
+                      keyboardType: TextInputType.number,
+                      maxLength: 6,
+                      decoration: const InputDecoration(
+                        labelText: 'Enter OTP here',
+                        border: OutlineInputBorder(),
+                      ),
+                      enabled: !isVerifying,
+                    ),
+                    const SizedBox(height: 24),
+                    FilledButton(
+                      onPressed: isVerifying
+                          ? null
+                          : () {
+                              if (otpController.text.length >= 4) {
+                                ctx.read<RegisterBloc>().add(
+                                      RegisterVerifyOtpRequested(
+                                        _emailController.text.trim(),
+                                        otpController.text,
+                                      ),
+                                    );
+                              }
+                            },
+                      child: isVerifying ? const AppShimmer(child: Text('Verifying...')) : const Text('Verify Email'),
+                    ),
+                    TextButton(
+                      onPressed: isVerifying
+                          ? null
+                          : () {
+                              Navigator.of(ctx).pop();
+                              ctx.read<RegisterBloc>().add(const RegisterOtpStatusCleared());
+                            },
+                      child: const Text('Cancel'),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                );
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _prevStep() {
     if (_step == 0) {
-      context.pop();
+      context.go('/login');
       return;
     }
     setState(() => _step--);
@@ -164,14 +271,25 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Widget build(BuildContext context) {
     return BlocConsumer<RegisterBloc, RegisterState>(
       listenWhen: (p, c) =>
-          p.status != c.status &&
-          (c.status == RegisterStatus.success ||
-              c.status == RegisterStatus.failure),
+          p.status != c.status || p.otpStatus != c.otpStatus,
       listener: (context, state) {
-        if (state.status == RegisterStatus.success &&
-            state.successEmail != null) {
-          context.go('/verify-email', extra: state.successEmail);
-        } else if (state.status == RegisterStatus.failure &&
+        if (state.otpStatus == RegisterOtpStatus.sent) {
+          // Show sheet only once when status becomes sent
+          _showOtpBottomSheet(context, state);
+        }
+
+        if (state.status == RegisterStatus.success) {
+          // Initialize app hubs manually since AuthBloc transitioned to authenticated in Step 1
+          final uid = Supabase.instance.client.auth.currentUser?.id;
+          if (uid != null) {
+            context.read<DashboardHubBloc>().add(DashboardHubStarted(uid));
+            context.read<ConnectivityBloc>().add(const ConnectivityStarted());
+            context.read<DayBookBloc>().add(DayBookStarted());
+            context.read<LoyaltyBloc>().add(LoadLoyaltyConfig(uid));
+            context.read<StockAuditBloc>().add(LoadStockAudits());
+          }
+          context.go('/app/dashboard');
+        } else if ((state.status == RegisterStatus.failure || state.otpStatus == RegisterOtpStatus.error) &&
             state.errorMessage != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -184,7 +302,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       },
       builder: (context, state) {
-        final submitting = state.status == RegisterStatus.submitting;
+        final submitting = state.status == RegisterStatus.submitting ||
+            state.otpStatus == RegisterOtpStatus.sending;
         final signatureFile = state.signatureLocalPath != null
             ? File(state.signatureLocalPath!)
             : null;
@@ -264,7 +383,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                                       if (isLastStep) {
                                         _submit(signatureFile);
                                       } else {
-                                        _nextStep();
+                                        _nextStep(state);
                                       }
                                     },
                               child: submitting
@@ -282,7 +401,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       ),
                       const SizedBox(height: 8),
                       TextButton(
-                        onPressed: submitting ? null : () => context.pop(),
+                        onPressed: submitting ? null : () => context.go('/login'),
                         child: const Text('Already have an account? Sign in'),
                       ),
                     ],

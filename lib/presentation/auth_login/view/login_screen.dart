@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     Align(
                       alignment: Alignment.centerRight,
                       child: TextButton(
-                        onPressed: () => context.push('/forgot-password'),
+                        onPressed: () => context.go('/forgot-password'),
                         child: const Text('Login with Otp'),
                       ),
                     ),

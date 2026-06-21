@@ -29,3 +29,22 @@ final class RegisterSubmitted extends RegisterEvent {
   @override
   List<Object?> get props => [payload];
 }
+
+final class RegisterSendOtpRequested extends RegisterEvent {
+  const RegisterSendOtpRequested(this.email);
+  final String email;
+  @override
+  List<Object?> get props => [email];
+}
+
+final class RegisterVerifyOtpRequested extends RegisterEvent {
+  const RegisterVerifyOtpRequested(this.email, this.otp);
+  final String email;
+  final String otp;
+  @override
+  List<Object?> get props => [email, otp];
+}
+
+final class RegisterOtpStatusCleared extends RegisterEvent {
+  const RegisterOtpStatusCleared();
+}
