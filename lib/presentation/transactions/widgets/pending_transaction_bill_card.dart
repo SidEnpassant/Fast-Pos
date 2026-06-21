@@ -114,14 +114,20 @@ class PendingTransactionBillCard extends StatelessWidget {
                           Supabase.instance.client.auth.currentUser?.id ?? '',
                     ),
                   const SizedBox(width: 8),
-                  Expanded(
-                    flex: 2,
-                    child: FilledButton.tonalIcon(
-                      icon: const Icon(Icons.picture_as_pdf_outlined),
-                      label: const Text('Bill'),
-                      onPressed: onShowBill,
-                    ),
-                  ),
+                  // Expanded(
+                  //   flex: 2,
+                  //   child: FilledButton.tonalIcon(
+                  //     icon: const Icon(Icons.picture_as_pdf_outlined),
+                  //     label: const Text('Bill'),
+                  //     onPressed: onShowBill,
+                  //   ),
+                    
+                  // ),
+                   IconButton.filledTonal(
+                        icon: const Icon(Icons.picture_as_pdf_outlined),
+                        tooltip: 'Bill',
+                        onPressed: onShowBill,
+                      ),
                   const SizedBox(width: 8),
                   IconButton.filledTonal(
                     onPressed: () => printBillToBluetooth(context, bill),
