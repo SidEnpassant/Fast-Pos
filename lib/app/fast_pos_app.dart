@@ -52,6 +52,7 @@ import 'package:inventopos/presentation/loyalty/bloc/loyalty_event.dart';
 import 'package:inventopos/presentation/messaging/bloc/messaging_automation_bloc.dart';
 import 'package:inventopos/presentation/returns/bloc/return_bloc.dart';
 import 'package:inventopos/presentation/stock_audit/bloc/stock_audit_bloc.dart';
+import 'package:flutter_native_splash/flutter_native_splash.dart';
 
 /// Repositories + global Blocs — pass to [runApp].
 Widget fastPosRoot() {
@@ -177,6 +178,7 @@ class _FastPosAppState extends State<FastPosApp> {
   void initState() {
     super.initState();
     _initHubIfAuthenticated();
+    FlutterNativeSplash.remove();
   }
 
   void _initHubIfAuthenticated() {

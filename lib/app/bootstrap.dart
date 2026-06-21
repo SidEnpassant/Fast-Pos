@@ -8,9 +8,12 @@ import 'package:inventopos/data/local/hive/local_store.dart';
 import 'package:inventopos/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:flutter_native_splash/flutter_native_splash.dart';
+
 /// Composition-root bootstrap (no UI): binding + remote SDK + local store.
 Future<void> initializeApp() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  WidgetsBinding widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   await dotenv.load(fileName: ".env");
   SupabaseConfig.ensureConfigured();
   await LocalStore.init();
